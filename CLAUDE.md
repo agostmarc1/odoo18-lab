@@ -21,11 +21,12 @@ Marco non è uno sviluppatore e lavora solo parlando con Claude, senza editor.
 docker-compose.yml   config/odoo.conf   .env(.example)
 addons/lab_workflow_custom/   <- moduli custom (mount /mnt/extra-addons)
 third-party/oca-*            <- repo OCA branch 18.0 (mount /mnt/third-party, gitignored)
-scripts/                     <- init_db, reset_db, update_module, run_tests, get_third_party
+scripts/                     <- setup_pc, init_db, reset_db, update_module, run_tests, get_third_party
 ```
 I nuovi moduli custom vanno in `addons/<nome_modulo>/`, con versione `18.0.x.y.z` nel manifest.
 
 ## Comandi
+- Installazione completa su un PC nuovo: `./scripts/setup_pc.sh` (idempotente: genera `.env`, OCA, db, test)
 - Aggiornare un modulo: `./scripts/update_module.sh [modulo]`, che fa `-u` con Odoo fermo
 - Test: `./scripts/run_tests.sh`. Esegui sempre i test dopo una modifica e aggiungine per ogni nuova logica.
 - Log: `docker compose logs -f odoo` · Shell Odoo: `docker compose run --rm -T odoo odoo shell -d lab18 --no-http`

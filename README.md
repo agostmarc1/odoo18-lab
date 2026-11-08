@@ -64,31 +64,25 @@ attiva **Intel VT-x / Virtualization Technology** oppure **AMD SVM**, salva e ri
 **macOS:** installa Docker Desktop da docker.com e `brew install git gh`.
 **Linux:** Docker Engine + plugin compose, `git`, `gh` dal gestore pacchetti.
 
-### 2. Scarica il progetto e avvia
+### 2. Installa e avvia con un solo comando
+
+Apri il terminale **Ubuntu** (su Windows: menu Start → "Ubuntu"; su Mac/Linux il Terminale), con
+Docker Desktop acceso, e incolla:
 
 ```bash
-gh auth login
+git clone https://github.com/agostmarc1/odoo18-lab ~/odoo18-lab && ~/odoo18-lab/scripts/setup_pc.sh
 ```
 
-```bash
-gh repo clone <tuo-utente>/odoo18-lab ~/odoo18-lab && cd ~/odoo18-lab
-```
+Lo script, da solo:
+1. crea il file `.env` con **password casuali**;
+2. scarica i moduli OCA (solo branch 18.0);
+3. crea il database `lab18` con i dati demo e installa tutti i moduli (5-10 minuti la prima volta);
+4. lancia i test automatici (devono risultare `0 failed, 0 error(s) of 7 tests`);
+5. stampa **link e credenziali**.
 
-```bash
-cp .env.example .env
-```
-
-Apri `.env` e metti password a tua scelta, poi:
-
-```bash
-./scripts/get_third_party.sh
-```
-
-```bash
-./scripts/init_db.sh
-```
-
-Dopo qualche minuto apri **http://127.0.0.1:8069**.
+Si può rilanciare senza rischi: se il database è già installato non lo tocca.
+Se dice che Docker non c'è o non è avviato: apri Docker Desktop → Impostazioni → Resources →
+WSL integration → attiva **Ubuntu** → Apply, poi rilancia.
 
 ---
 
