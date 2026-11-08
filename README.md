@@ -64,9 +64,22 @@ attiva **Intel VT-x / Virtualization Technology** oppure **AMD SVM**, salva e ri
 **macOS:** installa Docker Desktop da docker.com e `brew install git gh`.
 **Linux:** Docker Engine + plugin compose, `git`, `gh` dal gestore pacchetti.
 
+### Alternativa Windows senza Ubuntu: Docker Desktop + Git Bash
+
+Se `wsl --install` non riesce a scaricare (es. errore "Timeout del gateway (504)"):
+1. Dal browser scarica e installa **Docker Desktop** (https://www.docker.com/products/docker-desktop/)
+   e **Git per Windows** (https://git-scm.com/download/win). Riavvia se richiesto.
+2. Se Docker Desktop chiede di aggiornare WSL e fallisce: scarica il file `.x64.msi` da
+   https://github.com/microsoft/WSL/releases, aprilo, riavvia.
+3. Apri Docker Desktop e aspetta "Engine running".
+4. Apri **Git Bash** (menu Start) e incolla il comando del punto 2 qui sotto.
+
+Nota: con le cartelle Windows il ricaricamento automatico del codice può non funzionare; dopo una
+modifica usa `docker compose restart odoo` oppure `./scripts/update_module.sh`.
+
 ### 2. Installa e avvia con un solo comando
 
-Apri il terminale **Ubuntu** (su Windows: menu Start → "Ubuntu"; su Mac/Linux il Terminale), con
+Apri il terminale **Ubuntu** (su Windows: menu Start → "Ubuntu", oppure **Git Bash**; su Mac/Linux il Terminale), con
 Docker Desktop acceso, e incolla:
 
 ```bash

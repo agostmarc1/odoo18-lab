@@ -1,5 +1,7 @@
 # Funzioni comuni agli script (non eseguire direttamente)
 set -euo pipefail
+# Git Bash su Windows: non convertire i percorsi Linux (/var/lib/odoo...) in percorsi Windows
+export MSYS_NO_PATHCONV=1
 cd "$(dirname "$0")/.."
 [ -f .env ] || { echo "Manca il file .env: copia .env.example in .env e imposta le password."; exit 1; }
 set -a; . ./.env; set +a

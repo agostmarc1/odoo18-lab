@@ -3,11 +3,12 @@
 # Crea .env con password casuali (se manca), scarica OCA 18.0, crea il db lab18,
 # lancia i test e stampa link e credenziali.
 set -euo pipefail
+export MSYS_NO_PATHCONV=1   # Git Bash su Windows
 cd "$(dirname "$0")/.."
 
 if ! command -v docker >/dev/null 2>&1; then
-  echo "ERRORE: Docker non trovato. Installa Docker Desktop e, su Windows, attiva"
-  echo "Impostazioni > Resources > WSL integration > Ubuntu. Poi rilancia questo script."
+  echo "ERRORE: Docker non trovato. Installa Docker Desktop (in WSL/Ubuntu attiva anche"
+  echo "Impostazioni > Resources > WSL integration > Ubuntu). Poi riapri il terminale e rilancia."
   exit 1
 fi
 if ! docker info >/dev/null 2>&1; then
