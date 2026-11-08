@@ -1,0 +1,7 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_slot_user,slot user,model_lab_planning_slot,group_lab_planning_user,1,1,0,0
+access_slot_manager,slot manager,model_lab_planning_slot,group_lab_planning_manager,1,1,1,1
+access_default_task_user,default task user,model_lab_default_task,project.group_project_user,1,0,0,0
+access_default_task_manager,default task manager,model_lab_default_task,project.group_project_manager,1,1,1,1
+access_margin_pm,margin pm,model_lab_margin_report,project.group_project_manager,1,0,0,0
+access_margin_account,margin account,model_lab_margin_report,account.group_account_manager,1,0,0,0

@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="lab_margin_report_pivot" model="ir.ui.view">
+        <field name="name">lab.margin.report.pivot</field>
+        <field name="model">lab.margin.report</field>
+        <field name="arch" type="xml">
+            <pivot string="Margini per commessa" disable_linking="0">
+                <field name="partner_id" type="row"/>
+                <field name="project_id" type="row"/>
+                <field name="sold_amount" type="measure"/>
+                <field name="invoiced_amount" type="measure"/>
+                <field name="timesheet_cost" type="measure"/>
+                <field name="margin" type="measure"/>
+                <field name="hours_consumed" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+    <record id="lab_margin_report_list" model="ir.ui.view">
+        <field name="name">lab.margin.report.list</field>
+        <field name="model">lab.margin.report</field>
+        <field name="arch" type="xml">
+            <list decoration-danger="margin &lt; 0">
+                <field name="project_id"/>
+                <field name="partner_id"/>
+                <field name="user_id" widget="many2one_avatar_user"/>
+                <field name="sold_amount" sum="Totale"/>
+                <field name="invoiced_amount" sum="Totale"/>
+                <field name="timesheet_cost" sum="Totale"/>
+                <field name="margin" sum="Totale"/>
+                <field name="hours_consumed" sum="Totale" widget="float_time"/>
+            </list>
+        </field>
+    </record>
+    <record id="lab_margin_report_search" model="ir.ui.view">
+        <field name="name">lab.margin.report.search</field>
+        <field name="model">lab.margin.report</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="project_id"/>
+                <field name="partner_id"/>
+                <field name="user_id"/>
+                <filter name="sold" string="Commesse vendute" domain="[('sold_amount', '>', 0)]"/>
+                <filter name="negative" string="Margine negativo" domain="[('margin', '&lt;', 0)]"/>
+            </search>
+        </field>
+    </record>
+    <record id="action_margin_report" model="ir.actions.act_window">
+        <field name="name">Margini per commessa</field>
+        <field name="res_model">lab.margin.report</field>
+        <field name="view_mode">pivot,list</field>
+        <field name="context">{'search_default_sold': 1}</field>
+    </record>
+</odoo>

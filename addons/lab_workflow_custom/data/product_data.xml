@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <record id="subscription_template_monthly" model="sale.subscription.template">
+        <field name="name">Mensile (canone)</field>
+        <field name="code">MENS</field>
+        <field name="recurring_rule_type">months</field>
+        <field name="recurring_rule_count">1</field>
+        <field name="recurring_rule_boundary">unlimited</field>
+        <field name="invoicing_mode">draft</field>
+    </record>
+
+    <!-- 1. Sviluppo a corpo: prezzo fisso, 1 unità = 120 ore stimate -->
+    <record id="product_dev_fixed" model="product.template">
+        <field name="name">Sviluppo Software a Corpo</field>
+        <field name="default_code">SVIL-CORPO</field>
+        <field name="type">service</field>
+        <field name="sale_ok" eval="True"/>
+        <field name="purchase_ok" eval="False"/>
+        <field name="list_price">12000</field>
+        <field name="uom_id" ref="uom.product_uom_unit"/>
+        <field name="uom_po_id" ref="uom.product_uom_unit"/>
+        <field name="service_policy">ordered_prepaid</field>
+        <field name="service_tracking">task_in_project</field>
+        <field name="lab_hours_per_unit">120</field>
+        <field name="lab_create_default_tasks" eval="True"/>
+        <field name="description_sale">Sviluppo a corpo (prezzo fisso), stima 120 ore.</field>
+    </record>
+
+    <!-- 2. Monte ore prepagato 50h -->
+    <record id="product_hours_pack_50" model="product.template">
+        <field name="name">Pacchetto Monte Ore (50h)</field>
+        <field name="default_code">MONTE-50H</field>
+        <field name="type">service</field>
+        <field name="sale_ok" eval="True"/>
+        <field name="purchase_ok" eval="False"/>
+        <field name="list_price">2750</field>
+        <field name="uom_id" ref="uom.product_uom_unit"/>
+        <field name="uom_po_id" ref="uom.product_uom_unit"/>
+        <field name="service_policy">ordered_prepaid</field>
+        <field name="service_tracking">task_in_project</field>
+        <field name="lab_hours_per_unit">50</field>
+        <field name="lab_create_default_tasks" eval="True"/>
+        <field name="description_sale">Pacchetto prepagato di 50 ore (55 €/h).</field>
+    </record>
+
+    <!-- 3. Canone AMS mensile ricorrente (OCA subscription_oca), 20 ore/mese -->
+    <record id="product_ams_monthly" model="product.template">
+        <field name="name">Canone Assistenza Mensile AMS</field>
+        <field name="default_code">AMS-MESE</field>
+        <field name="type">service</field>
+        <field name="sale_ok" eval="True"/>
+        <field name="purchase_ok" eval="False"/>
+        <field name="list_price">1500</field>
+        <field name="uom_id" ref="uom.product_uom_unit"/>
+        <field name="uom_po_id" ref="uom.product_uom_unit"/>
+        <field name="service_policy">ordered_prepaid</field>
+        <field name="service_tracking">project_only</field>
+        <field name="lab_monthly_hours">20</field>
+        <field name="subscribable" eval="True"/>
+        <field name="subscription_template_id" ref="subscription_template_monthly"/>
+        <field name="description_sale">Canone mensile di assistenza applicativa: 20 ore/mese incluse.</field>
+    </record>
+</odoo>

@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- App Pianificazione -->
+    <menuitem id="menu_planning_root" name="Pianificazione" sequence="45"
+              web_icon="lab_workflow_custom,static/description/icon.png"
+              groups="group_lab_planning_user"/>
+    <menuitem id="menu_my_slots" name="I miei turni" parent="menu_planning_root"
+              action="action_my_slots" sequence="10"/>
+    <menuitem id="menu_all_slots" name="Pianificazione team" parent="menu_planning_root"
+              action="action_all_slots" sequence="20" groups="group_lab_planning_manager"/>
+    <menuitem id="menu_planning_reporting" name="Report" parent="menu_planning_root"
+              sequence="30" groups="group_lab_planning_manager"/>
+    <menuitem id="menu_slots_report" name="Carico settimanale" parent="menu_planning_reporting"
+              action="action_slots_report" sequence="10"/>
+    <menuitem id="menu_margin_report_planning" name="Margini per commessa"
+              parent="menu_planning_reporting" action="action_margin_report" sequence="20"/>
+
+    <!-- Report margini anche in Progetti > Report -->
+    <menuitem id="menu_margin_report_project" name="Margini per commessa"
+              parent="project.menu_project_report" action="action_margin_report" sequence="90"
+              groups="project.group_project_manager"/>
+    <!-- Configurazione task di default in Progetti > Configurazione -->
+    <menuitem id="menu_default_tasks" name="Task di default commessa"
+              parent="project.menu_project_config" action="action_default_tasks" sequence="90"
+              groups="project.group_project_manager"/>
+</odoo>

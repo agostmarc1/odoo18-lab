@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Form task: banner di allerta + riquadro ore -->
+    <record id="view_task_form_lab" model="ir.ui.view">
+        <field name="name">project.task.form.lab</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_form2"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="before">
+                <field name="lab_alert_level" invisible="1"/>
+                <div class="alert alert-warning mb-0 text-center" role="alert"
+                     invisible="lab_alert_level != 'warning'">
+                    ⚠️ Attenzione: consumato oltre il <b>75%</b> delle ore stimate
+                    (<field name="lab_consumption_pct" widget="integer" class="oe_inline"/>%).
+                </div>
+                <div class="alert alert-danger mb-0 text-center" role="alert"
+                     invisible="lab_alert_level != 'danger'">
+                    🛑 Rischio sforamento: consumato oltre il <b>90%</b> delle ore stimate
+                    (<field name="lab_consumption_pct" widget="integer" class="oe_inline"/>%).
+                </div>
+            </xpath>
+            <xpath expr="//notebook" position="before">
+                <group string="Monte ore" name="lab_hours"
+                       groups="hr_timesheet.group_hr_timesheet_user">
+                    <group>
+                        <field name="lab_sold_hours" widget="float_time"
+                               invisible="not sale_line_id"/>
+                        <field name="allocated_hours" string="Ore stimate" widget="float_time"
+                               readonly="1"/>
+                        <field name="effective_hours" string="Ore consuntivate" widget="float_time"/>
+                    </group>
+                    <group>
+                        <field name="lab_consumption_pct" widget="progressbar"/>
+                    </group>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Kanban task: badge -->
+    <record id="view_task_kanban_lab" model="ir.ui.view">
+        <field name="name">project.task.kanban.lab</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_kanban"/>
+        <field name="arch" type="xml">
+            <xpath expr="//t[@t-name='card']//field[@name='tag_ids']" position="before">
+                <field name="lab_alert_level" invisible="1"/>
+                <span class="badge rounded-pill text-bg-warning mb-1"
+                      invisible="lab_alert_level != 'warning'">⚠ ore &gt; 75%</span>
+                <span class="badge rounded-pill text-bg-danger mb-1"
+                      invisible="lab_alert_level != 'danger'">🛑 ore &gt; 90%</span>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Lista task: colonne ore + colore riga -->
+    <record id="view_task_list_lab" model="ir.ui.view">
+        <field name="name">project.task.list.lab</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.project_task_view_tree_main_base"/>
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="attributes">
+                <attribute name="decoration-warning">lab_alert_level == 'warning'</attribute>
+                <attribute name="decoration-danger">lab_alert_level == 'danger'</attribute>
+            </xpath>
+            <xpath expr="//list" position="inside">
+                <field name="lab_alert_level" optional="show" widget="badge"
+                       decoration-success="lab_alert_level == 'ok'"
+                       decoration-warning="lab_alert_level == 'warning'"
+                       decoration-danger="lab_alert_level == 'danger'"/>
+                <field name="lab_consumption_pct" optional="show" widget="progressbar"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_task_search_lab" model="ir.ui.view">
+        <field name="name">project.task.search.lab</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="project.view_task_search_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//search" position="inside">
+                <separator/>
+                <filter name="lab_alert_any" string="Alert monte ore (≥75%)"
+                        domain="[('lab_alert_level', 'in', ('warning', 'danger'))]"/>
+                <filter name="lab_alert_danger" string="Rischio sforamento (≥90%)"
+                        domain="[('lab_alert_level', '=', 'danger')]"/>
+                <filter name="lab_groupby_alert" string="Alert monte ore"
+                        context="{'group_by': 'lab_alert_level'}"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

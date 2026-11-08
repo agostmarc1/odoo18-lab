@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Utenti di prova SENZA password: le password le imposta scripts/init_db.sh leggendo .env -->
+    <record id="user_commerciale" model="res.users">
+        <field name="name">Carla Commerciale</field>
+        <field name="login">commerciale</field>
+        <field name="email">commerciale@lab.example</field>
+        <field name="groups_id" eval="[Command.set([ref('base.group_user'), ref('group_lab_commerciale')])]"/>
+    </record>
+    <record id="user_pm" model="res.users">
+        <field name="name">Paolo Project Manager</field>
+        <field name="login">pm</field>
+        <field name="email">pm@lab.example</field>
+        <field name="groups_id" eval="[Command.set([ref('base.group_user'), ref('group_lab_pm')])]"/>
+    </record>
+    <record id="user_analista" model="res.users">
+        <field name="name">Anna Analista</field>
+        <field name="login">analista</field>
+        <field name="email">analista@lab.example</field>
+        <field name="groups_id" eval="[Command.set([ref('base.group_user'), ref('group_lab_team')])]"/>
+    </record>
+    <record id="user_sviluppatore" model="res.users">
+        <field name="name">Davide Sviluppatore</field>
+        <field name="login">sviluppatore</field>
+        <field name="email">sviluppatore@lab.example</field>
+        <field name="groups_id" eval="[Command.set([ref('base.group_user'), ref('group_lab_team')])]"/>
+    </record>
+    <record id="user_amministrazione" model="res.users">
+        <field name="name">Alba Amministrazione</field>
+        <field name="login">amministrazione</field>
+        <field name="email">amministrazione@lab.example</field>
+        <field name="groups_id" eval="[Command.set([ref('base.group_user'), ref('group_lab_amministrazione')])]"/>
+    </record>
+
+    <!-- Dipendenti collegati (costo orario per il calcolo margini) -->
+    <record id="employee_pm" model="hr.employee">
+        <field name="name">Paolo Project Manager</field>
+        <field name="user_id" ref="user_pm"/>
+        <field name="hourly_cost">45</field>
+    </record>
+    <record id="employee_analista" model="hr.employee">
+        <field name="name">Anna Analista</field>
+        <field name="user_id" ref="user_analista"/>
+        <field name="hourly_cost">38</field>
+    </record>
+    <record id="employee_sviluppatore" model="hr.employee">
+        <field name="name">Davide Sviluppatore</field>
+        <field name="user_id" ref="user_sviluppatore"/>
+        <field name="hourly_cost">35</field>
+    </record>
+</odoo>

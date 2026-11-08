@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- Il task di Sviluppo (creato da Odoo) riceve il resto: 100 - 15 - 10 - 15 = 60% -->
+    <record id="default_task_analysis" model="lab.default.task">
+        <field name="name">Analisi e Specifiche</field>
+        <field name="sequence">10</field>
+        <field name="share_pct">15</field>
+        <field name="description">&lt;p&gt;Raccolta requisiti, documento di specifiche funzionali, validazione con il cliente.&lt;/p&gt;</field>
+    </record>
+    <record id="default_task_pm" model="lab.default.task">
+        <field name="name">Project Management &amp; Coordinamento</field>
+        <field name="sequence">20</field>
+        <field name="share_pct">10</field>
+        <field name="description">&lt;p&gt;Kick-off, SAL, coordinamento team, reporting al cliente.&lt;/p&gt;</field>
+    </record>
+    <record id="default_task_test" model="lab.default.task">
+        <field name="name">Test &amp; UAT</field>
+        <field name="sequence">90</field>
+        <field name="share_pct">15</field>
+        <field name="description">&lt;p&gt;Test interni, collaudo utente (UAT), correzioni e rilascio.&lt;/p&gt;</field>
+    </record>
+</odoo>

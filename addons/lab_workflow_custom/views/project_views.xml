@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="edit_project_lab" model="ir.ui.view">
+        <field name="name">project.project.form.lab</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.edit_project"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="before">
+                <field name="lab_alert_level" invisible="1"/>
+                <div class="alert alert-warning mb-0 text-center" role="alert"
+                     invisible="lab_alert_level != 'warning'">
+                    ⚠️ Monte ore oltre il <b>75%</b>: avvisare il cliente / valutare un'estensione.
+                </div>
+                <div class="alert alert-danger mb-0 text-center" role="alert"
+                     invisible="lab_alert_level != 'danger'">
+                    🛑 Monte ore oltre il <b>90%</b>: rischio sforamento, serve un'azione commerciale.
+                </div>
+            </xpath>
+            <xpath expr="//notebook" position="before">
+                <group string="Monte ore" name="lab_hours">
+                    <group>
+                        <field name="lab_is_monthly" invisible="not lab_is_monthly"/>
+                        <field name="lab_sold_hours" widget="float_time"/>
+                        <field name="lab_estimated_hours" widget="float_time"/>
+                        <field name="lab_consumed_hours" widget="float_time"/>
+                    </group>
+                    <group>
+                        <field name="lab_consumption_pct" widget="progressbar"/>
+                        <div class="text-muted" colspan="2" invisible="not lab_is_monthly">
+                            Canone mensile: ore vendute e consuntivate sono del mese corrente.
+                        </div>
+                    </group>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_project_kanban_lab" model="ir.ui.view">
+        <field name="name">project.project.kanban.lab</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.view_project_kanban"/>
+        <field name="arch" type="xml">
+            <xpath expr="//t[@t-name='card']//field[@name='tag_ids']" position="before">
+                <field name="lab_alert_level" invisible="1"/>
+                <span class="badge rounded-pill text-bg-warning"
+                      invisible="lab_alert_level != 'warning'">⚠ monte ore &gt; 75%</span>
+                <span class="badge rounded-pill text-bg-danger"
+                      invisible="lab_alert_level != 'danger'">🛑 monte ore &gt; 90%</span>
+            </xpath>
+        </field>
+    </record>
+</odoo>

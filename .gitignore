@@ -1,0 +1,19 @@
+# credenziali locali
+.env
+# python compilato
+__pycache__/
+*.py[cod]
+# dump e backup database
+*.dump
+*.sql
+*.sql.gz
+*.zip
+backups/
+# moduli terze parti: si scaricano con scripts/get_third_party.sh
+third-party/*
+!third-party/README.md
+# editor / sistema
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

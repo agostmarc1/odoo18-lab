@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="lab_planning_slot_list" model="ir.ui.view">
+        <field name="name">lab.planning.slot.list</field>
+        <field name="model">lab.planning.slot</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="state == 'cancel'" decoration-success="state == 'confirmed'"
+                  decoration-info="state == 'published'">
+                <field name="date"/>
+                <field name="employee_id" widget="many2one_avatar_employee"/>
+                <field name="project_id"/>
+                <field name="task_id"/>
+                <field name="allocated_hours" widget="float_time" sum="Totale"/>
+                <field name="confirmed_hours" widget="float_time" sum="Totale" optional="show"/>
+                <field name="state" widget="badge" decoration-info="state == 'published'"
+                       decoration-success="state == 'confirmed'"/>
+                <button name="action_publish" type="object" string="Pubblica" icon="fa-send"
+                        invisible="state != 'draft'"
+                        groups="lab_workflow_custom.group_lab_planning_manager"/>
+                <button name="action_confirm" type="object" string="Conferma" icon="fa-check"
+                        class="btn-primary" invisible="state != 'published'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="lab_planning_slot_form" model="ir.ui.view">
+        <field name="name">lab.planning.slot.form</field>
+        <field name="model">lab.planning.slot</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_publish" type="object" string="Pubblica al dipendente"
+                            class="btn-primary" invisible="state != 'draft'"
+                            groups="lab_workflow_custom.group_lab_planning_manager"/>
+                    <button name="action_confirm" type="object" string="Conferma turno e crea foglio ore"
+                            class="btn-primary" invisible="state != 'published'"/>
+                    <button name="action_reset_draft" type="object" string="Riporta in bozza"
+                            invisible="state not in ('published', 'cancel')"
+                            groups="lab_workflow_custom.group_lab_planning_manager"/>
+                    <button name="action_cancel" type="object" string="Annulla"
+                            invisible="state in ('cancel', 'confirmed')"
+                            groups="lab_workflow_custom.group_lab_planning_manager"/>
+                    <field name="state" widget="statusbar" statusbar_visible="draft,published,confirmed"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_open_timesheet" type="object" class="oe_stat_button"
+                                icon="fa-clock-o" invisible="not timesheet_id" string="Foglio ore"/>
+                    </div>
+                    <div class="oe_title"><h1><field name="name" placeholder="Descrizione turno"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="employee_id" readonly="state != 'draft'"/>
+                            <field name="project_id" readonly="state != 'draft'"/>
+                            <field name="task_id" readonly="state != 'draft'"/>
+                            <field name="timesheet_id" invisible="not timesheet_id"/>
+                        </group>
+                        <group>
+                            <field name="date" readonly="state != 'draft'"/>
+                            <field name="week_start"/>
+                            <field name="allocated_hours" widget="float_time" readonly="state != 'draft'"/>
+                            <field name="confirmed_hours" widget="float_time" readonly="state != 'published'"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                        </group>
+                    </group>
+                    <div class="text-muted">
+                        Regola 80/20: max 32h pianificate a settimana per persona.
+                        Alla conferma il turno diventa una riga del Foglio Ore.
+                    </div>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="lab_planning_slot_calendar" model="ir.ui.view">
+        <field name="name">lab.planning.slot.calendar</field>
+        <field name="model">lab.planning.slot</field>
+        <field name="arch" type="xml">
+            <calendar date_start="date" mode="week" color="employee_id"
+                      quick_create="0" event_open_popup="1">
+                <field name="employee_id" filters="1" avatar_field="avatar_128"/>
+                <field name="project_id"/>
+                <field name="allocated_hours" widget="float_time"/>
+                <field name="state"/>
+            </calendar>
+        </field>
+    </record>
+
+    <record id="lab_planning_slot_pivot" model="ir.ui.view">
+        <field name="name">lab.planning.slot.pivot</field>
+        <field name="model">lab.planning.slot</field>
+        <field name="arch" type="xml">
+            <pivot string="Carico settimanale">
+                <field name="employee_id" type="row"/>
+                <field name="week_start" interval="week" type="col"/>
+                <field name="allocated_hours" type="measure" widget="float_time"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="lab_planning_slot_search" model="ir.ui.view">
+        <field name="name">lab.planning.slot.search</field>
+        <field name="model">lab.planning.slot</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="employee_id"/>
+                <field name="project_id"/>
+                <field name="task_id"/>
+                <filter name="my_slots" string="I miei turni" domain="[('user_id', '=', uid)]"/>
+                <filter name="to_confirm" string="Da confermare" domain="[('state', '=', 'published')]"/>
+                <filter name="draft" string="Bozze" domain="[('state', '=', 'draft')]"/>
+                <filter name="confirmed" string="Confermati" domain="[('state', '=', 'confirmed')]"/>
+                <separator/>
+                <filter name="upcoming" string="Da oggi in avanti"
+                        domain="[('date', '>=', context_today().strftime('%Y-%m-%d'))]"/>
+                <filter name="date" string="Data" date="date"/>
+                <group expand="0">
+                    <filter name="group_employee" string="Dipendente" context="{'group_by': 'employee_id'}"/>
+                    <filter name="group_project" string="Progetto" context="{'group_by': 'project_id'}"/>
+                    <filter name="group_week" string="Settimana" context="{'group_by': 'week_start:week'}"/>
+                    <filter name="group_state" string="Stato" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_my_slots" model="ir.actions.act_window">
+        <field name="name">I miei turni</field>
+        <field name="res_model">lab.planning.slot</field>
+        <field name="view_mode">list,calendar,form</field>
+        <field name="context">{'search_default_my_slots': 1, 'search_default_to_confirm': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Nessun turno da confermare</p>
+            <p>Qui trovi i turni che il Project Manager ti ha pubblicato.
+               Premi <b>Conferma</b> a fine giornata: il turno diventa una riga del tuo Foglio Ore.</p>
+        </field>
+    </record>
+
+    <record id="action_all_slots" model="ir.actions.act_window">
+        <field name="name">Pianificazione team</field>
+        <field name="res_model">lab.planning.slot</field>
+        <field name="view_mode">calendar,list,pivot,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Pianifica il primo turno</p>
+            <p>Assegna ore di un dipendente su un task. Regola 80/20: max 32h a settimana.
+               Poi premi <b>Pubblica</b> per mandarlo al dipendente.</p>
+        </field>
+    </record>
+
+    <record id="action_slots_report" model="ir.actions.act_window">
+        <field name="name">Carico settimanale</field>
+        <field name="res_model">lab.planning.slot</field>
+        <field name="view_mode">pivot,list</field>
+        <field name="context">{'search_default_group_employee': 0}</field>
+        <field name="domain">[('state', '!=', 'cancel')]</field>
+    </record>
+</odoo>

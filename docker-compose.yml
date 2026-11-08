@@ -1,0 +1,41 @@
+# Odoo 18.0 Community Edition + PostgreSQL 16 - laboratorio locale
+# Le credenziali sono in .env (escluso da git). Vedi .env.example.
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - odoo18-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  odoo:
+    image: odoo:18.0
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:8069:8069"   # solo dal tuo PC, non dalla rete
+    environment:
+      HOST: db
+      USER: ${POSTGRES_USER}
+      PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./config/odoo.conf:/etc/odoo/odoo.conf:ro
+      - ./addons:/mnt/extra-addons
+      - ./third-party:/mnt/third-party:ro
+      - odoo18-filestore:/var/lib/odoo
+    # dev mode: ricarica il codice Python quando cambia e legge le viste XML dal disco
+    command: ["odoo", "--dev=xml,reload"]
+
+volumes:
+  odoo18-db-data:
+  odoo18-filestore:

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- Regola 80/20: massimo ore pianificabili a settimana per persona.
+         Modificabile da Impostazioni > Tecnico > Parametri di sistema -->
+    <record id="param_max_weekly_hours" model="ir.config_parameter">
+        <field name="key">lab_workflow_custom.max_weekly_hours</field>
+        <field name="value">32</field>
+    </record>
+</odoo>
