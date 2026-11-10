@@ -3,8 +3,12 @@ from . import sale_order_line
 from . import lab_default_task
 from . import project_task
 from . import project_project
+from . import hr_employee
+from . import lab_cost
+from . import lab_ai_usage
 from . import account_analytic_line
 from . import account_move
+from . import account_move_line
 from . import lab_planning_slot
 from . import lab_margin_report
 from . import sale_subscription

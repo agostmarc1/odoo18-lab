@@ -50,8 +50,8 @@ cat <<MSG
 =============================================================
  Odoo 18 pronto:  http://127.0.0.1:8069
  Amministratore:  admin / ${LAB_ADMIN_PASSWORD}
- Utenti di prova: commerciale, pm, analista, sviluppatore,
-                  amministrazione  -> password ${LAB_USERS_PASSWORD}
+ Utenti di prova: giuseppe, marco, carlo, niccolo, giulia, gianluca, nicola,
+                  luana -> password ${LAB_USERS_PASSWORD}
  (le password sono salvate nel file .env)
 =============================================================
 MSG

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Corrispondenze di esempio (identificativi finti, come quelli dei report Anthropic) -->
+    <record id="mapping_workspace_demo" model="lab.ai.mapping">
+        <field name="ref_type">workspace</field>
+        <field name="name">wrkspc_demo_commessa_1</field>
+        <field name="label">Workspace dedicato alla commessa di esempio</field>
+        <field name="project_id" ref="project.project_project_1"/>
+    </record>
+    <record id="mapping_actor_carlo" model="lab.ai.mapping">
+        <field name="ref_type">actor</field>
+        <field name="name">user_demo_carlo</field>
+        <field name="label">Claude Code di Carlo</field>
+        <field name="employee_id" ref="employee_carlo"/>
+    </record>
+
+    <!-- Consumi del mese scorso: uno per ciascun tipo di attribuzione -->
+    <record id="usage_demo_direct" model="lab.ai.usage">
+        <field name="date" eval="(DateTime.today().replace(day=1) - relativedelta(days=20)).strftime('%Y-%m-%d')"/>
+        <field name="source">csv</field>
+        <field name="tool_id" ref="ai_tool_claude_api"/>
+        <field name="description">API / claude-sonnet-5-5</field>
+        <field name="workspace_ref">wrkspc_demo_commessa_1</field>
+        <field name="amount_currency">84</field>
+        <field name="external_ref">demo|direct</field>
+    </record>
+    <record id="usage_demo_person" model="lab.ai.usage">
+        <field name="date" eval="(DateTime.today().replace(day=1) - relativedelta(days=15)).strftime('%Y-%m-%d')"/>
+        <field name="source">csv</field>
+        <field name="tool_id" ref="ai_tool_claude_api"/>
+        <field name="description">claude_code / claude-opus-5-5</field>
+        <field name="actor_ref">user_demo_carlo</field>
+        <field name="amount_currency">120</field>
+        <field name="external_ref">demo|person</field>
+    </record>
+    <record id="usage_demo_unmatched" model="lab.ai.usage">
+        <field name="date" eval="(DateTime.today().replace(day=1) - relativedelta(days=10)).strftime('%Y-%m-%d')"/>
+        <field name="source">csv</field>
+        <field name="tool_id" ref="ai_tool_claude_api"/>
+        <field name="description">API / claude-haiku-5-5 (chiave non censita)</field>
+        <field name="api_key_ref">apikey_demo_sconosciuta</field>
+        <field name="amount_currency">15</field>
+        <field name="external_ref">demo|overhead</field>
+    </record>
+</odoo>

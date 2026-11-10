@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Sviluppatori = consulenti esterni: fatturano all'azienda a giornata.
+         Il loro costo sulla commessa è "maturato" (ore × tariffa) finché non arriva la fattura. -->
+    <record id="partner_carlo_fornitore" model="res.partner">
+        <field name="name">Carlo Sviluppatore (libero professionista)</field>
+        <field name="email">carlo.fatture@lab.example</field>
+        <field name="supplier_rank">1</field>
+    </record>
+    <record id="partner_niccolo_fornitore" model="res.partner">
+        <field name="name">Niccolò Sviluppatore (libero professionista)</field>
+        <field name="email">niccolo.fatture@lab.example</field>
+        <field name="supplier_rank">1</field>
+    </record>
+    <record id="employee_carlo" model="hr.employee">
+        <field name="name">Carlo Sviluppatore</field>
+        <field name="user_id" ref="user_carlo"/>
+        <field name="job_title">Sviluppatore senior (consulente esterno)</field>
+        <field name="lab_resource_type">external</field>
+        <field name="lab_vendor_id" ref="partner_carlo_fornitore"/>
+        <field name="lab_external_rate">360</field>
+        <field name="lab_external_rate_unit">day</field>
+        <field name="hourly_cost">0</field>
+        <!-- senior con Claude Code: fattore parallelo 1,5 = 48h-progetto a settimana -->
+        <field name="lab_parallel_factor">1.5</field>
+    </record>
+    <record id="employee_niccolo" model="hr.employee">
+        <field name="name">Niccolò Sviluppatore</field>
+        <field name="user_id" ref="user_niccolo"/>
+        <field name="job_title">Sviluppatore junior (consulente esterno)</field>
+        <field name="lab_resource_type">external</field>
+        <field name="lab_vendor_id" ref="partner_niccolo_fornitore"/>
+        <field name="lab_external_rate">280</field>
+        <field name="lab_external_rate_unit">day</field>
+        <field name="hourly_cost">0</field>
+    </record>
+
+    <!-- Licenze AI del team di prova (costi di esempio). Anche i consulenti esterni lavorano
+         con la licenza Claude dell'azienda: il costo va sulle commesse in base alle loro ore. -->
+    <record id="license_carlo" model="lab.ai.license">
+        <field name="employee_id" ref="employee_carlo"/>
+        <field name="tool_id" ref="ai_tool_claude_max"/>
+        <field name="monthly_cost">100</field>
+        <field name="allocation_mode">hours</field>
+    </record>
+    <record id="license_niccolo" model="lab.ai.license">
+        <field name="employee_id" ref="employee_niccolo"/>
+        <field name="tool_id" ref="ai_tool_claude_max"/>
+        <field name="monthly_cost">100</field>
+        <field name="allocation_mode">hours</field>
+    </record>
+    <record id="license_giulia" model="lab.ai.license">
+        <field name="employee_id" ref="employee_giulia"/>
+        <field name="tool_id" ref="ai_tool_claude_team"/>
+        <field name="monthly_cost">30</field>
+        <field name="allocation_mode">hours</field>
+    </record>
+    <record id="license_gianluca" model="lab.ai.license">
+        <field name="employee_id" ref="employee_gianluca"/>
+        <field name="tool_id" ref="ai_tool_claude_team"/>
+        <field name="monthly_cost">30</field>
+        <field name="allocation_mode">hours</field>
+    </record>
+    <record id="license_nicola" model="lab.ai.license">
+        <field name="employee_id" ref="employee_nicola"/>
+        <field name="tool_id" ref="ai_tool_claude_team"/>
+        <field name="monthly_cost">30</field>
+        <field name="allocation_mode">hours</field>
+    </record>
+    <record id="license_marco" model="lab.ai.license">
+        <field name="employee_id" ref="employee_marco"/>
+        <field name="tool_id" ref="ai_tool_claude_team"/>
+        <field name="monthly_cost">30</field>
+        <field name="allocation_mode">governance</field>
+    </record>
+</odoo>

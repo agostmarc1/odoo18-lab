@@ -1,51 +1,86 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Utenti di prova SENZA password: le password le imposta scripts/init_db.sh leggendo .env -->
-    <record id="user_commerciale" model="res.users">
-        <field name="name">Carla Commerciale</field>
-        <field name="login">commerciale</field>
-        <field name="email">commerciale@lab.example</field>
+    <!-- Utenti di prova SENZA password: le password le imposta scripts/init_db.sh leggendole da .env.
+         Il ruolo è nel cognome, per riconoscerli subito nelle demo. -->
+
+    <!-- Commerciale -->
+    <record id="user_giuseppe" model="res.users">
+        <field name="name">Giuseppe Commerciale</field>
+        <field name="login">giuseppe</field>
+        <field name="email">giuseppe@lab.example</field>
         <field name="groups_id" eval="[Command.set([ref('base.group_user'), ref('group_lab_commerciale')])]"/>
     </record>
-    <record id="user_pm" model="res.users">
-        <field name="name">Paolo Project Manager</field>
-        <field name="login">pm</field>
-        <field name="email">pm@lab.example</field>
+    <!-- Project Manager -->
+    <record id="user_marco" model="res.users">
+        <field name="name">Marco Project Manager</field>
+        <field name="login">marco</field>
+        <field name="email">marco@lab.example</field>
         <field name="groups_id" eval="[Command.set([ref('base.group_user'), ref('group_lab_pm')])]"/>
     </record>
-    <record id="user_analista" model="res.users">
-        <field name="name">Anna Analista</field>
-        <field name="login">analista</field>
-        <field name="email">analista@lab.example</field>
+    <!-- Sviluppatori: consulenti esterni (fatturano all'azienda), vedi demo_costs.xml -->
+    <record id="user_carlo" model="res.users">
+        <field name="name">Carlo Sviluppatore</field>
+        <field name="login">carlo</field>
+        <field name="email">carlo@lab.example</field>
         <field name="groups_id" eval="[Command.set([ref('base.group_user'), ref('group_lab_team')])]"/>
     </record>
-    <record id="user_sviluppatore" model="res.users">
-        <field name="name">Davide Sviluppatore</field>
-        <field name="login">sviluppatore</field>
-        <field name="email">sviluppatore@lab.example</field>
+    <record id="user_niccolo" model="res.users">
+        <field name="name">Niccolò Sviluppatore</field>
+        <field name="login">niccolo</field>
+        <field name="email">niccolo@lab.example</field>
         <field name="groups_id" eval="[Command.set([ref('base.group_user'), ref('group_lab_team')])]"/>
     </record>
+    <!-- Analisti funzionali -->
+    <record id="user_giulia" model="res.users">
+        <field name="name">Giulia Analista</field>
+        <field name="login">giulia</field>
+        <field name="email">giulia@lab.example</field>
+        <field name="groups_id" eval="[Command.set([ref('base.group_user'), ref('group_lab_team')])]"/>
+    </record>
+    <record id="user_gianluca" model="res.users">
+        <field name="name">Gianluca Analista</field>
+        <field name="login">gianluca</field>
+        <field name="email">gianluca@lab.example</field>
+        <field name="groups_id" eval="[Command.set([ref('base.group_user'), ref('group_lab_team')])]"/>
+    </record>
+    <!-- Supporto (assistenza AMS) -->
+    <record id="user_nicola" model="res.users">
+        <field name="name">Nicola Supporto</field>
+        <field name="login">nicola</field>
+        <field name="email">nicola@lab.example</field>
+        <field name="groups_id" eval="[Command.set([ref('base.group_user'), ref('group_lab_support')])]"/>
+    </record>
+    <!-- Amministrazione -->
     <record id="user_amministrazione" model="res.users">
-        <field name="name">Alba Amministrazione</field>
-        <field name="login">amministrazione</field>
-        <field name="email">amministrazione@lab.example</field>
+        <field name="name">Luana Amministrazione</field>
+        <field name="login">luana</field>
+        <field name="email">luana@lab.example</field>
         <field name="groups_id" eval="[Command.set([ref('base.group_user'), ref('group_lab_amministrazione')])]"/>
     </record>
 
-    <!-- Dipendenti collegati (costo orario per il calcolo margini) -->
-    <record id="employee_pm" model="hr.employee">
-        <field name="name">Paolo Project Manager</field>
-        <field name="user_id" ref="user_pm"/>
+    <!-- Dipendenti collegati: costo orario per margini e pianificazione -->
+    <record id="employee_marco" model="hr.employee">
+        <field name="name">Marco Project Manager</field>
+        <field name="user_id" ref="user_marco"/>
+        <field name="job_title">Project Manager</field>
         <field name="hourly_cost">45</field>
     </record>
-    <record id="employee_analista" model="hr.employee">
-        <field name="name">Anna Analista</field>
-        <field name="user_id" ref="user_analista"/>
+    <record id="employee_giulia" model="hr.employee">
+        <field name="name">Giulia Analista</field>
+        <field name="user_id" ref="user_giulia"/>
+        <field name="job_title">Analista funzionale</field>
         <field name="hourly_cost">38</field>
     </record>
-    <record id="employee_sviluppatore" model="hr.employee">
-        <field name="name">Davide Sviluppatore</field>
-        <field name="user_id" ref="user_sviluppatore"/>
-        <field name="hourly_cost">35</field>
+    <record id="employee_gianluca" model="hr.employee">
+        <field name="name">Gianluca Analista</field>
+        <field name="user_id" ref="user_gianluca"/>
+        <field name="job_title">Analista funzionale</field>
+        <field name="hourly_cost">38</field>
+    </record>
+    <record id="employee_nicola" model="hr.employee">
+        <field name="name">Nicola Supporto</field>
+        <field name="user_id" ref="user_nicola"/>
+        <field name="job_title">Supporto applicativo (AMS)</field>
+        <field name="hourly_cost">30</field>
     </record>
 </odoo>

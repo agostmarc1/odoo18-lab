@@ -17,3 +17,5 @@ third-party/*
 .idea/
 .DS_Store
 Thumbs.db
+# pacchetto app creato da scripts/package_app.sh
+dist/

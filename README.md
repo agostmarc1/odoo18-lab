@@ -8,20 +8,37 @@ Sul PC non si installa niente oltre a Docker e Git.
 
 ---
 
+## Azienda demo: Italia, euro, localizzazione italiana
+
+Il database `lab18` nasce già come azienda italiana (**Software House Lab S.r.l.**, valuta **euro**,
+lingua italiana, piano dei conti e IVA italiani) con **tutta la localizzazione italiana OCA 18.0**
+(`l10n-italy`: fatturazione elettronica SdI/PEC, registri IVA, liquidazione IVA, RiBa, DDT,
+cespiti, bilancio, Intrastat, codice fiscale...). La valuta va scelta alla creazione del database:
+dopo le prime registrazioni contabili Odoo non permette più di cambiarla.
+
+La localizzazione è **configurazione dell'ambiente**, non una personalizzazione: per questo non è
+una dipendenza della nostra app (che resta installabile anche in un Odoo non italiano). L'elenco dei
+moduli è in `scripts/_lib.sh` (`ITALY_MODULES`); i repository OCA in `scripts/get_third_party.sh`.
+
+L'immagine Docker è quella ufficiale `odoo:18.0` più due librerie Python richieste da `l10n-italy`
+(`Dockerfile`, `requirements.txt` con versioni fissate).
+
 ## Cosa c'è dentro
 
 | Cartella / file | A cosa serve |
 |---|---|
 | `docker-compose.yml` | Dice a Docker quali container avviare (Odoo 18 + PostgreSQL 16) |
+| `Dockerfile`, `requirements.txt` | Immagine `odoo:18.0` + librerie per la localizzazione italiana |
 | `.env` | Password locali. **Non va mai su git** (copiarlo da `.env.example`) |
 | `config/odoo.conf` | Configurazione di Odoo (cartelle dei moduli, database `lab18`) |
 | `addons/lab_workflow_custom/` | **Il nostro modulo custom** |
 | `third-party/` | Moduli OCA 18.0 scaricati con `scripts/get_third_party.sh` (non versionati) |
 | `scripts/` | Comandi pronti: crea, resetta e aggiorna il database, lancia i test |
 
-Moduli installati: `crm`, `sale_management`, `project`, `hr_timesheet`, `sale_timesheet`, `account`,
-`subscription_oca` (OCA, canoni ricorrenti), `project_timeline` + `web_timeline` (OCA, timeline dei task)
-e `lab_workflow_custom`.
+**Tutte le personalizzazioni sono in una sola app: "Flusso Operativo Software House"**
+(nome tecnico `lab_workflow_custom`). Si installa solo lei: Odoo attiva da solo i moduli da cui dipende,
+cioè `crm`, `sale_management`, `project`, `hr_timesheet`, `sale_timesheet`, `account`,
+`subscription_oca` (OCA, canoni ricorrenti) e `project_timeline` + `web_timeline` (OCA, timeline dei task).
 
 > **Planning in Community:** i moduli `planning`, `project_forecast` e `industry_fsm` esistono solo in
 > Odoo **Enterprise**. Per questo la Pianificazione (turni, regola 80/20, conferma → foglio ore) è
@@ -89,8 +106,9 @@ git clone https://github.com/agostmarc1/odoo18-lab ~/odoo18-lab && ~/odoo18-lab/
 Lo script, da solo:
 1. crea il file `.env` con **password casuali**;
 2. scarica i moduli OCA (solo branch 18.0);
-3. crea il database `lab18` con i dati demo e installa tutti i moduli (5-10 minuti la prima volta);
-4. lancia i test automatici (devono risultare `0 failed, 0 error(s) of 7 tests`);
+3. crea il database `lab18` (Italia, euro) con i dati demo, la localizzazione italiana e la nostra
+   app (15-25 minuti la prima volta);
+4. lancia i test automatici (devono risultare `0 failed, 0 error(s) of 17 tests`);
 5. stampa **link e credenziali**.
 
 Si può rilanciare senza rischi: se il database è già installato non lo tocca.
@@ -107,11 +125,14 @@ WSL integration → attiva **Ubuntu** → Apply, poi rilancia.
 
 | Login | Nome | Ruolo (owner di processo) |
 |---|---|---|
-| `commerciale` | Carla Commerciale | Commerciale: CRM, Vendite, fatture **solo in bozza** |
-| `pm` | Paolo Project Manager | Project Manager: Progetti, Pianificazione, Fogli ore, Report |
-| `analista` | Anna Analista | Analista Funzionale: task assegnati, i miei turni, i miei fogli ore |
-| `sviluppatore` | Davide Sviluppatore | Sviluppatore: task assegnati, i miei turni, i miei fogli ore |
-| `amministrazione` | Alba Amministrazione | Amministrazione: Fatturazione completa e Vendite |
+| `giuseppe` | Giuseppe Commerciale | Commerciale: CRM, Vendite, fatture **solo in bozza** |
+| `marco` | Marco Project Manager | Project Manager: Progetti, Pianificazione, Fogli ore, Costi e AI, Report |
+| `carlo` | Carlo Sviluppatore | Sviluppatore senior, **consulente esterno** (fattura 360 €/giorno, fattore parallelo 1,5) |
+| `niccolo` | Niccolò Sviluppatore | Sviluppatore junior, **consulente esterno** (fattura 280 €/giorno, fattore 1,0) |
+| `giulia` | Giulia Analista | Analista funzionale (38 €/h): task assegnati, turni, fogli ore |
+| `gianluca` | Gianluca Analista | Analista funzionale (38 €/h): task assegnati, turni, fogli ore |
+| `nicola` | Nicola Supporto | Supporto AMS (30 €/h): come il team, e segue in automatico le commesse a canone |
+| `luana` | Luana Amministrazione | Amministrazione: Fatturazione completa, fatture dei consulenti, chiusura mese costi |
 
 Per provare più utenti insieme usa una **finestra anonima** del browser per ognuno.
 
@@ -153,7 +174,7 @@ Windows montate in Docker), usa `docker compose restart odoo`.
 ./scripts/run_tests.sh
 ```
 
-Simulano l'intero flusso (7 test). Deve comparire `0 failed, 0 error(s) of 7 tests`.
+Simulano l'intero flusso e i costi di commessa (17 test). Deve comparire `0 failed, 0 error(s) of 17 tests`.
 
 ### Resettare il database e ripartire da zero
 
@@ -174,7 +195,23 @@ Poi `./scripts/update_module.sh subscription_oca` (o il modulo interessato).
 
 ---
 
-## Cosa fa il modulo `lab_workflow_custom`
+## Installare l'app in un altro Odoo 18
+
+```bash
+./scripts/package_app.sh
+```
+
+Crea `dist/flusso_operativo_18.0.zip`: dentro ci sono l'app e i moduli OCA 18.0 che le servono,
+più un file `LEGGIMI.txt` con le istruzioni. Nell'altro Odoo 18.0 Community si copiano tutte le
+cartelle nella cartella dei moduli, si riavvia Odoo e poi si va in **Applicazioni → Aggiorna elenco
+applicazioni → "Flusso Operativo Software House" → Installa**.
+Gli utenti di prova si creano solo nei database con dati demo; altrimenti i ruoli si assegnano da
+Impostazioni → Utenti (sezione "Ruoli Flusso Operativo").
+
+Regola: **ogni nuova personalizzazione va dentro questa app**, mai in impostazioni fatte a mano o
+in altri moduli, altrimenti non viaggia con il pacchetto.
+
+## Cosa fa l'app `lab_workflow_custom`
 
 ### Prodotti pronti (Vendite → Prodotti)
 
@@ -231,12 +268,75 @@ a loro, mentre il commerciale dell'ordine viene aggiunto come follower.
 - Il Commerciale può creare fatture **in bozza** ma non confermarle: la conferma spetta
   all'Amministrazione.
 
+### Costi commessa: AI, lavoro in parallelo, consulenti esterni
+
+Chi segna le ore lo fa come sempre: i costi accessori li calcola e li ripartisce Odoo.
+
+- **Lavoro in parallelo.** Se in un giorno una persona segna più ore di quelle del suo calendario
+  (es. 6h + 6h su due commesse in una giornata da 8h), le ore restano fatturabili ma il **costo**
+  della giornata si divide tra le commesse (8h × costo orario, non 12h). Sui contratti T&M quelle
+  ore vanno approvate dal PM prima della fattura: **Pianificazione → Ore parallele da approvare**.
+- **Fattore parallelo.** Nella scheda della persona (scheda *Costi e AI*): quante ore-progetto
+  può gestire per ogni ora reale (es. senior con Claude Code 1,5). Il limite settimanale della
+  regola 80/20 diventa 32h × fattore. Il PM lo può correggere per una settimana:
+  **Pianificazione → Fattore parallelo per settimana**.
+- **Licenze AI (Claude Team/Pro, Claude Code).** Si assegnano nella scheda della persona o in
+  **Pianificazione → Costi e AI → Licenze AI**. Odoo calcola la *maggiorazione AI all'ora*
+  (licenze / ore standard del mese) e il *costo pieno all'ora*. Ogni notte ripartisce le licenze
+  sulle commesse in proporzione alle ore; a fine mese l'Amministrazione preme **Chiudi mese**
+  (calcolo esatto: licenza × ore commessa / ore totali). Per PM e analisti si può scegliere la
+  ripartizione *governance*: sulle commesse di cui sono Project Manager.
+- **Consulenti esterni.** Nella scheda persona: *Tipo risorsa = Consulente esterno*, fornitore e
+  tariffa (all'ora o a giornata). Finché la fattura non arriva la commessa vede il costo
+  *maturato* (ore × tariffa). Sulla fattura fornitore usa il prodotto **Prestazione consulente
+  esterno**, la distribuzione analitica della commessa e la colonna *Consulente*: alla conferma
+  Odoo collega le sue ore e mostra lo *scostamento* fattura − ore.
+- **Ribaltamento al cliente (pass-through).** Solo sui contratti **a consuntivo (T&M)**: la
+  fattura del consulente (o una spesa viva con il prodotto *Spese vive ribaltate*) si aggiunge da
+  sola all'ordine del cliente al costo + **ricarico 15%** (modificabile sulla commessa, 0% = al
+  puro costo). Sui contratti a corpo e sui canoni il costo resta un costo e riduce il margine.
+  Sui T&M le ore del consulente non si fatturano anche a ore, per non fatturarle due volte.
+
 ### Margini
 
-**Progetti → Rendicontazione → Margini per commessa** (oppure Pianificazione → Report): una vista
-pivot con Venduto, Fatturato, Costo fogli ore (ore × costo orario del dipendente) e Margine per
-cliente e progetto. Ci sono anche i report standard di Odoo: Fogli ore → Rendicontazione e il
-pannello *Redditività* nell'aggiornamento di progetto.
+**Progetti → Rendicontazione → Margini per commessa** (oppure Pianificazione → Report): per ogni
+commessa Venduto (T&M = ore consegnate × prezzo), Ribaltato al cliente, Costo lavoro interno,
+Costo AI, Costo consulenti esterni (con la quota maturata in attesa di fattura), Altri costi
+fornitori, Margine,
+Margine % e Margine senza pass-through, più le *ore risparmiate* (stimate − consuntivate) che
+mostrano l'effetto dell'AI sui contratti a corpo. Ci sono anche i report standard di Odoo:
+Fogli ore → Rendicontazione e il pannello *Redditività* nell'aggiornamento di progetto.
+
+### Consumi AI a consumo (API Anthropic, Claude Code)
+
+**Pianificazione → Costi e AI → Consumi AI.** Ogni riga è un consumo (giorno, workspace, chiave API,
+utente, importo). Le righe arrivano da tre fonti, con lo stesso risultato:
+
+1. **a mano**, direttamente nella lista;
+2. **da file CSV** (es. export dalla Console Anthropic): Preferiti → *Importa record*;
+3. **dal connettore Anthropic** (pulsante *Importa da Anthropic* e job notturno). È **facoltativo e
+   spento in questo ambiente demo**: si attiva solo se l'amministratore imposta una chiave Admin nel
+   parametro di sistema `lab_workflow_custom.anthropic_admin_key`. Senza chiave tutto il resto funziona.
+
+**Corrispondenze consumi** decide a chi va ogni costo, senza toccare il codice:
+
+| Il consumo ha... | Dove va il costo |
+|---|---|
+| un workspace o una chiave API dedicati a una commessa | tutto su quella commessa (**diretto**) |
+| un utente (es. il Claude Code di Carlo) | alla persona, poi diviso sulle sue commesse in base alle ore del mese |
+| nessuna corrispondenza | costi generali (evidenziati in giallo, da sistemare) |
+
+Una corrispondenza aggiunta dopo vale anche per i consumi già registrati (non per i mesi chiusi).
+Alla **chiusura del mese**, i consumi diretti delle commesse **T&M** diventano una riga *Spese vive AI
+mm/aaaa* sull'ordine del cliente, al costo + ricarico, pronta da fatturare. Riaprendo il mese (se non
+ancora fatturata) la spesa torna a zero e si ricalcola alla nuova chiusura, senza doppioni.
+
+Nei dati demo ci sono tre consumi del mese scorso, uno per caso: diretto (workspace della commessa
+"Design ufficio"), personale (Claude Code di Carlo) e senza corrispondenza.
+
+### Prossima fase (non ancora fatta)
+
+- **Fase 3:** commit Git come base di ripartizione dei costi AI (in alternativa o insieme alle ore).
 
 ---
 
@@ -244,30 +344,35 @@ pannello *Redditività* nell'aggiornamento di progetto.
 
 Usa una finestra del browser per ogni utente (le finestre anonime vanno bene).
 
-1. **CRM – `commerciale`**: CRM → *Nuovo* → crea l'opportunità "Portale clienti" per un cliente
+1. **CRM – `giuseppe`**: CRM → *Nuovo* → crea l'opportunità "Portale clienti" per un cliente
    (es. *Deco Addict*). Aprila → **Nuovo preventivo** → aggiungi la riga **Pacchetto Monte Ore (50h)**
    → Salva.
-2. **Firma/Ordine – `commerciale`**: sul preventivo premi **Conferma** (diventa Ordine di vendita).
+2. **Firma/Ordine – `giuseppe`**: sul preventivo premi **Conferma** (diventa Ordine di vendita).
    Torna all'opportunità e premi **Vinta**.
-3. **Progetto – `pm`**: Progetti → il nuovo progetto "S000xx - [MONTE-50H] ...". Nel progetto ci sono
+3. **Progetto – `marco`**: Progetti → il nuovo progetto "S000xx - [MONTE-50H] ...". Nel progetto ci sono
    i 4 task (Analisi 7:30, PM 5:00, Sviluppo 30:00, Test 7:30). Nelle impostazioni del progetto
-   imposta te stesso come *Project Manager*, poi assegna il task **Sviluppo** a *Davide Sviluppatore*.
+   imposta te stesso come *Project Manager*, poi assegna il task **Sviluppo** a *Niccolò Sviluppatore*.
    Se vuoi, correggi le stime dei task (campo *Tempo assegnato*).
-4. **Pianificazione all'80% – `pm`**: Pianificazione → Pianificazione team → *Nuovo*.
-   Crea 4 turni da 8h (lunedì–giovedì) per Davide sul task Sviluppo: sono 32h, cioè l'80%.
+4. **Pianificazione all'80% – `marco`**: Pianificazione → Pianificazione team → *Nuovo*.
+   Crea 4 turni da 8h (lunedì–giovedì) per Niccolò sul task Sviluppo: sono 32h, cioè l'80%
+   (con Carlo, fattore parallelo 1,5, il limite sarebbe 48h).
    Prova a crearne un quinto: Odoo lo blocca (regola 80/20). Poi seleziona i turni nella lista →
    **Pubblica**.
-5. **Conferma turni – `sviluppatore`**: Pianificazione → **I miei turni** → **Conferma** su ogni turno.
+5. **Conferma turni – `niccolo`**: Pianificazione → **I miei turni** → **Conferma** su ogni turno.
    Ogni turno confermato crea una riga in *Fogli ore → I miei fogli ore*.
-6. **Alert monte ore – `pm`**: dopo 32h il task Sviluppo (30h stimate) è **rosso**, mentre il progetto
+6. **Alert monte ore – `marco`**: dopo 32h il task Sviluppo (30h stimate) è **rosso**, mentre il progetto
    è a 32/50 = 64%. Aggiungi da *Fogli ore* altre 6h sul progetto: con 38h (76%) il progetto diventa
    **giallo**. A 45h (90%) diventa **rosso**. Controlla le attività ⏰ arrivate al PM e, sull'ordine
    di vendita, al Commerciale.
-7. **Fatturazione**: `commerciale` → ordine di vendita → **Crea fattura** → bozza (se prova a
-   confermarla riceve un errore: è voluto). `amministrazione` → Contabilità → Fatture → apri la
+7. **Fatturazione**: `giuseppe` → ordine di vendita → **Crea fattura** → bozza (se prova a
+   confermarla riceve un errore: è voluto). `luana` → Contabilità → Fatture → apri la
    bozza → **Conferma**.
-8. **Margini – `pm`**: Progetti → Rendicontazione → **Margini per commessa**: trovi venduto 2.750 €,
-   fatturato, costo delle ore (Davide costa 35 €/h) e margine.
+8. **Margini – `marco`**: Progetti → Rendicontazione → **Margini per commessa**: trovi venduto 2.750 €,
+   fatturato, costo delle ore e margine. Niccolò è un consulente esterno: finché non arriva la sua
+   fattura la commessa vede il costo *maturato* (ore × 280 €/giorno = 35 €/h); quando `luana`
+   registra la fattura fornitore (prodotto *Prestazione consulente esterno*, colonna *Consulente*)
+   il costo maturato viene sostituito da quello fatturato e compare lo scostamento. Tutti gli importi sono in euro
+   e le fatture usano il piano dei conti e l'IVA italiani (22%).
 
 ---
 

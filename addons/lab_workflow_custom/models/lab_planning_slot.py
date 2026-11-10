@@ -40,6 +40,12 @@ class LabPlanningSlot(models.Model):
     company_id = fields.Many2one("res.company", default=lambda s: s.env.company,
                                  required=True)
     color = fields.Integer(compute="_compute_color")
+    # Limite reale della settimana per la persona (32h x fattore parallelo), mostrato nel turno
+    weekly_limit = fields.Float("Limite settimanale (ore)", compute="_compute_weekly_load")
+    weekly_factor = fields.Float("Fattore parallelo della settimana",
+                                 compute="_compute_weekly_load", digits=(4, 2))
+    weekly_planned = fields.Float("Già pianificate nella settimana (ore)",
+                                  compute="_compute_weekly_load")
 
     _sql_constraints = [
         ("positive_hours", "CHECK(allocated_hours > 0)",
@@ -73,24 +79,51 @@ class LabPlanningSlot(models.Model):
             "lab_workflow_custom.max_weekly_hours")
         return float(value) if value else DEFAULT_MAX_WEEKLY_HOURS
 
-    # ---- Regola 80/20 -----------------------------------------------------
+    # ---- Regola 80/20 (con fattore parallelo) -------------------------------
+    def _weekly_limit(self, employee, week):
+        """Ore-progetto pianificabili: 80% del tempo × fattore parallelo della persona
+        (correggibile dal PM settimana per settimana)."""
+        override = self.env["lab.planning.capacity"].sudo().search(
+            [("employee_id", "=", employee.id), ("week_start", "=", week)], limit=1)
+        factor = override.parallel_factor if override else (
+            employee.sudo().lab_parallel_factor or 1.0)
+        return self._max_weekly_hours() * factor, factor
+
+    @api.depends("employee_id", "week_start", "allocated_hours", "state")
+    def _compute_weekly_load(self):
+        for slot in self:
+            if not slot.employee_id or not slot.week_start:
+                slot.update({"weekly_limit": 0.0, "weekly_factor": 0.0, "weekly_planned": 0.0})
+                continue
+            limit, factor = self._weekly_limit(slot.employee_id, slot.week_start)
+            others = self.sudo().search([
+                ("employee_id", "=", slot.employee_id.id),
+                ("week_start", "=", slot.week_start),
+                ("state", "!=", "cancel"),
+                ("id", "!=", slot._origin.id or 0),
+            ])
+            own = slot.allocated_hours if slot.state != "cancel" else 0.0
+            slot.update({"weekly_limit": limit, "weekly_factor": factor,
+                         "weekly_planned": sum(others.mapped("allocated_hours")) + own})
+
     @api.constrains("employee_id", "date", "allocated_hours", "state")
     def _check_weekly_capacity(self):
-        limit = self._max_weekly_hours()
         for slot in self.filtered(lambda s: s.state != "cancel"):
             week = slot.week_start
+            limit, factor = self._weekly_limit(slot.employee_id, week)
             total = sum(self.sudo().search([
                 ("employee_id", "=", slot.employee_id.id),
                 ("week_start", "=", week),
                 ("state", "!=", "cancel"),
             ]).mapped("allocated_hours"))
-            if total > limit:
+            if total > limit + 1e-6:
                 raise ValidationError(_(
                     "Regola 80/20: %(emp)s avrebbe %(tot).1fh pianificate nella settimana "
-                    "del %(week)s, ma il massimo è %(max).0fh (80%% del tempo). "
-                    "Il restante 20%% è riservato a formazione, supporto e imprevisti.",
+                    "del %(week)s, ma il massimo è %(max).1fh (80%% del tempo × fattore "
+                    "parallelo %(f).2f). Il restante 20%% è riservato a formazione, supporto "
+                    "e imprevisti.",
                     emp=slot.employee_id.name, tot=total,
-                    week=week.strftime("%d/%m/%Y"), max=limit))
+                    week=week.strftime("%d/%m/%Y"), max=limit, f=factor))
 
     # ---- Permessi sui campi ---------------------------------------------
     def _is_planning_manager(self):

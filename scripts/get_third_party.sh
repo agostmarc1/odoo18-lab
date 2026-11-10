@@ -7,6 +7,19 @@ declare -A REPOS=(
   [oca-contract]=https://github.com/OCA/contract
   [oca-project]=https://github.com/OCA/project
   [oca-web]=https://github.com/OCA/web
+  # localizzazione italiana (l10n-italy) e repo OCA da cui dipende
+  [oca-l10n-italy]=https://github.com/OCA/l10n-italy
+  [oca-account-closing]=https://github.com/OCA/account-closing
+  [oca-account-financial-reporting]=https://github.com/OCA/account-financial-reporting
+  [oca-account-financial-tools]=https://github.com/OCA/account-financial-tools
+  [oca-account-payment]=https://github.com/OCA/account-payment
+  [oca-currency]=https://github.com/OCA/currency
+  [oca-delivery-carrier]=https://github.com/OCA/delivery-carrier
+  [oca-partner-contact]=https://github.com/OCA/partner-contact
+  [oca-product-attribute]=https://github.com/OCA/product-attribute
+  [oca-reporting-engine]=https://github.com/OCA/reporting-engine
+  [oca-server-ux]=https://github.com/OCA/server-ux
+  [oca-stock-logistics-workflow]=https://github.com/OCA/stock-logistics-workflow
 )
 for dir in "${!REPOS[@]}"; do
   url=${REPOS[$dir]}

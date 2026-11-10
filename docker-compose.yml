@@ -17,7 +17,9 @@ services:
       retries: 20
 
   odoo:
-    image: odoo:18.0
+    # odoo:18.0 ufficiale + librerie Python della localizzazione italiana (vedi Dockerfile)
+    build: .
+    image: odoo18-lab:18.0
     restart: unless-stopped
     depends_on:
       db:

@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Crea il database lab18 con dati demo e installa tutti i moduli del flusso.
+# Crea il database lab18 (Italia, euro, lingua italiana, dati demo) con la localizzazione
+# italiana OCA e la nostra app.
 source "$(dirname "$0")/_lib.sh"
 docker compose up -d --wait db
 # Già installato? (un db vuoto creato da Odoo all'avvio NON conta come installato)
@@ -11,8 +12,16 @@ if docker compose exec -T db psql -U "$POSTGRES_USER" -d "$DB" -Atc \
   exit 0
 fi
 docker compose stop odoo || true
-echo "Creo $DB con dati demo e installo: $MODULES (qualche minuto...)"
-odoo_run -d "$DB" -i "$MODULES" --load-language=it_IT
+echo "1/4 Creo $DB con i dati demo e la lingua italiana"
+odoo_run -d "$DB" -i base --load-language=it_IT
+echo "2/4 Imposto l'azienda in Italia e in euro (prima della contabilità)"
+setup_company_italy
+echo "3/4 Installo la contabilità italiana (piano dei conti e IVA)"
+# va fatta da sola: alcuni moduli OCA (es. Intrastat) nei dati demo usano le imposte italiane
+odoo_run -d "$DB" -i l10n_it
+echo "4/4 Installo localizzazione italiana OCA e app (10-20 minuti la prima volta...)"
+odoo_run -d "$DB" -i "$MODULES,$ITALY_MODULES"
+finalize_companies
 set_passwords
 docker compose up -d odoo
 echo "Fatto. Apri http://127.0.0.1:8069  (utente: admin, password: LAB_ADMIN_PASSWORD in .env)"
