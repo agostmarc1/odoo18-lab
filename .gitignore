@@ -19,3 +19,5 @@ third-party/*
 Thumbs.db
 # pacchetto app creato da scripts/package_app.sh
 dist/
+# ambiente Python per registrare il video della guida
+.venv-video/

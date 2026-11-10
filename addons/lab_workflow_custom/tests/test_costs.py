@@ -184,8 +184,11 @@ class TestLabCosts(TransactionCase):
         std = self.env["hr.employee"]._lab_standard_month_hours()
         self.assertAlmostEqual(self.dev.lab_ai_hourly_uplift, 100 / std, places=4)
         self.assertAlmostEqual(self.dev.lab_fully_loaded_cost, 35 + 100 / std, places=2)
-        # mese scorso (finito): 60h su A, 40h su B -> 60 € e 40 €
-        last = self.day.replace(day=1) - timedelta(days=1)
+        # un mese finito senza dati sintetici (3 mesi fa): 60h su A, 40h su B -> 60 € e 40 €
+        first = self.day.replace(day=1)
+        for _i in range(3):
+            first = (first - timedelta(days=1)).replace(day=1)
+        last = (first + timedelta(days=32)).replace(day=1) - timedelta(days=1)
         first_last = last.replace(day=1)
         for i in range(10):
             self._ts(task_a, self.dev, 6, first_last + timedelta(days=i))

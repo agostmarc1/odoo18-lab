@@ -143,8 +143,10 @@ class LabCostPeriod(models.Model):
         for period in self:
             if period.state == "closed":
                 raise UserError(_("Il mese %s è chiuso: riaprilo per ricalcolarlo.", period.name))
-            period._compute_ai_fixed()
-            period._compute_ai_variable()
+            # le ripartizioni sono un registro calcolato, in sola lettura per tutti gli utenti:
+            # le scrive il sistema, chiunque prema il pulsante (PM o Amministrazione)
+            period.sudo()._compute_ai_fixed()
+            period.sudo()._compute_ai_variable()
         return True
 
     def action_close(self):
@@ -155,7 +157,7 @@ class LabCostPeriod(models.Model):
             if period.date_end >= date.today():
                 raise UserError(_("Il mese %s non è ancora finito.", period.name))
             period.action_compute()
-            period._create_ai_passthrough()
+            period.sudo()._create_ai_passthrough()
             period.state = "closed"
         return True
 
@@ -164,7 +166,7 @@ class LabCostPeriod(models.Model):
                 or self.env.user.has_group("base.group_system")):
             raise UserError(_("La riapertura del mese spetta all'Amministrazione."))
         for period in self:
-            period._remove_ai_passthrough()
+            period.sudo()._remove_ai_passthrough()
         self.write({"state": "open"})
         return True
 

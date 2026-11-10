@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Analisi funzionale e tecnica</title>
+<style>
+  :root{--fg:#1f2328;--muted:#57606a;--line:#d0d7de;--soft:#f6f8fa;--accent:#714b67;--accent-soft:#f4eef3;--warn:#9a6700;--warn-soft:#fff8c5}
+  *{box-sizing:border-box}
+  body{margin:0;background:#fff;color:var(--fg);font:15px/1.6 'Segoe UI',Roboto,Arial,sans-serif}
+  main{max-width:1080px;margin:0 auto;padding:24px 16px 64px}
+  h1{font-size:30px;margin:8px 0 4px}
+  h2{font-size:22px;border-bottom:1px solid var(--line);padding-bottom:6px;margin-top:40px}
+  h3{font-size:17px;margin:26px 0 8px}
+  p.lead{color:var(--muted);font-size:16px;margin-top:0}
+  code{background:var(--soft);border-radius:4px;padding:1px 5px;font-size:13px}
+  pre{background:var(--soft);border:1px solid var(--line);border-radius:6px;padding:12px 14px;overflow-x:auto;font-size:13px;line-height:1.5}
+  table{border-collapse:collapse;width:100%;font-size:14px;margin:10px 0 6px}
+  th,td{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}
+  th{background:var(--soft)}
+  .wrap{overflow-x:auto}
+  nav.toc{background:var(--accent-soft);border-radius:8px;padding:12px 18px;margin:18px 0}
+  nav.toc ol{margin:6px 0 0 18px;padding:0;columns:2;column-gap:32px}
+  nav.toc a{color:var(--accent);text-decoration:none}
+  .meta{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+  .chip{background:var(--soft);border:1px solid var(--line);border-radius:14px;padding:2px 12px;font-size:13px}
+  .note{background:var(--warn-soft);border-left:4px solid var(--warn);padding:8px 12px;border-radius:4px;margin:10px 0}
+  a{color:var(--accent)}
+  @media (max-width:700px){nav.toc ol{columns:1} table{display:block;overflow-x:auto} code{word-break:break-word}}
+</style>
+</head>
+<body>
+<main>
+<p><a href="/odoo/action-base.open_module_tree">← Torna alle App</a></p>
+<h1>Flusso Operativo Software House</h1>
+<p class="lead">Analisi funzionale e tecnica del modulo <code>lab_workflow_custom</code>, per chi deve installarlo, mantenerlo o estenderlo.</p>
+<div class="meta">
+  <span class="chip">Odoo 18.0 Community</span><span class="chip">Versione modulo 18.0.1.7.1</span>
+  <span class="chip">Licenza LGPL-3</span><span class="chip">Categoria Services/Project</span>
+</div>
+
+<nav class="toc"><b>Indice</b>
+<ol>
+  <li><a href="#scopo">Scopo e perimetro</a></li>
+  <li><a href="#architettura">Architettura</a></li>
+  <li><a href="#requisiti">Requisiti e tracciabilità</a></li>
+  <li><a href="#dati">Modello dati</a></li>
+  <li><a href="#calcoli">Regole di calcolo</a></li>
+  <li><a href="#estensioni">Punti di estensione di Odoo</a></li>
+  <li><a href="#sicurezza">Sicurezza e permessi</a></li>
+  <li><a href="#automazioni">Automazioni e notifiche</a></li>
+  <li><a href="#configurazione">Parametri e dati di base</a></li>
+  <li><a href="#integrazione">Integrazione Anthropic</a></li>
+  <li><a href="#test">Test automatici</a></li>
+  <li><a href="#rilascio">Installazione e rilascio</a></li>
+  <li><a href="#limiti">Limiti noti e rischi tecnici</a></li>
+  <li><a href="#glossario">Glossario</a></li>
+</ol></nav>
+
+<!-- ============================================================== -->
+<h2 id="scopo">1. Scopo e perimetro</h2>
+<p>Il modulo copre il flusso operativo di una software house: vendita di servizi, generazione della commessa, pianificazione delle persone, consuntivazione, controllo del monte ore e analisi dei margini con costi di consulenti esterni e strumenti AI. Raccoglie in un'unica app tutte le personalizzazioni rispetto a Odoo 18 CE standard: installandola in un altro database si attivano campi, viste, dati, gruppi e permessi senza configurazioni manuali.</p>
+<table>
+  <tr><th>Nel perimetro</th><th>Fuori perimetro</th></tr>
+  <tr><td>
+    <ul style="margin:0;padding-left:18px">
+      <li>Ore vendute per riga d'ordine e progetto, task di default stimati</li>
+      <li>Alert monte ore 75% / 90% su task e progetto, con notifiche</li>
+      <li>Pianificazione turni (equivalente CE del modulo Enterprise <i>Planning</i>) con regola 80/20</li>
+      <li>Lavoro in parallelo: costo giornaliero diviso, approvazione PM delle ore extra</li>
+      <li>Consulenti esterni: costo maturato, fattura fornitore, ribaltamento T&amp;M</li>
+      <li>Licenze e consumi AI ripartiti sulle commesse, chiusura mensile</li>
+      <li>Report margini per commessa e scheda economica del progetto</li>
+      <li>Dati sintetici per demo e collaudo</li>
+    </ul></td><td>
+    <ul style="margin:0;padding-left:18px">
+      <li>Localizzazione italiana (OCA <code>l10n-italy</code>): configurazione d'ambiente, non dipendenza</li>
+      <li>Moduli Enterprise (<code>planning</code>, <code>sale_subscription</code>, <code>industry_fsm</code>, <code>project_forecast</code>)</li>
+      <li>Ripartizione dei consumi AI per commit Git (fase 3, solo proposta)</li>
+      <li>Contabilità analitica avanzata oltre la distribuzione standard di Odoo</li>
+    </ul></td></tr>
+</table>
+<p><b>Vincoli di progetto.</b> Nessuna modifica al core di Odoo né al codice OCA: solo <code>_inherit</code> sui modelli e <code>inherit_id</code> + xpath sulle viste. Solo moduli OCA del branch <code>18.0</code>. Nessuna credenziale nei file versionati. L'ambiente demo deve funzionare senza servizi esterni.</p>
+
+<!-- ============================================================== -->
+<h2 id="architettura">2. Architettura</h2>
+<h3>Dipendenze</h3>
+<table>
+  <tr><th>Modulo</th><th>Origine</th><th>Perché serve</th></tr>
+  <tr><td><code>crm</code>, <code>sale_management</code></td><td>Odoo CE</td><td>Opportunità, preventivi, ordini</td></tr>
+  <tr><td><code>sale_timesheet</code>, <code>project</code>, <code>hr_timesheet</code></td><td>Odoo CE</td><td>Generazione progetto/task da ordine, fogli ore, consegnato a consuntivo</td></tr>
+  <tr><td><code>account</code></td><td>Odoo CE</td><td>Fatture cliente e fornitore, distribuzione analitica</td></tr>
+  <tr><td><code>subscription_oca</code></td><td>OCA <code>contract</code> 18.0</td><td>Canoni ricorrenti AMS (sostituisce <code>sale_subscription</code> Enterprise)</td></tr>
+  <tr><td><code>project_timeline</code> (+ <code>web_timeline</code>)</td><td>OCA <code>project</code> / <code>web</code> 18.0</td><td>Vista timeline dei task</td></tr>
+</table>
+<h3>Struttura del modulo</h3>
+<pre>lab_workflow_custom/
+├── __manifest__.py          dipendenze, file dati, application=True
+├── models/                  15 file: 9 modelli estesi, 11 modelli nuovi (uno è una vista SQL)
+├── views/                   9 file XML: viste ereditate + viste dei nuovi modelli + menu
+├── security/                gruppi, regole di record, ACL (ir.model.access.csv)
+├── data/                    parametri, prodotti, task di default, strumenti AI, cron
+├── demo/                    utenti demo, costi demo, scenario sintetico
+├── tests/                   test_flow, test_costs, test_ai_usage (18 test)
+└── static/description/      pagina dell'app, video, questa analisi</pre>
+<h3>Principi di progetto</h3>
+<ul>
+  <li><b>Un solo calcolo dei margini.</b> La vista SQL <code>lab.margin.report</code> è l'unica fonte: la scheda del progetto la legge, non ricalcola.</li>
+  <li><b>Un solo modo di consuntivare i turni.</b> La conferma di <code>lab.planning.slot</code> crea la riga di <code>account.analytic.line</code>; non esistono altri percorsi.</li>
+  <li><b>Le ore non si toccano.</b> Il lavoro in parallelo cambia solo il costo (<code>amount</code>) e lo stato di approvazione, mai <code>unit_amount</code>.</li>
+  <li><b>Ribaltamento solo sui T&amp;M.</b> Il tipo contratto si ricava dai prodotti venduti (<code>project._lab_contract_type()</code>), non da un campo inserito a mano.</li>
+</ul>
+
+<!-- ============================================================== -->
+<h2 id="requisiti">3. Requisiti e tracciabilità</h2>
+<p>Ogni requisito funzionale (RF) è collegato al punto del codice che lo realizza e al test che lo verifica.</p>
+<div class="wrap"><table>
+  <tr><th>ID</th><th>Requisito</th><th>Realizzazione</th><th>Test</th><th>Owner</th></tr>
+  <tr><td>RF-01</td><td>Le ore vendute di una riga si ricavano dal prodotto (ore per unità, ore mensili) o dall'unità di misura</td><td><code>sale.order.line._compute_lab_sold_hours</code></td><td>test_flow 01, 03</td><td>Commerciale</td></tr>
+  <tr><td>RF-02</td><td>Alla conferma dell'ordine nasce una commessa riservata agli invitati, con ore allocate = ore vendute; il venditore la segue</td><td><code>sale.order.line._timesheet_create_project</code></td><td>test_flow 02</td><td>Commerciale, PM</td></tr>
+  <tr><td>RF-03</td><td>Sui prodotti marcati si creano i task di default con le ore ripartite in percentuale; lo Sviluppo prende il resto</td><td><code>_timesheet_service_generation</code>, <code>lab.default.task._create_default_tasks</code></td><td>test_flow 02</td><td>PM</td></tr>
+  <tr><td>RF-04</td><td>Alert al 75% (giallo) e al 90% (rosso): task su ore stimate, progetto su ore vendute (canone AMS: mese corrente)</td><td><code>_alert_level</code>, <code>project.task._compute_lab_alert</code>, <code>project.project._compute_lab_hours</code></td><td>test_flow 05, 07</td><td>PM</td></tr>
+  <tr><td>RF-05</td><td>Al primo superamento di una soglia: messaggio e attività per PM (progetto) e venditore (ordine); una sola notifica per soglia, riarmata se le ore scendono</td><td><code>project.project._lab_check_hours_alert</code></td><td>test_flow 05</td><td>PM, Commerciale</td></tr>
+  <tr><td>RF-06</td><td>Pianificazione turni con stati bozza → pubblicato → confermato / annullato; il dipendente vede solo i propri turni pubblicati</td><td><code>lab.planning.slot</code>, regole <code>rule_planning_slot_*</code></td><td>test_flow 04</td><td>PM, Team</td></tr>
+  <tr><td>RF-07</td><td>Regola 80/20: ore pianificate in settimana ≤ 32 h × fattore parallelo (persona o correzione settimanale)</td><td><code>_check_weekly_capacity</code>, <code>_weekly_limit</code>, <code>lab.planning.capacity</code></td><td>test_flow 04, test_costs 07</td><td>PM</td></tr>
+  <tr><td>RF-08</td><td>La conferma del turno crea la riga del foglio ore (ore effettive se indicate)</td><td><code>lab.planning.slot.action_confirm</code></td><td>test_flow 04</td><td>Team</td></tr>
+  <tr><td>RF-09</td><td>Sulle commesse a corpo e T&amp;M il foglio ore senza task non si salva</td><td><code>account.analytic.line._check_lab_task_required</code></td><td>test_flow 08</td><td>Team</td></tr>
+  <tr><td>RF-10</td><td>Ogni pacchetto mostra ore scalate, residue e dettaglio per task</td><td><code>sale.order.line._compute_lab_package</code>, <code>action_lab_open_consumption</code></td><td>test_flow 08</td><td>PM</td></tr>
+  <tr><td>RF-11</td><td>Giornata oltre calendario: costo di ogni riga × (ore calendario / ore segnate); righe <i>da approvare</i></td><td><code>account.analytic.line._lab_recompute_days</code></td><td>test_costs 01</td><td>PM</td></tr>
+  <tr><td>RF-12</td><td>Le ore parallele da approvare non entrano nel consegnato T&amp;M finché il PM non le approva</td><td><code>_timesheet_compute_delivered_quantity_domain</code>, <code>action_lab_approve_parallel</code></td><td>test_costs 02</td><td>PM</td></tr>
+  <tr><td>RF-13</td><td>Consulente esterno: costo orario 0, costo maturato = ore × tariffa finché non arriva la fattura; alla conferma della fattura le ore si collegano e si calcola lo scostamento</td><td><code>_hourly_cost</code>, <code>_lab_link_consultant_timesheets</code>, <code>_compute_lab_consultant_variance</code></td><td>test_costs 03</td><td>Amministrazione</td></tr>
+  <tr><td>RF-14</td><td>Fatture fornitore e spese vive si ribaltano all'ordine solo sui T&amp;M, al costo + ricarico (default 15%, per commessa)</td><td><code>account.move.line._sale_determine_order</code>, <code>_sale_get_invoice_price</code></td><td>test_costs 03, 04, 05</td><td>Amministrazione, PM</td></tr>
+  <tr><td>RF-15</td><td>Sui T&amp;M le ore dei consulenti esterni non si fatturano a tariffa oraria (si ribalta la loro fattura)</td><td><code>account.analytic.line._timesheet_determine_sale_line</code></td><td>test_costs 03</td><td>Amministrazione</td></tr>
+  <tr><td>RF-16</td><td>Licenze AI ripartite per mese: in corso con maggiorazione oraria, a mese finito in proporzione alle ore; modalità <i>governance</i> per i PM</td><td><code>lab.cost.period._compute_ai_fixed</code></td><td>test_costs 06</td><td>Amministrazione</td></tr>
+  <tr><td>RF-17</td><td>Consumi AI attribuiti con le corrispondenze: diretto su commessa, ripartito sulle ore della persona, costi generali</td><td><code>lab.ai.usage._compute_target</code>, <code>lab.cost.period._compute_ai_variable</code></td><td>test_ai_usage 03</td><td>PM, Amministrazione</td></tr>
+  <tr><td>RF-18</td><td>Chiusura del mese (solo Amministrazione, solo a mese finito): i consumi diretti dei T&amp;M diventano spese vive sull'ordine; la riapertura le toglie se non ancora fatturate</td><td><code>action_close</code>, <code>_create_ai_passthrough</code>, <code>action_reopen</code></td><td>test_ai_usage 03</td><td>Amministrazione</td></tr>
+  <tr><td>RF-19</td><td>Il Commerciale prepara fatture in bozza ma non le registra</td><td><code>account.move.action_post</code></td><td>test_flow 06</td><td>Commerciale, Amministrazione</td></tr>
+  <tr><td>RF-20</td><td>Canone AMS con abbonamento OCA; il Supporto segue in automatico le commesse a canone</td><td><code>sale.subscription.create</code>, <code>_timesheet_create_project</code></td><td>test_flow 07</td><td>Supporto</td></tr>
+  <tr><td>RF-21</td><td>Report margini per commessa e scheda <i>Costi, ricavi e margine</i> sul progetto</td><td><code>lab.margin.report</code>, <code>project.project._compute_lab_economics</code></td><td>test_costs 03–06</td><td>PM, Amministrazione</td></tr>
+  <tr><td>RF-22</td><td>Import dei consumi dall'API costi Anthropic, facoltativo e spento senza chiave</td><td><code>_lab_fetch_anthropic</code>, <code>_lab_parse_anthropic_rows</code>, <code>_lab_upsert</code></td><td>test_ai_usage 01, 02</td><td>Amministrazione</td></tr>
+</table></div>
+<h3>Requisiti non funzionali</h3>
+<table>
+  <tr><th>ID</th><th>Requisito</th><th>Come è soddisfatto</th></tr>
+  <tr><td>RNF-01</td><td>Installabile in un altro Odoo 18 CE senza passaggi manuali</td><td>Unica app con <code>depends</code> completo; <code>scripts/package_app.sh</code> impacchetta app e moduli OCA</td></tr>
+  <tr><td>RNF-02</td><td>Nessuna modifica a core e OCA</td><td>Solo ereditarietà; il bug OCA sul listino è aggirato in <code>models/sale_subscription.py</code></td></tr>
+  <tr><td>RNF-03</td><td>Nessuna credenziale versionata</td><td>Password in <code>.env</code> (gitignored); chiave Anthropic solo come parametro di sistema</td></tr>
+  <tr><td>RNF-04</td><td>Nessun lavoro in più per chi segna le ore</td><td>Il task è l'unico dato richiesto in più (e solo su corpo/T&amp;M); tutto il resto è calcolato</td></tr>
+  <tr><td>RNF-05</td><td>Ambiente demo autonomo</td><td>Scenario sintetico idempotente con date relative a oggi; connettore esterno spento senza chiave</td></tr>
+</table>
+
+<!-- ============================================================== -->
+<h2 id="dati">4. Modello dati</h2>
+<h3>Modelli nuovi</h3>
+<div class="wrap"><table>
+  <tr><th>Modello</th><th>Scopo</th><th>Campi principali</th></tr>
+  <tr><td><code>lab.planning.slot</code></td><td>Turno pianificato (eredita <code>mail.thread</code>)</td><td>employee_id, user_id (related, salvato), project_id, task_id, date, week_start (calcolato, salvato), allocated_hours (&gt; 0, vincolo SQL), confirmed_hours, state, timesheet_id, weekly_limit / weekly_factor / weekly_planned (calcolati)</td></tr>
+  <tr><td><code>lab.planning.capacity</code></td><td>Correzione settimanale del fattore parallelo</td><td>employee_id, week_start (normalizzato al lunedì), parallel_factor (0,1–3), note; unico per persona e settimana</td></tr>
+  <tr><td><code>lab.default.task</code></td><td>Modelli dei task creati sulle nuove commesse</td><td>name, sequence, share_pct (somma &lt; 100), description, active</td></tr>
+  <tr><td><code>lab.ai.tool</code></td><td>Catalogo strumenti AI</td><td>name, vendor_id, tool_type (license / usage), monthly_cost, currency_id</td></tr>
+  <tr><td><code>lab.ai.license</code></td><td>Licenza assegnata a una persona</td><td>employee_id, tool_id, monthly_cost, date_start, date_end, allocation_mode (hours / governance)</td></tr>
+  <tr><td><code>lab.ai.usage</code></td><td>Riga di consumo AI</td><td>date, source (manual / csv / api), workspace_ref, api_key_ref, actor_ref, amount_currency, currency_id, amount (in euro, salvato), project_id / employee_id (da corrispondenze, modificabili), attribution, external_ref (unico per azienda)</td></tr>
+  <tr><td><code>lab.ai.mapping</code></td><td>Corrispondenza identificativo fornitore → commessa o persona</td><td>ref_type (workspace / api_key / actor), name (unico per tipo), label, project_id, employee_id, active</td></tr>
+  <tr><td><code>lab.cost.period</code></td><td>Mese di ripartizione</td><td>date_start (normalizzato al giorno 1, unico per azienda), date_end, state (open / closed), allocation_ids, total_amount, unallocated_amount</td></tr>
+  <tr><td><code>lab.cost.allocation</code></td><td>Registro delle ripartizioni (letto dal report margini)</td><td>period_id, project_id (vuoto = costi generali), employee_id, license_id, cost_type (ai_fixed / ai_variable), passthrough, sale_line_id, amount, basis, basis_qty, basis_pct</td></tr>
+  <tr><td><code>lab.margin.report</code></td><td>Vista SQL di sola lettura (<code>_auto = False</code>), una riga per progetto attivo</td><td>sold_amount, passthrough_revenue, invoiced_amount, timesheet_cost, ai_cost, external_cost, external_accrued, other_vendor_cost, passthrough_cost, total_cost, margin, margin_pct, margin_excl_passthrough, hours_consumed, hours_estimated, hours_saved</td></tr>
+  <tr><td><code>lab.demo.data</code></td><td>Caricatore dello scenario sintetico (modello astratto di servizio)</td><td><code>_lab_load_synthetic()</code> idempotente</td></tr>
+</table></div>
+<h3>Modelli estesi</h3>
+<div class="wrap"><table>
+  <tr><th>Modello</th><th>Campi aggiunti</th><th>Salvati?</th></tr>
+  <tr><td><code>product.template</code></td><td>lab_hours_per_unit, lab_monthly_hours, lab_create_default_tasks</td><td>Sì</td></tr>
+  <tr><td><code>sale.order.line</code></td><td>lab_sold_hours</td><td>Sì (calcolato)</td></tr>
+  <tr><td></td><td>lab_consumed_hours, lab_remaining_hours, lab_task_count</td><td>No (calcolati)</td></tr>
+  <tr><td><code>project.project</code></td><td>lab_default_tasks_done, lab_passthrough_markup_pct, lab_alert_notified</td><td>Sì</td></tr>
+  <tr><td></td><td>lab_is_monthly, lab_sold/estimated/consumed_hours, lab_consumption_pct, lab_alert_level, lab_contract_type, campi economici (lab_revenue … lab_margin_pct), lab_package_line_ids</td><td>No (calcolati)</td></tr>
+  <tr><td><code>project.task</code></td><td>lab_consumption_pct, lab_alert_level</td><td>Sì (calcolati, filtrabili)</td></tr>
+  <tr><td></td><td>lab_sold_hours</td><td>No (related)</td></tr>
+  <tr><td><code>account.analytic.line</code></td><td>lab_parallel_ratio, lab_parallel_state (indicizzato), lab_accrued_external_cost, lab_vendor_bill_line_id</td><td>Sì</td></tr>
+  <tr><td><code>account.move.line</code></td><td>lab_consultant_id, lab_timesheet_ids (inverso)</td><td>Sì</td></tr>
+  <tr><td></td><td>lab_accrued_amount, lab_variance</td><td>No (calcolati)</td></tr>
+  <tr><td><code>hr.employee</code></td><td>lab_resource_type, lab_vendor_id, lab_external_rate, lab_external_rate_unit, lab_parallel_factor, lab_ai_license_ids</td><td>Sì (visibili solo a HR, Amministrazione, PM)</td></tr>
+  <tr><td></td><td>lab_ai_monthly_cost, lab_ai_hourly_uplift, lab_fully_loaded_cost</td><td>No (calcolati)</td></tr>
+</table></div>
+<h3>Relazioni principali</h3>
+<pre>sale.order.line ──(conferma)──▶ project.project ──▶ project.task (default + Sviluppo)
+        ▲                               ▲                   ▲
+        │ so_line                       │ project_id        │ task_id
+account.analytic.line ◀──(conferma)── lab.planning.slot ──▶ hr.employee ◀── lab.planning.capacity
+        │ lab_vendor_bill_line_id                               ▲
+        ▼                                                       │ employee_id
+account.move.line (lab_consultant_id) ─────────────────────────┘
+lab.ai.usage ──(lab.ai.mapping)──▶ project / employee ──▶ lab.cost.allocation ◀── lab.cost.period
+lab.ai.license ──────────────────────────────────────────▶ lab.cost.allocation
+lab.margin.report (vista SQL) ◀── sale_order_line, account_analytic_line, lab_cost_allocation, project_task</pre>
+
+<!-- ============================================================== -->
+<h2 id="calcoli">5. Regole di calcolo</h2>
+<h3>5.1 Ore vendute di una riga d'ordine</h3>
+<pre>se prodotto non servizio            → 0
+se lab_monthly_hours (canone)       → lab_monthly_hours × quantità
+se lab_hours_per_unit               → lab_hours_per_unit × quantità
+se UdM della categoria tempo        → quantità convertita in ore
+altrimenti                          → quantità (1 unità = 1 ora, come Odoo)</pre>
+<h3>5.2 Task di default</h3>
+<p>Per ogni <code>lab.default.task</code> attivo: ore stimate = ore vendute × share_pct / 100 (arrotondate a 2 decimali). Il task creato da Odoo viene rinominato <i>Sviluppo – &lt;prodotto&gt;</i> e riceve (100 − Σ share_pct)%. Con i dati di base: Analisi 15%, Project Management 10%, Test 15%, Sviluppo 60%. Il flag <code>lab_default_tasks_done</code> sul progetto impedisce doppioni se l'ordine ha più righe.</p>
+<h3>5.3 Alert monte ore</h3>
+<pre>percentuale = consuntivate / riferimento × 100
+≥ 90 → danger (rosso)   ≥ 75 → warning (giallo)   altrimenti ok   riferimento = 0 → none
+task:      riferimento = ore stimate (allocated_hours), altrimenti ore vendute della riga
+progetto:  riferimento = ore vendute delle righe collegate, altrimenti ore stimate dei task
+canone:    riferimento = ore mensili × quantità; consuntivate dal primo del mese</pre>
+<p>La notifica parte dagli hook di <code>account.analytic.line</code> (create / write / unlink). Il livello già notificato è salvato in <code>lab_alert_notified</code>: se il consumo scende (ore stornate o nuovo mese AMS) l'alert si riarma.</p>
+<h3>5.4 Regola 80/20 e fattore parallelo</h3>
+<pre>limite settimana = max_weekly_hours (default 32) × fattore
+fattore = lab.planning.capacity della settimana, se esiste; altrimenti hr.employee.lab_parallel_factor (default 1)
+vincolo: Σ allocated_hours dei turni non annullati della persona nella settimana ≤ limite</pre>
+<h3>5.5 Lavoro in parallelo</h3>
+<pre>per ogni (persona, giorno) con righe su progetto:
+  ore_calendario = resource_calendar_id.hours_per_day  (default 8)
+  fattore_giorno = min(1, ore_calendario / Σ ore segnate)
+  amount di ogni riga = −ore × costo orario × fattore_giorno   (convertito nella valuta del conto)
+  stato = normal se Σ ore ≤ ore_calendario; altrimenti to_approve (approved resta approved)
+consegnato T&amp;M: esclude le righe to_approve</pre>
+<p>Esempio: 6 h + 6 h in una giornata da 8 h → fattore 0,667, costo pari a 8 h; le 12 h restano fatturabili dopo l'approvazione.</p>
+<h3>5.6 Consulenti esterni</h3>
+<pre>costo orario da dipendente = 0
+tariffa oraria = tariffa concordata  (o tariffa giornaliera / ore_calendario)
+costo maturato riga = ore × fattore_giorno × tariffa oraria   (finché lab_vendor_bill_line_id è vuoto)
+alla registrazione della fattura fornitore (riga con lab_consultant_id e distribuzione analitica sulla commessa):
+  si collegano le ore del consulente sulla commessa con data ≤ data fattura non ancora fatturate
+scostamento = importo riga fattura − Σ costo maturato delle ore collegate</pre>
+<h3>5.7 Ribaltamento al cliente (pass-through)</h3>
+<pre>solo se project._lab_contract_type() == 'tm'
+prezzo di vendita = costo × (1 + lab_passthrough_markup_pct / 100)   (solo prodotti con expense_policy = cost)
+tipo contratto: canone se un prodotto ha ore mensili; tm se un prodotto è a consegna da fogli ore;
+                corpo altrimenti; interno se non c'è ordine</pre>
+<h3>5.8 Licenze AI</h3>
+<pre>costo del mese = canone mensile × giorni di validità nel mese / giorni del mese
+modalità hours:      pesi = ore della persona per commessa nel mese
+modalità governance: pesi = ore totali delle commesse di cui la persona è PM
+mese finito:  quota commessa = costo × peso / Σ pesi   (conguaglio esatto)
+mese in corso (hours): quota = min(costo × peso / Σ pesi, costo / ore standard × peso)
+                       il non assorbito va nei costi generali
+ore standard del mese = max_weekly_hours × 52 / 12
+nessuna ora nel mese → tutto nei costi generali</pre>
+<h3>5.9 Consumi AI</h3>
+<pre>corrispondenza: workspace e chiave API vincono sull'utente (actor)
+  progetto trovato → diretto (passthrough se la commessa è T&amp;M)
+  solo persona     → ripartito sulle ore della persona nel mese
+  nessuna          → costi generali
+importo in euro = conversione al cambio della data del consumo
+alla chiusura: per ogni commessa T&amp;M con consumi diretti si crea (o aggiorna) una riga d'ordine
+  "Spese vive AI MM/AAAA" a prezzo = costo × (1 + ricarico) più una riga analitica che la rende consegnata</pre>
+<h3>5.10 Margini (vista SQL)</h3>
+<pre>venduto   = Σ righe d'ordine confermate non spesa: a consegna → prezzo × (1 − sconto) × consegnato; altrimenti imponibile
+ribaltato = Σ righe spesa: prezzo × (1 − sconto) × consegnato
+costi     = lavoro interno (−Σ amount fogli ore) + AI (Σ allocazioni)
+          + consulenti (fatture con consulente + maturato non fatturato) + altri fornitori
+margine   = venduto + ribaltato − costi
+margine % = margine / (venduto + ribaltato) × 100
+margine senza pass-through = venduto − (costi − costi ribaltati)
+ore risparmiate = ore stimate dei task principali attivi − ore consuntivate</pre>
+
+<!-- ============================================================== -->
+<h2 id="estensioni">6. Punti di estensione di Odoo</h2>
+<p>Tutti gli override chiamano <code>super()</code>; nessun metodo standard è sostituito per intero.</p>
+<div class="wrap"><table>
+  <tr><th>Modello</th><th>Metodo</th><th>Modifica</th></tr>
+  <tr><td>sale.order.line</td><td><code>_timesheet_create_project</code></td><td>Ore allocate = ore vendute, visibilità <i>followers</i>, iscrizione venditore e Supporto (AMS)</td></tr>
+  <tr><td>sale.order.line</td><td><code>_timesheet_create_task_prepare_values</code></td><td>Ore stimate del task = ore vendute per i prodotti a ore</td></tr>
+  <tr><td>sale.order.line</td><td><code>_timesheet_service_generation</code></td><td>Crea i task di default dopo la generazione standard</td></tr>
+  <tr><td>sale.order.line</td><td><code>_timesheet_compute_delivered_quantity_domain</code></td><td>Esclude le ore parallele da approvare</td></tr>
+  <tr><td>account.analytic.line</td><td><code>create</code> / <code>write</code> / <code>unlink</code></td><td>Ricalcolo dei giorni paralleli e controllo alert (saltabile con il contesto <code>lab_skip_parallel</code>)</td></tr>
+  <tr><td>account.analytic.line</td><td><code>_hourly_cost</code></td><td>0 per i consulenti esterni</td></tr>
+  <tr><td>account.analytic.line</td><td><code>_timesheet_determine_sale_line</code></td><td>Nessuna riga d'ordine per esterni su T&amp;M</td></tr>
+  <tr><td>account.move</td><td><code>action_post</code></td><td>Blocco per il Commerciale; collegamento ore dei consulenti</td></tr>
+  <tr><td>account.move</td><td><code>button_draft</code></td><td>Scollega le ore dei consulenti</td></tr>
+  <tr><td>account.move.line</td><td><code>_sale_determine_order</code></td><td>Ricerca dell'ordine con <code>sudo</code> e filtro sui soli T&amp;M</td></tr>
+  <tr><td>account.move.line</td><td><code>_sale_get_invoice_price</code></td><td>Ricarico sul prezzo di rifatturazione</td></tr>
+  <tr><td>sale.subscription (OCA)</td><td><code>create</code></td><td>Listino di ripiego quando l'ordine non ne ha uno</td></tr>
+</table></div>
+<h3>Viste ereditate</h3>
+<p>Form progetto (banner alert, gruppo <i>Monte ore</i>, scheda <i>Costi, ricavi e margine</i>), kanban progetto (etichette alert), form/kanban/lista/ricerca task (banner, barra di consumo, filtri), form ordine (ore scalate/residue e pulsante <i>Ore per task</i>), form prodotto (campi ore), form dipendente (scheda <i>Costi e AI</i>), form fattura (consulente sulla riga). Menu: app <b>Pianificazione</b> (turni, ore parallele, fattore settimanale, report, <i>Costi e AI</i>), più <i>Margini per commessa</i> in Progetti › Rendicontazione e <i>Task di default commessa</i> in Progetti › Configurazione.</p>
+
+<!-- ============================================================== -->
+<h2 id="sicurezza">7. Sicurezza e permessi</h2>
+<h3>Gruppi</h3>
+<div class="wrap"><table>
+  <tr><th>Gruppo (categoria)</th><th>Implica</th><th>Uso</th></tr>
+  <tr><td>Pianificazione / Utente: i miei turni</td><td>base.group_user</td><td>Vede e conferma i propri turni pubblicati</td></tr>
+  <tr><td>Pianificazione / Responsabile: tutti i turni</td><td>Utente turni</td><td>Crea, modifica, pubblica, annulla tutti i turni</td></tr>
+  <tr><td>Ruoli / Commerciale</td><td>sales_team.group_sale_salesman, account.group_account_invoice</td><td>Propri documenti di vendita, fatture solo in bozza</td></tr>
+  <tr><td>Ruoli / Project Manager</td><td>project.group_project_manager, hr_timesheet.group_timesheet_manager, Responsabile turni, sales_team.group_sale_salesman_all_leads</td><td>Progetti, turni, approvazioni, margini</td></tr>
+  <tr><td>Ruoli / Analista Funzionale / Sviluppatore</td><td>project.group_project_user, hr_timesheet.group_hr_timesheet_user, Utente turni</td><td>Task, turni e fogli ore propri</td></tr>
+  <tr><td>Ruoli / Supporto (AMS)</td><td>Analista / Sviluppatore</td><td>In più segue in automatico le commesse a canone</td></tr>
+  <tr><td>Ruoli / Amministrazione</td><td>account.group_account_manager, sales_team.group_sale_manager</td><td>Contabilità, costi AI, chiusura mese</td></tr>
+</table></div>
+<h3>Accessi ai nuovi modelli (L = lettura, S = scrittura, C = creazione, E = eliminazione)</h3>
+<div class="wrap"><table>
+  <tr><th>Modello</th><th>Team / Utente turni</th><th>PM</th><th>Amministrazione</th><th>Sistema</th></tr>
+  <tr><td>lab.planning.slot</td><td>L S (solo <i>Ore effettive</i> e conferma, via codice)</td><td>L S C E</td><td>—</td><td>tramite Responsabile</td></tr>
+  <tr><td>lab.planning.capacity</td><td>L</td><td>L S C E</td><td>—</td><td>—</td></tr>
+  <tr><td>lab.default.task</td><td>L (utente progetti)</td><td>L S C E</td><td>—</td><td>—</td></tr>
+  <tr><td>lab.ai.tool / lab.ai.license</td><td>—</td><td>L</td><td>L S C E</td><td>L S C E</td></tr>
+  <tr><td>lab.ai.usage</td><td>—</td><td>L</td><td>L S C E</td><td>L S C E</td></tr>
+  <tr><td>lab.ai.mapping</td><td>—</td><td>L S C</td><td>L S C E</td><td>L S C E</td></tr>
+  <tr><td>lab.cost.period</td><td>—</td><td>L S</td><td>L S C E</td><td>L S C E</td></tr>
+  <tr><td>lab.cost.allocation</td><td>—</td><td>L</td><td>L</td><td>L S C E</td></tr>
+  <tr><td>lab.margin.report</td><td>—</td><td>L</td><td>L</td><td>—</td></tr>
+</table></div>
+<h3>Regole di record e controlli nel codice</h3>
+<ul>
+  <li><code>rule_planning_slot_own</code>: l'utente turni vede solo i propri turni non in bozza; <code>rule_planning_slot_all</code>: il responsabile vede tutto; <code>rule_planning_slot_company</code>: regola globale multi-azienda.</li>
+  <li><code>lab.planning.slot.write</code>: chi non è responsabile può cambiare solo <code>confirmed_hours</code> e solo su turni pubblicati; <code>action_confirm</code> accetta solo i propri turni.</li>
+  <li>Approvazione ore parallele: gruppo PM o <code>project.group_project_manager</code>. Chiusura e riapertura mese: Amministrazione o <code>base.group_system</code>. Registrazione fatture: vietata al Commerciale senza Amministrazione.</li>
+  <li>Costi e tariffe su <code>hr.employee</code>: attributo <code>groups</code> su HR, Amministrazione, PM.</li>
+</ul>
+<h3>Uso di <code>sudo</code></h3>
+<p>È usato dove il risultato è un dato di sistema e non deve dipendere da chi preme il pulsante: ricalcolo dei giorni paralleli, ripartizioni del mese, ricerca dell'ordine da rifatturare (la commessa è riservata agli invitati e l'Amministrazione spesso non la vede), creazione del foglio ore dalla conferma del turno, lettura del report margini nella scheda progetto (protetta dal gruppo della scheda). La riga creata sull'ordine nel pass-through resta con i permessi dell'utente.</p>
+
+<!-- ============================================================== -->
+<h2 id="automazioni">8. Automazioni e notifiche</h2>
+<table>
+  <tr><th>Evento</th><th>Effetto</th></tr>
+  <tr><td>Conferma ordine di servizi</td><td>Commessa, task, follower (venditore, Supporto per AMS), abbonamento OCA per i canoni</td></tr>
+  <tr><td>Pubblicazione turno</td><td>Il dipendente diventa follower e riceve un messaggio</td></tr>
+  <tr><td>Conferma turno</td><td>Riga di foglio ore, stato confermato, collegamento al turno</td></tr>
+  <tr><td>Creazione / modifica / eliminazione foglio ore</td><td>Ricalcolo del giorno (costo, stato parallelo, maturato esterni), consegnato T&amp;M, alert su progetto</td></tr>
+  <tr><td>Superamento soglia 75% / 90%</td><td>Messaggio e attività <i>Avviso</i> al PM sul progetto e al venditore sull'ordine</td></tr>
+  <tr><td>Registrazione fattura fornitore</td><td>Collegamento ore del consulente; riga di rifatturazione sull'ordine T&amp;M</td></tr>
+  <tr><td>Nuova corrispondenza consumi</td><td>Riattribuzione dei consumi già importati, esclusi i mesi chiusi</td></tr>
+  <tr><td>Cron giornaliero <i>Costi commessa: ripartizione costi AI</i></td><td>Ricalcola il mese in corso e il precedente se ancora aperto</td></tr>
+  <tr><td>Cron giornaliero <i>Consumi AI: import da Anthropic</i></td><td>Importa gli ultimi 3 giorni se la chiave è configurata; altrimenti non fa nulla</td></tr>
+</table>
+
+<!-- ============================================================== -->
+<h2 id="configurazione">9. Parametri e dati di base</h2>
+<table>
+  <tr><th>Parametro di sistema</th><th>Default</th><th>Effetto</th></tr>
+  <tr><td><code>lab_workflow_custom.max_weekly_hours</code></td><td>32</td><td>Ore pianificabili a settimana con fattore 1 (regola 80/20); base delle ore standard del mese</td></tr>
+  <tr><td><code>lab_workflow_custom.passthrough_markup_pct</code></td><td>15</td><td>Ricarico proposto sulle nuove commesse</td></tr>
+  <tr><td><code>lab_workflow_custom.anthropic_admin_key</code></td><td>assente</td><td>Attiva il connettore Anthropic (chiave Admin)</td></tr>
+</table>
+<p><b>Prodotti di base</b> (<code>noupdate</code>): <i>Sviluppo Software a Corpo</i> (SVIL-CORPO, 120 h, task di default), <i>Pacchetto Monte Ore (50h)</i> (MONTE-50H, 50 h, task di default), <i>Canone Assistenza Mensile AMS</i> (AMS-MESE, 20 h/mese, abbonamento mensile), <i>Consulenza a consuntivo (T&amp;M)</i> (TM-ORA, a ore da fogli ore), <i>Prestazione consulente esterno</i> (CONS-EXT) e <i>Spese vive ribaltate</i> (SPESE-VIVE), entrambi con rifatturazione al costo. <b>Strumenti AI</b>: Claude Team (30 €/mese), Claude Max / Claude Code (100 €/mese), API Anthropic (a consumo).</p>
+
+<!-- ============================================================== -->
+<h2 id="integrazione">10. Integrazione Anthropic</h2>
+<table>
+  <tr><th>Voce</th><th>Valore</th></tr>
+  <tr><td>Endpoint</td><td><code>GET https://api.anthropic.com/v1/organizations/analytics/cost</code></td></tr>
+  <tr><td>Autenticazione</td><td>Header <code>x-api-key</code> con la chiave Admin del parametro di sistema</td></tr>
+  <tr><td>Parametri</td><td>starting_at / ending_at, <code>time_bucket_width=1d</code>, raggruppamento per workspace, chiave, actor, prodotto e modello, limit 1000, paginazione con <code>next_page</code> (massimo 100 pagine)</td></tr>
+  <tr><td>Importi</td><td>Stringhe in centesimi di USD (<code>"41280.000000"</code> = 412,80 $), convertite in euro al cambio del giorno</td></tr>
+  <tr><td>Deduplicazione</td><td><code>external_ref</code> = data | workspace | chiave | actor | prodotto | modello; reimport = aggiornamento dell'importo</td></tr>
+  <tr><td>Errori</td><td>Risposta diversa da 200 → <code>UserError</code> con il testo; nel cron l'errore è solo registrato nel log</td></tr>
+  <tr><td>Fonti alternative</td><td>Inserimento manuale e import CSV standard dalla lista <i>Consumi AI</i>; stesso trattamento a valle</td></tr>
+</table>
+<p class="note">Nell'ambiente demo la chiave non esiste: il pulsante <i>Importa da Anthropic</i> mostra un messaggio e il cron non fa nulla. I test usano payload d'esempio, mai chiamate reali.</p>
+
+<!-- ============================================================== -->
+<h2 id="test">11. Test automatici</h2>
+<p>18 test con <code>TransactionCase</code>, eseguiti con <code>./scripts/run_tests.sh</code> (Odoo fermo, <code>--test-tags</code> sul modulo).</p>
+<div class="wrap"><table>
+  <tr><th>File</th><th>Test</th><th>Cosa verifica</th></tr>
+  <tr><td rowspan="8">test_flow.py</td><td>01 products_configured</td><td>Prodotti di base con le giuste politiche</td></tr>
+  <tr><td>02 order_creates_project_and_default_tasks</td><td>Commessa, visibilità, task di default e ripartizione ore</td></tr>
+  <tr><td>03 fixed_price_hours_per_unit</td><td>Ore per unità sul prodotto a corpo</td></tr>
+  <tr><td>04 planning_8020_and_confirm_creates_timesheet</td><td>Limite settimanale e foglio ore dalla conferma</td></tr>
+  <tr><td>05 alert_75_90</td><td>Soglie e notifiche</td></tr>
+  <tr><td>06 invoice_draft_by_sales_post_by_admin</td><td>Separazione Commerciale / Amministrazione</td></tr>
+  <tr><td>07 ams_monthly_alert_and_subscription</td><td>Canone: consumo mensile e abbonamento OCA</td></tr>
+  <tr><td>08 package_traced_by_task</td><td>Task obbligatorio e ore scalate per task</td></tr>
+  <tr><td rowspan="7">test_costs.py</td><td>01 parallel_day_splits_cost</td><td>Costo diviso nel giorno parallelo</td></tr>
+  <tr><td>02 tm_parallel_hours_need_pm_approval</td><td>Consegnato T&amp;M dopo approvazione</td></tr>
+  <tr><td>03 consultant_accrual_bill_and_passthrough_tm</td><td>Maturato, fattura, scostamento, ribaltamento con ricarico</td></tr>
+  <tr><td>04 no_passthrough_on_fixed_price</td><td>Nessun ribaltamento sui contratti a corpo</td></tr>
+  <tr><td>05 markup_zero_on_project</td><td>Ricarico 0 = puro costo</td></tr>
+  <tr><td>06 ai_license_allocation_month</td><td>Ripartizione licenze nel mese finito e in corso</td></tr>
+  <tr><td>07 planning_parallel_factor</td><td>Fattore della persona e correzione settimanale</td></tr>
+  <tr><td rowspan="3">test_ai_usage.py</td><td>01 parse_anthropic_payload</td><td>Conversione della risposta API</td></tr>
+  <tr><td>02 connector_off_in_demo</td><td>Connettore spento senza chiave</td></tr>
+  <tr><td>03 mapping_and_allocation</td><td>Corrispondenze, ripartizione, spese vive alla chiusura</td></tr>
+</table></div>
+<p>Il collaudo end-to-end con gli utenti dei ruoli è documentato nel video della pagina dell'app (registrato da <code>scripts/registra_video.sh</code>, rigenerabile dopo ogni modifica).</p>
+
+<!-- ============================================================== -->
+<h2 id="rilascio">12. Installazione e rilascio</h2>
+<ul>
+  <li><b>Laboratorio</b>: <code>./scripts/setup_pc.sh</code> (Docker, OCA, database <code>lab18</code> senza demo standard, scenario sintetico, test).</li>
+  <li><b>Altro Odoo 18 CE</b>: <code>./scripts/package_app.sh</code> crea <code>dist/flusso_operativo_18.0.zip</code> con l'app e i moduli OCA richiesti; copiare le cartelle nell'addons path e installare <i>Flusso Operativo Software House</i>.</li>
+  <li><b>Aggiornamento</b>: <code>./scripts/update_module.sh</code> (<code>-u</code> con Odoo fermo). A ogni modifica si alza la versione <code>18.0.x.y.z</code> nel manifest.</li>
+  <li><b>Dati</b>: i file in <code>data/</code> con <code>noupdate="1"</code> (parametri, prodotti, task di default, strumenti AI) non vengono sovrascritti negli aggiornamenti; cron e gruppi sì.</li>
+  <li><b>Dipendenze Python</b>: <code>requests</code> (già in Odoo) per il connettore.</li>
+</ul>
+
+<!-- ============================================================== -->
+<h2 id="limiti">13. Limiti noti e rischi tecnici</h2>
+<div class="wrap"><table>
+  <tr><th>Tema</th><th>Descrizione</th><th>Impatto / mitigazione</th></tr>
+  <tr><td>Campi di progetto non salvati</td><td>Ore, alert, tipo contratto ed economia del progetto sono calcolati a ogni lettura (una ricerca sui fogli ore per progetto).</td><td>Non filtrabili né ordinabili; con molte commesse il kanban può rallentare. Se serve, salvarli e ricalcolarli dagli hook dei fogli ore.</td></tr>
+  <tr><td>Amministrazione e schede dipendente</td><td>I campi costo di <code>hr.employee</code> sono visibili all'Amministrazione, ma il gruppo non dà accesso al modello dipendente (serve un ruolo HR).</td><td>Per gestire tariffe e fornitori dei consulenti, l'Amministrazione deve avere anche <i>Dipendenti / Funzionario</i>, oppure va aggiunto l'accesso nell'app.</td></tr>
+  <tr><td>Tipo contratto dedotto</td><td>Se un ordine mescola prodotti a canone, T&amp;M e a corpo, vince nell'ordine: canone, T&amp;M, corpo.</td><td>Vendere tipologie diverse su ordini separati.</td></tr>
+  <tr><td>Ripartizione ricalcolata</td><td>A ogni ricalcolo le allocazioni del mese aperto vengono eliminate e ricreate.</td><td>Non modificarle a mano (sono in sola lettura); i mesi chiusi non si ricalcolano.</td></tr>
+  <tr><td>Costi fornitori per conto analitico</td><td>Il report somma le fatture fornitore per conto analitico del progetto.</td><td>Un conto analitico condiviso da più progetti duplicherebbe i costi: mantenere un conto per commessa (default di Odoo).</td></tr>
+  <tr><td>Calendario</td><td>Le ore di una giornata si leggono da <code>hours_per_day</code> del calendario della persona (default 8), senza ferie o giorni ridotti.</td><td>Giornate parziali o permessi vanno gestiti a mano (approvazione PM).</td></tr>
+  <tr><td>Cambio USD</td><td>Il tasso USD dei dati demo è dimostrativo (1,08).</td><td>In produzione attivare l'aggiornamento automatico dei cambi.</td></tr>
+</table></div>
+
+<!-- ============================================================== -->
+<h2 id="glossario">14. Glossario</h2>
+<table>
+  <tr><th>Termine</th><th>Significato</th></tr>
+  <tr><td>A corpo / monte ore</td><td>Contratto a prezzo fisso o pacchetto di ore prepagato: le ore si scalano, non si fatturano una per una</td></tr>
+  <tr><td>T&amp;M</td><td>Time &amp; Material, a consuntivo: si fatturano le ore consegnate e le spese ribaltate</td></tr>
+  <tr><td>AMS</td><td>Application Management Services: canone mensile di assistenza con ore incluse</td></tr>
+  <tr><td>Pass-through</td><td>Costo di terzi (consulente, consumo AI) rifatturato al cliente al costo più un ricarico</td></tr>
+  <tr><td>Fattore parallelo</td><td>Quante ore-progetto una persona può gestire per ogni ora reale lavorando in parallelo con l'AI</td></tr>
+  <tr><td>Costo maturato</td><td>Stima del costo di un consulente esterno (ore × tariffa) in attesa della sua fattura</td></tr>
+  <tr><td>Costi generali</td><td>Costi AI non attribuibili a una commessa (allocazioni senza progetto)</td></tr>
+</table>
+</main>
+</body>
+</html>

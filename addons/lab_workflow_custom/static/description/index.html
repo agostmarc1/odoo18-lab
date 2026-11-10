@@ -1,0 +1,209 @@
+<section style="max-width:1100px;margin:0 auto;font-family:'Segoe UI',Roboto,Arial,sans-serif;color:#1f2328;line-height:1.55">
+
+<div style="text-align:center;padding:24px 16px 8px">
+  <img src="icon.png" alt="" style="width:72px;height:72px"/>
+  <h1 style="margin:12px 0 4px;font-size:30px">Flusso Operativo Software House</h1>
+  <p style="margin:0;color:#57606a;font-size:17px">Dalla vendita al margine di commessa, per software house che lavorano con team misti e strumenti AI.<br/>
+  Odoo 18.0 Community · una sola app · nessuna modifica al core né ai moduli OCA</p>
+</div>
+
+<div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin:20px 0 8px">
+  <span style="background:#eef2ff;border-radius:16px;padding:4px 14px">Monte ore e alert 75% / 90%</span>
+  <span style="background:#eef2ff;border-radius:16px;padding:4px 14px">Pianificazione 80/20</span>
+  <span style="background:#eef2ff;border-radius:16px;padding:4px 14px">Lavoro in parallelo</span>
+  <span style="background:#eef2ff;border-radius:16px;padding:4px 14px">Consulenti esterni e pass-through</span>
+  <span style="background:#eef2ff;border-radius:16px;padding:4px 14px">Costi AI per commessa</span>
+  <span style="background:#eef2ff;border-radius:16px;padding:4px 14px">Margini per progetto e pacchetto</span>
+</div>
+
+<p style="text-align:center;color:#57606a;font-size:14px">Indice: Video · 1. Esigenze · 2. Funzionalità · 3. Guida passo-passo · 4. Processi BPMN · 5. Ruoli · 6. Dati sintetici · 7. Installazione · 8. Note tecniche</p>
+<p style="text-align:center;margin:6px 0 0"><a href="/lab_workflow_custom/static/description/analisi_tecnica.html" target="_blank" style="display:inline-block;background:#714b67;color:#fff;border-radius:6px;padding:7px 16px;text-decoration:none;font-weight:600">Analisi funzionale e tecnica (per i tecnici)</a></p>
+
+<!-- ================================================================== -->
+<h2 style="border-bottom:1px solid #d0d7de;padding-bottom:6px;margin-top:36px">Video dimostrativo</h2>
+<p>Il video mostra l'app in uso con gli utenti demo di quattro ruoli (Commerciale, Project Manager, Analista, Amministrazione): un ordine nuovo diventa una commessa, il PM pianifica, l'analista consuntiva, scatta l'alert e si leggono costi e margini. Didascalie in italiano, nessun audio.</p>
+<p style="text-align:center"><a href="/lab_workflow_custom/static/description/video.html" target="_blank"><img src="video_copertina.png" alt="Guarda il video dimostrativo" style="max-width:100%;width:880px;border:1px solid #d0d7de;border-radius:8px"/></a><br/>
+<a href="/lab_workflow_custom/static/description/video.html" target="_blank" style="display:inline-block;margin-top:10px;background:#714b67;color:#fff;border-radius:6px;padding:8px 20px;text-decoration:none;font-weight:600">▶ Guarda il video</a></p>
+<!-- CAPITOLI_VIDEO -->
+<p style="margin-bottom:4px"><b>Capitoli</b> (il minuto apre il video da quel punto)</p>
+<ol style="font-size:14px;columns:2;column-gap:32px">
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=5" target="_blank">0:05</a> – Il Commerciale vende un pacchetto di ore</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=65" target="_blank">1:05</a> – Il Project Manager trova la commessa pronta</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=118" target="_blank">1:58</a> – Pianificazione con la regola 80/20</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=199" target="_blank">3:19</a> – L'analista conferma il turno</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=249" target="_blank">4:09</a> – Alert sul monte ore</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=290" target="_blank">4:50</a> – Lavoro in parallelo</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=313" target="_blank">5:13</a> – Costi, ricavi e margine della commessa</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=358" target="_blank">5:58</a> – Costi AI e chiusura del mese</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=417" target="_blank">6:57</a> – Riepilogo</li>
+</ol>
+<!-- /CAPITOLI_VIDEO -->
+
+
+<!-- ================================================================== -->
+<h2 style="border-bottom:1px solid #d0d7de;padding-bottom:6px;margin-top:36px">1. Esigenze aziendali</h2>
+<p><b>Settore.</b> Una software house o società di consulenza IT che vende progetti a corpo, pacchetti di ore prepagati, attività a consuntivo (T&amp;M) e canoni mensili di assistenza (AMS). Il team è misto: Project Manager, analisti funzionali e supporto sono dipendenti; gli sviluppatori sono consulenti esterni che fatturano all'azienda a giornata. Tutti lavorano con strumenti AI (Claude Team, Claude Code, API Anthropic).</p>
+<p><b>Obiettivo.</b> Sapere in ogni momento quanto costa e quanto rende ogni commessa, senza appesantire chi segna le ore. Odoo 18 Community copre vendite, progetti, fogli ore e contabilità, ma non la pianificazione delle persone (modulo Enterprise), né tre aspetti propri di questo modello di lavoro: il lavoro in parallelo su più commesse grazie all'AI, il costo dei consulenti che arriva solo con la loro fattura e il costo degli strumenti AI.</p>
+<p><b>Problemi da risolvere.</b> Se una persona segna 12 ore in una giornata da 8 lavorando in parallelo, il costo non deve raddoppiare. Le fatture dei consulenti e i consumi AI dedicati vanno ribaltati al cliente solo sui contratti T&amp;M, con un ricarico. Le licenze AI vanno distribuite sulle commesse senza chiedere a nessuno di tracciare i prompt. Il monte ore venduto va sorvegliato prima che si esaurisca, e ogni ora scalata deve dire su quale task è stata spesa.</p>
+<p><b>Priorità e vincoli.</b> Tutto in un'unica app installabile anche in un altro Odoo 18 CE; nessuna modifica al core né ai moduli OCA; nessuna burocrazia aggiuntiva nei fogli ore; ambiente demo funzionante senza credenziali esterne.</p>
+
+<!-- ================================================================== -->
+<h2 style="border-bottom:1px solid #d0d7de;padding-bottom:6px;margin-top:36px">2. Cosa fa l'app</h2>
+<p style="color:#57606a">Le schermate sono d'esempio: i riquadri numerati corrispondono alle voci sotto ogni figura.</p>
+
+<h3>2.1 Dalla vendita alla commessa, con il monte ore sotto controllo</h3>
+<p>Quando il Commerciale conferma un ordine di servizi, Odoo crea una commessa visibile solo agli invitati, con le ore vendute e 4 task già stimati (Analisi 15%, PM 10%, Sviluppo 60%, Test 15%). Ogni ora segnata aggiorna il consumo: al 75% compare un avviso giallo, al 90% rosso; la prima volta che si supera una soglia, PM e venditore ricevono un messaggio e un'attività. Nei canoni AMS il consumo è calcolato sul mese corrente e il Supporto segue la commessa in automatico.</p>
+<p><img src="a02_progetto.png" alt="Scheda commessa" style="max-width:100%;border:1px solid #d0d7de;border-radius:6px"/></p>
+<p style="font-size:14px"><i>Figura 1 – Scheda commessa a corpo.</i> 1. Avviso rosso: monte ore oltre il 90%. 2. Gruppo <i>Monte ore</i>: ore vendute, stimate, consuntivate e percentuale di consumo. 3. <i>Tipo contratto</i>, ricavato dal prodotto venduto: decide se costi esterni e spese si ribaltano al cliente (solo T&amp;M).</p>
+<p><img src="a03_task.png" alt="Task della commessa" style="max-width:100%;border:1px solid #d0d7de;border-radius:6px"/></p>
+<p style="font-size:14px"><i>Figura 2 – Task della commessa.</i> 1. Alert monte ore per task, sulle ore stimate del task. 2. Barra di consumo. 3. Ore consuntivate dai fogli ore e dai turni confermati.</p>
+
+<h3>2.2 Pianificazione con la regola 80/20 e il fattore parallelo</h3>
+<p>Il PM pianifica turni (persona, giorno, task, ore) e li pubblica; la persona li conferma a fine giornata, eventualmente correggendo le ore, e Odoo crea la riga del foglio ore. Ogni persona può avere al massimo 32 h a settimana (80% di 40 h) moltiplicate per il suo <i>fattore parallelo</i>: 1,0 per chi segue un progetto alla volta, 1,5 per un senior che con Claude Code segue più commesse. Il PM può correggere il fattore per una singola settimana. Oltre il limite il turno non si salva.</p>
+<p><img src="a04_turno.png" alt="Turno" style="max-width:100%;border:1px solid #d0d7de;border-radius:6px"/></p>
+<p style="font-size:14px"><i>Figura 3 – Turno confermato.</i> 1. Stato: bozza → pubblicato → confermato. 2. Riquadro <i>Regola 80/20 della settimana</i>: ore già pianificate, limite reale e fattore usato. 3. Pulsante <i>Foglio ore</i>.</p>
+
+<h3>2.3 Lavoro in parallelo: costo non duplicato, ore da approvare</h3>
+<p>Se una persona segna in un giorno più ore del suo calendario, le ore restano tutte e si fatturano tutte, ma il costo della giornata si divide tra le commesse (6 h + 6 h in una giornata da 8 h valgono 8 h di costo). Le righe di quel giorno diventano <i>da approvare</i>: sui contratti T&amp;M entrano in fattura solo dopo l'approvazione del PM.</p>
+<p><img src="a05_parallele.png" alt="Ore parallele" style="max-width:100%;border:1px solid #d0d7de;border-radius:6px"/></p>
+<p style="font-size:14px"><i>Figura 4 – Ore parallele da approvare.</i> 1. Stato <i>Ore parallele da approvare</i>. 2. Pulsante <i>Approva</i>, riservato al PM. 3. Le ore dei consulenti esterni sui T&amp;M non hanno voce d'ordine: si fatturano tramite la loro fattura (2.4).</p>
+
+<h3>2.4 Consulenti esterni e ribaltamento al cliente</h3>
+<p>Per un consulente esterno la scheda persona indica il fornitore che fattura e la tariffa concordata. Le sue ore non hanno un costo da dipendente: finché la fattura non arriva, la commessa vede un costo <i>maturato</i> (ore × tariffa). Quando l'Amministrazione conferma la fattura fornitore indicando il consulente, Odoo collega le ore e mostra lo scostamento. Se la commessa è T&amp;M, la riga della fattura si aggiunge all'ordine del cliente al costo + ricarico (15% predefinito, modificabile per commessa). Sulle commesse a corpo e sui canoni resta solo un costo.</p>
+<p><img src="a06_persona.png" alt="Scheda persona" style="max-width:100%;border:1px solid #d0d7de;border-radius:6px"/></p>
+<p style="font-size:14px"><i>Figura 5 – Scheda persona, Costi e AI.</i> 1. Tipo risorsa: dipendente o consulente esterno. 2. Fornitore e tariffa concordata. 3. Costo pieno: licenze AI, maggiorazione AI all'ora, fattore parallelo. 4. Licenze AI assegnate.</p>
+<p><img src="a01_ordine.png" alt="Ordine T&amp;M" style="max-width:100%;border:1px solid #d0d7de;border-radius:6px"/></p>
+<p style="font-size:14px"><i>Figura 6 – Ordine T&amp;M con la fattura del consulente ribaltata.</i> 1. Riga T&amp;M a ore: si consegnano solo le ore interne. 2. Riga aggiunta dalla fattura del consulente, al costo + ricarico. 3. <i>Consegnati</i>: la quantità che andrà in fattura.</p>
+
+<h3>2.5 Costi AI ripartiti sulle commesse</h3>
+<p>Le licenze AI a canone si assegnano alle persone; i consumi a pagamento (API, Claude Code) si registrano a mano, da CSV o, se configurato, dall'API costi di Anthropic. Una tabella di corrispondenze decide dove va ogni consumo: un workspace o una chiave dedicati vanno sulla loro commessa, il consumo di una persona si divide sulle sue ore del mese, il resto va nei costi generali. Ogni notte Odoo ripartisce il mese aperto; a fine mese l'Amministrazione lo chiude e i consumi dedicati alle commesse T&amp;M diventano spese vive sull'ordine del cliente.</p>
+<p><img src="a07_mese.png" alt="Ripartizione del mese" style="max-width:100%;border:1px solid #d0d7de;border-radius:6px"/></p>
+<p style="font-size:14px"><i>Figura 7 – Ripartizione del mese.</i> 1. <i>Ricalcola mese</i> e <i>Chiudi mese</i> (Amministrazione, a mese finito). 2. Totale ripartito e costi generali. 3. Consumo API dedicato alla commessa T&amp;M, <i>da ribaltare</i>. 4. Mese in corso: la licenza non ancora assorbita dalle ore resta nei costi generali.</p>
+<p><img src="a08_consumi.png" alt="Consumi AI" style="max-width:100%;border:1px solid #d0d7de;border-radius:6px"/></p>
+<p style="font-size:14px"><i>Figura 8 – Consumi AI.</i> 1. Attribuzione: diretto, ripartito sulla persona, costi generali. 2. Importo convertito in euro. 3. <i>Importa da Anthropic</i>: connettore facoltativo, spento senza chiave.</p>
+
+<h3>2.6 Margini per commessa</h3>
+<p>Il report mette a confronto i ricavi (venduto, e per i T&amp;M le ore consegnate per il prezzo, più quanto ribaltato al cliente) con i costi divisi per natura: lavoro interno, AI, consulenti esterni, altri fornitori. Mostra anche il margine senza pass-through e le ore risparmiate rispetto alla stima.</p>
+<p><img src="a09_margini.png" alt="Margini per commessa" style="max-width:100%;border:1px solid #d0d7de;border-radius:6px"/></p>
+<p style="font-size:14px"><i>Figura 9 – Margini per commessa.</i> 1. Ribaltato al cliente, al netto dello sconto di riga. 2. Costo consulenti esterni (fatture + maturato). 3. Altri costi fornitori. 4. Margine lordo.</p>
+
+<h3>2.7 Costi, ricavi e margine nel progetto; pacchetti ore tracciati per task</h3>
+<p>Ogni foglio ore porta il <b>task</b> e la <b>riga dell'ordine</b> (il pacchetto): le ore scalate sono sempre riconducibili a un'attività. Sulle commesse vendute a ore (monte ore e T&amp;M) un foglio ore senza task non si salva; sui canoni AMS resta facoltativo. Il progetto ha la scheda <i>Costi, ricavi e margine</i> (PM e Amministrazione), con gli stessi numeri del report; ogni pacchetto mostra ore vendute, scalate e residue, e il pulsante <i>Ore per task</i> apre il dettaglio.</p>
+<p><img src="a10_economia.png" alt="Costi, ricavi e margine" style="max-width:100%;border:1px solid #d0d7de;border-radius:6px"/></p>
+<p style="font-size:14px"><i>Figura 10 – Scheda Costi, ricavi e margine.</i> 1. Ricavi. 2. Costi. 3. Margine. 4. Pacchetti venduti con ore scalate e residue (rosso se sforato). 5. <i>Ore per task</i>.</p>
+<p><img src="a11_pertask.png" alt="Ore per task" style="max-width:100%;border:1px solid #d0d7de;border-radius:6px"/></p>
+<p style="font-size:14px"><i>Figura 11 – Ore scalate dal pacchetto, raggruppate per task.</i> 1. Il pacchetto. 2. Un gruppo per task, con le singole registrazioni. 3. Ore per task e totale.</p>
+<p><img src="a12_ordine.png" alt="Ordine con ore scalate" style="max-width:100%;border:1px solid #d0d7de;border-radius:6px"/></p>
+<p style="font-size:14px"><i>Figura 12 – Riga d'ordine del pacchetto.</i> 1. Ore scalate e residue. 2. Dettaglio per task. 3. <i>Consegnati</i>: esclude le ore parallele non ancora approvate. 4. Totale ore registrate sull'ordine.</p>
+
+<!-- ================================================================== -->
+<h2 style="border-bottom:1px solid #d0d7de;padding-bottom:6px;margin-top:36px">3. Guida passo-passo</h2>
+<p>I passaggi seguono il flusso del video. Per ogni passo: chi lo fa, dove si trova in Odoo e cosa succede dopo.</p>
+
+<h3>3.1 Preparazione (una volta sola)</h3>
+<table style="border-collapse:collapse;width:100%;font-size:14px">
+  <tr style="background:#f6f8fa"><th style="text-align:left;padding:6px;border:1px solid #d0d7de">#</th><th style="text-align:left;padding:6px;border:1px solid #d0d7de">Chi</th><th style="text-align:left;padding:6px;border:1px solid #d0d7de">Dove</th><th style="text-align:left;padding:6px;border:1px solid #d0d7de">Cosa fare</th><th style="text-align:left;padding:6px;border:1px solid #d0d7de">Risultato</th></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">1</td><td style="padding:6px;border:1px solid #d0d7de">Commerciale / PM</td><td style="padding:6px;border:1px solid #d0d7de">Vendite › Prodotti</td><td style="padding:6px;border:1px solid #d0d7de">Sui servizi indicare <i>Ore per unità</i> (pacchetti e corpo), <i>Ore mensili incluse</i> (canoni) e, se serve, <i>Crea task di gestione interna</i>. I prodotti di base sono già pronti.</td><td style="padding:6px;border:1px solid #d0d7de">Ore vendute calcolate da sole sugli ordini</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">2</td><td style="padding:6px;border:1px solid #d0d7de">PM</td><td style="padding:6px;border:1px solid #d0d7de">Progetti › Configurazione › Task di default commessa</td><td style="padding:6px;border:1px solid #d0d7de">Rivedere i task standard e le percentuali (totale sotto il 100%: il resto va allo Sviluppo).</td><td style="padding:6px;border:1px solid #d0d7de">Stime dei task delle nuove commesse</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">3</td><td style="padding:6px;border:1px solid #d0d7de">HR (con accesso all'app Dipendenti)</td><td style="padding:6px;border:1px solid #d0d7de">Dipendenti › scheda persona › Costi e AI</td><td style="padding:6px;border:1px solid #d0d7de">Tipo risorsa (dipendente o consulente esterno), fornitore e tariffa dei consulenti, fattore parallelo, licenze AI.</td><td style="padding:6px;border:1px solid #d0d7de">Costi corretti per persona e limite 80/20 personale</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">4</td><td style="padding:6px;border:1px solid #d0d7de">Amministrazione</td><td style="padding:6px;border:1px solid #d0d7de">Pianificazione › Costi e AI › Strumenti AI, Licenze AI, Corrispondenze consumi</td><td style="padding:6px;border:1px solid #d0d7de">Catalogo degli strumenti, licenze per persona, collegamento di workspace, chiavi e utenti del fornitore alle commesse o alle persone.</td><td style="padding:6px;border:1px solid #d0d7de">Costi AI attribuibili alle commesse</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">5</td><td style="padding:6px;border:1px solid #d0d7de">Amministratore di sistema</td><td style="padding:6px;border:1px solid #d0d7de">Impostazioni › Tecnico › Parametri di sistema</td><td style="padding:6px;border:1px solid #d0d7de">Facoltativo: ore settimanali (<code>max_weekly_hours</code>, 32), ricarico (<code>passthrough_markup_pct</code>, 15), chiave Anthropic.</td><td style="padding:6px;border:1px solid #d0d7de">Regole adattate all'azienda</td></tr>
+</table>
+
+<h3>3.2 Dalla vendita alla commessa</h3>
+<table style="border-collapse:collapse;width:100%;font-size:14px">
+  <tr style="background:#f6f8fa"><th style="text-align:left;padding:6px;border:1px solid #d0d7de">#</th><th style="text-align:left;padding:6px;border:1px solid #d0d7de">Chi</th><th style="text-align:left;padding:6px;border:1px solid #d0d7de">Dove</th><th style="text-align:left;padding:6px;border:1px solid #d0d7de">Cosa fare</th><th style="text-align:left;padding:6px;border:1px solid #d0d7de">Risultato</th></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">1</td><td style="padding:6px;border:1px solid #d0d7de">Commerciale</td><td style="padding:6px;border:1px solid #d0d7de">Vendite › Ordini › Preventivi › Nuovo</td><td style="padding:6px;border:1px solid #d0d7de">Cliente, poi <i>Aggiungi prodotto</i> (es. Pacchetto Monte Ore 50h).</td><td style="padding:6px;border:1px solid #d0d7de">Preventivo in bozza</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">2</td><td style="padding:6px;border:1px solid #d0d7de">Commerciale</td><td style="padding:6px;border:1px solid #d0d7de">Pulsante <i>Conferma</i></td><td style="padding:6px;border:1px solid #d0d7de">Conferma dell'ordine.</td><td style="padding:6px;border:1px solid #d0d7de">Commessa riservata agli invitati, ore vendute, 4 task stimati; per i canoni anche abbonamento mensile e Supporto tra i follower</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">3</td><td style="padding:6px;border:1px solid #d0d7de">PM</td><td style="padding:6px;border:1px solid #d0d7de">Progetti › commessa</td><td style="padding:6px;border:1px solid #d0d7de">Controllare il gruppo <i>Monte ore</i> e il <i>Tipo contratto</i>; sui T&amp;M scegliere il ricarico pass-through; assegnare i task.</td><td style="padding:6px;border:1px solid #d0d7de">Commessa pronta da pianificare</td></tr>
+</table>
+
+<h3>3.3 Pianificazione e consuntivazione</h3>
+<table style="border-collapse:collapse;width:100%;font-size:14px">
+  <tr style="background:#f6f8fa"><th style="text-align:left;padding:6px;border:1px solid #d0d7de">#</th><th style="text-align:left;padding:6px;border:1px solid #d0d7de">Chi</th><th style="text-align:left;padding:6px;border:1px solid #d0d7de">Dove</th><th style="text-align:left;padding:6px;border:1px solid #d0d7de">Cosa fare</th><th style="text-align:left;padding:6px;border:1px solid #d0d7de">Risultato</th></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">1</td><td style="padding:6px;border:1px solid #d0d7de">PM</td><td style="padding:6px;border:1px solid #d0d7de">Pianificazione › Pianificazione team › Nuovo</td><td style="padding:6px;border:1px solid #d0d7de">Dipendente, progetto, task, giorno, ore pianificate; <i>Salva</i>.</td><td style="padding:6px;border:1px solid #d0d7de">Turno in bozza; oltre il limite 80/20 Odoo blocca il salvataggio</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">2</td><td style="padding:6px;border:1px solid #d0d7de">PM</td><td style="padding:6px;border:1px solid #d0d7de">Pianificazione › Fattore parallelo per settimana</td><td style="padding:6px;border:1px solid #d0d7de">Facoltativo: alzare o abbassare il fattore di una persona per una settimana (es. formazione).</td><td style="padding:6px;border:1px solid #d0d7de">Limite settimanale corretto</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">3</td><td style="padding:6px;border:1px solid #d0d7de">PM</td><td style="padding:6px;border:1px solid #d0d7de">Turno › <i>Pubblica al dipendente</i></td><td style="padding:6px;border:1px solid #d0d7de">Pubblicazione del turno.</td><td style="padding:6px;border:1px solid #d0d7de">La persona vede il turno e riceve un messaggio</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">4</td><td style="padding:6px;border:1px solid #d0d7de">Analista / Sviluppatore / Supporto</td><td style="padding:6px;border:1px solid #d0d7de">Pianificazione › I miei turni</td><td style="padding:6px;border:1px solid #d0d7de">A fine giornata correggere le <i>Ore effettive</i> se diverse e premere <i>Conferma turno e crea foglio ore</i>.</td><td style="padding:6px;border:1px solid #d0d7de">Riga del foglio ore con commessa e task (pulsante <i>Foglio ore</i>)</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">5</td><td style="padding:6px;border:1px solid #d0d7de">Analista / Sviluppatore / Supporto</td><td style="padding:6px;border:1px solid #d0d7de">Fogli ore › Fogli ore › I miei fogli ore</td><td style="padding:6px;border:1px solid #d0d7de">Per le attività non pianificate: registrare le ore indicando sempre il task (obbligatorio su corpo e T&amp;M).</td><td style="padding:6px;border:1px solid #d0d7de">Ore scalate dal pacchetto, consumo e alert aggiornati</td></tr>
+</table>
+
+<h3>3.4 Controllo durante la commessa</h3>
+<table style="border-collapse:collapse;width:100%;font-size:14px">
+  <tr style="background:#f6f8fa"><th style="text-align:left;padding:6px;border:1px solid #d0d7de">#</th><th style="text-align:left;padding:6px;border:1px solid #d0d7de">Chi</th><th style="text-align:left;padding:6px;border:1px solid #d0d7de">Dove</th><th style="text-align:left;padding:6px;border:1px solid #d0d7de">Cosa fare</th><th style="text-align:left;padding:6px;border:1px solid #d0d7de">Risultato</th></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">1</td><td style="padding:6px;border:1px solid #d0d7de">PM, Commerciale</td><td style="padding:6px;border:1px solid #d0d7de">Attività e messaggi su progetto e ordine</td><td style="padding:6px;border:1px solid #d0d7de">Al primo superamento del 75% o del 90% arriva un'attività di avviso: valutare con il cliente un'estensione.</td><td style="padding:6px;border:1px solid #d0d7de">Etichette gialle o rosse su commessa e task</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">2</td><td style="padding:6px;border:1px solid #d0d7de">PM</td><td style="padding:6px;border:1px solid #d0d7de">Pianificazione › Ore parallele da approvare</td><td style="padding:6px;border:1px solid #d0d7de">Verificare le giornate oltre il calendario e premere <i>Approva</i>.</td><td style="padding:6px;border:1px solid #d0d7de">Sui T&amp;M le ore entrano nel consegnato e quindi in fattura</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">3</td><td style="padding:6px;border:1px solid #d0d7de">PM</td><td style="padding:6px;border:1px solid #d0d7de">Commessa › scheda <i>Costi, ricavi e margine</i> › <i>Ore per task</i></td><td style="padding:6px;border:1px solid #d0d7de">Leggere ricavi, costi, margine e ore scalate di ogni pacchetto.</td><td style="padding:6px;border:1px solid #d0d7de">Dettaglio delle ore per attività</td></tr>
+</table>
+
+<h3>3.5 Consulenti esterni, costi AI e fatturazione</h3>
+<table style="border-collapse:collapse;width:100%;font-size:14px">
+  <tr style="background:#f6f8fa"><th style="text-align:left;padding:6px;border:1px solid #d0d7de">#</th><th style="text-align:left;padding:6px;border:1px solid #d0d7de">Chi</th><th style="text-align:left;padding:6px;border:1px solid #d0d7de">Dove</th><th style="text-align:left;padding:6px;border:1px solid #d0d7de">Cosa fare</th><th style="text-align:left;padding:6px;border:1px solid #d0d7de">Risultato</th></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">1</td><td style="padding:6px;border:1px solid #d0d7de">Amministrazione</td><td style="padding:6px;border:1px solid #d0d7de">Contabilità › Fornitori › Fatture › Nuovo</td><td style="padding:6px;border:1px solid #d0d7de">Fattura del consulente: prodotto <i>Prestazione consulente esterno</i>, campo <i>Consulente</i> sulla riga, distribuzione analitica sulla commessa; <i>Conferma</i>.</td><td style="padding:6px;border:1px solid #d0d7de">Ore del consulente collegate, scostamento fattura/ore; se T&amp;M, riga sull'ordine del cliente al costo + ricarico</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">2</td><td style="padding:6px;border:1px solid #d0d7de">Amministrazione</td><td style="padding:6px;border:1px solid #d0d7de">Pianificazione › Costi e AI › Consumi AI</td><td style="padding:6px;border:1px solid #d0d7de">Inserire i consumi a mano, importarli da CSV o con <i>Importa da Anthropic</i> (se configurato).</td><td style="padding:6px;border:1px solid #d0d7de">Ogni consumo attribuito: diretto, per persona o costi generali</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">3</td><td style="padding:6px;border:1px solid #d0d7de">PM / Amministrazione</td><td style="padding:6px;border:1px solid #d0d7de">Pianificazione › Costi e AI › Ripartizione per mese</td><td style="padding:6px;border:1px solid #d0d7de">Durante il mese: <i>Ricalcola mese</i> (lo fa anche il cron ogni notte).</td><td style="padding:6px;border:1px solid #d0d7de">Costi AI provvisori sulle commesse</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">4</td><td style="padding:6px;border:1px solid #d0d7de">Amministrazione</td><td style="padding:6px;border:1px solid #d0d7de">Stesso menu, a mese finito</td><td style="padding:6px;border:1px solid #d0d7de"><i>Chiudi mese</i> (oppure <i>Riapri</i>, se le spese vive non sono ancora state fatturate).</td><td style="padding:6px;border:1px solid #d0d7de">Ripartizione definitiva; consumi diretti dei T&amp;M come spese vive sull'ordine</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">5</td><td style="padding:6px;border:1px solid #d0d7de">Commerciale</td><td style="padding:6px;border:1px solid #d0d7de">Vendite › Ordini › Ordini › ordine › <i>Crea fattura</i></td><td style="padding:6px;border:1px solid #d0d7de">Preparare la fattura al cliente.</td><td style="padding:6px;border:1px solid #d0d7de">Fattura in bozza (il Commerciale non può registrarla)</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">6</td><td style="padding:6px;border:1px solid #d0d7de">Amministrazione</td><td style="padding:6px;border:1px solid #d0d7de">Contabilità › Clienti › Fatture</td><td style="padding:6px;border:1px solid #d0d7de">Controllare e premere <i>Conferma</i>.</td><td style="padding:6px;border:1px solid #d0d7de">Fattura registrata; il fatturato entra nel report margini</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">7</td><td style="padding:6px;border:1px solid #d0d7de">PM, Amministrazione</td><td style="padding:6px;border:1px solid #d0d7de">Progetti › Rendicontazione › Margini per commessa</td><td style="padding:6px;border:1px solid #d0d7de">Confrontare le commesse (lista o pivot).</td><td style="padding:6px;border:1px solid #d0d7de">Margine lordo, margine senza pass-through, ore risparmiate</td></tr>
+</table>
+
+<!-- ================================================================== -->
+<h2 style="border-bottom:1px solid #d0d7de;padding-bottom:6px;margin-top:36px">4. Processi (BPMN 2.0)</h2>
+<p>Corsie (lane) per ruolo, eventi di inizio e fine, attività e gateway esclusivi per le decisioni. I diagrammi rappresentano solo ciò che l'app fa oggi.</p>
+<p><b>PROC-001/002/003 – Dall'ordine al foglio ore</b><br/><img src="bpmn_proc1.svg" alt="BPMN dall'ordine al foglio ore" style="max-width:100%"/></p>
+<p><b>PROC-004/005 – Lavoro in parallelo e fatturazione</b><br/><img src="bpmn_proc2.svg" alt="BPMN lavoro in parallelo e fatturazione" style="max-width:100%"/></p>
+<p><b>PROC-006 – Consulente esterno e ribaltamento</b><br/><img src="bpmn_proc3.svg" alt="BPMN consulente esterno" style="max-width:100%"/></p>
+<p><b>PROC-007 – Chiusura mensile dei costi AI</b><br/><img src="bpmn_proc4.svg" alt="BPMN chiusura mensile" style="max-width:100%"/></p>
+
+<!-- ================================================================== -->
+<h2 style="border-bottom:1px solid #d0d7de;padding-bottom:6px;margin-top:36px">5. Ruoli e responsabilità</h2>
+<table style="border-collapse:collapse;width:100%;font-size:14px">
+  <tr style="background:#f6f8fa"><th style="text-align:left;padding:6px;border:1px solid #d0d7de">Ruolo (gruppo dell'app)</th><th style="text-align:left;padding:6px;border:1px solid #d0d7de">Cosa fa</th></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">Commerciale</td><td style="padding:6px;border:1px solid #d0d7de">Opportunità, preventivi, ordini, fatture in bozza (non le conferma)</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">Project Manager</td><td style="padding:6px;border:1px solid #d0d7de">Progetti, stime dei task, turni, alert, approvazione ore parallele, fattore parallelo, ricarico pass-through, margini</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">Analista funzionale / Sviluppatore</td><td style="padding:6px;border:1px solid #d0d7de">Conferma dei turni, fogli ore con task, task assegnati</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">Supporto</td><td style="padding:6px;border:1px solid #d0d7de">Ticket e fogli ore sulle commesse a canone (AMS)</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">Amministrazione</td><td style="padding:6px;border:1px solid #d0d7de">Conferma fatture, fatture dei consulenti, licenze e consumi AI, chiusura del mese</td></tr>
+</table>
+
+<!-- ================================================================== -->
+<h2 style="border-bottom:1px solid #d0d7de;padding-bottom:6px;margin-top:36px">6. Dati sintetici per la verifica</h2>
+<p>Con i dati demo attivi (o su richiesta con <code>env["lab.demo.data"]._lab_load_synthetic()</code>) l'app carica uno scenario coerente, con date relative a oggi. Non viene mai caricato in un database di produzione senza dati demo.</p>
+<table style="border-collapse:collapse;width:100%;font-size:14px">
+  <tr style="background:#f6f8fa"><th style="text-align:left;padding:6px;border:1px solid #d0d7de">Cliente / area</th><th style="text-align:left;padding:6px;border:1px solid #d0d7de">Cosa permette di verificare</th></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">Rossi Meccanica – monte ore 50 h</td><td style="padding:6px;border:1px solid #d0d7de">Alert giallo all'80%, ore per task, fattura anticipata, consulente Niccolò fatturato (solo costo, contratto a corpo)</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">Bianchi Logistica – T&amp;M</td><td style="padding:6px;border:1px solid #d0d7de">Fattura di Carlo ribaltata con ricarico, spese vive AI del mese chiuso, ore parallele approvate e da approvare, fattura al cliente</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">Verdi Retail – canone AMS</td><td style="padding:6px;border:1px solid #d0d7de">Ticket del Supporto, consumo sul mese corrente, abbonamento OCA</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">Neri Assicurazioni – sviluppo a corpo 120 h</td><td style="padding:6px;border:1px solid #d0d7de">Task di analisi oltre il 90%, ore del consulente maturate in attesa di fattura, da fatturare</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">CRM</td><td style="padding:6px;border:1px solid #d0d7de">Tre opportunità in fasi diverse e un preventivo AMS in bozza</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">Pianificazione</td><td style="padding:6px;border:1px solid #d0d7de">Niccolò a 32 h (limite pieno), Carlo con fattore 1,5, fattore ridotto per la settimana prossima, turni confermati che diventano fogli ore</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">Costi AI</td><td style="padding:6px;border:1px solid #d0d7de">Licenze del team, consumi diretti / per persona / costi generali, mese scorso chiuso e mese in corso aperto</td></tr>
+</table>
+
+<!-- ================================================================== -->
+<h2 style="border-bottom:1px solid #d0d7de;padding-bottom:6px;margin-top:36px">7. Installazione</h2>
+<ul>
+  <li><b>Dipendenze</b> (si installano da sole): crm, sale_management, sale_timesheet, project, hr_timesheet, account; OCA 18.0 <code>subscription_oca</code> (canoni) e <code>project_timeline</code> (con <code>web_timeline</code>).</li>
+  <li><b>Pacchetto per un altro Odoo 18 CE</b>: <code>scripts/package_app.sh</code> crea uno zip con l'app e i moduli OCA; copiare le cartelle nell'addons path e installare <i>Flusso Operativo Software House</i>.</li>
+  <li><b>Localizzazione italiana</b> (OCA l10n-italy): è configurazione dell'ambiente, non una dipendenza dell'app.</li>
+  <li><b>Connettore Anthropic</b>: facoltativo; si attiva solo con il parametro di sistema <code>lab_workflow_custom.anthropic_admin_key</code>.</li>
+</ul>
+
+<!-- ================================================================== -->
+<h2 style="border-bottom:1px solid #d0d7de;padding-bottom:6px;margin-top:36px">8. Note tecniche</h2>
+<table style="border-collapse:collapse;width:100%;font-size:14px">
+  <tr style="background:#f6f8fa"><th style="text-align:left;padding:6px;border:1px solid #d0d7de">Area</th><th style="text-align:left;padding:6px;border:1px solid #d0d7de">Modelli e punti di estensione</th></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">Vendita → commessa</td><td style="padding:6px;border:1px solid #d0d7de"><code>sale.order.line</code> (<code>lab_sold_hours</code>, ore scalate/residue, <code>_timesheet_create_project</code>), <code>lab.default.task</code></td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">Monte ore e alert</td><td style="padding:6px;border:1px solid #d0d7de"><code>project.project</code> / <code>project.task</code> (<code>lab_alert_level</code>, <code>_lab_check_hours_alert</code>)</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">Pianificazione</td><td style="padding:6px;border:1px solid #d0d7de"><code>lab.planning.slot</code>, <code>lab.planning.capacity</code>, parametro <code>max_weekly_hours</code></td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">Fogli ore</td><td style="padding:6px;border:1px solid #d0d7de"><code>account.analytic.line</code>: <code>_lab_recompute_days</code> (ore parallele), costo maturato dei consulenti, task obbligatorio</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">Consulenti e pass-through</td><td style="padding:6px;border:1px solid #d0d7de"><code>account.move.line</code> (<code>lab_consultant_id</code>, <code>_sale_determine_order</code> solo T&amp;M, ricarico)</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">Costi AI</td><td style="padding:6px;border:1px solid #d0d7de"><code>lab.ai.tool</code>, <code>lab.ai.license</code>, <code>lab.ai.usage</code>, <code>lab.ai.mapping</code>, <code>lab.cost.period</code>, <code>lab.cost.allocation</code></td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">Margini</td><td style="padding:6px;border:1px solid #d0d7de"><code>lab.margin.report</code> (vista SQL, unica fonte dei margini, letta anche dalla scheda del progetto)</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">Dati sintetici</td><td style="padding:6px;border:1px solid #d0d7de"><code>lab.demo.data._lab_load_synthetic</code> (idempotente)</td></tr>
+</table>
+<p><b>Prossimo sviluppo proposto (fase 3, non implementato).</b> Ripartire i consumi AI personali anche in base ai commit Git collegati ai task (codice del task nel messaggio di commit), con base di ripartizione scelta dall'Amministrazione.</p>
+<p><b>Analisi funzionale e tecnica completa</b> (requisiti con tracciabilità su codice e test, modello dati, formule di calcolo, punti di estensione, sicurezza, automazioni, integrazione, limiti noti): <a href="/lab_workflow_custom/static/description/analisi_tecnica.html" target="_blank">apri l'analisi funzionale e tecnica</a>.</p>
+<p style="color:#57606a;font-size:14px">Il video si rigenera con <code>scripts/registra_video.sh</code> dopo ogni modifica all'app: crea e poi ripulisce un ordine di prova per il cliente <i>Ferri Automazione S.r.l.</i>.</p>
+</section>

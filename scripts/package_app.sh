@@ -47,17 +47,33 @@ Come installarla in un altro Odoo 18.0 Community:
   4. Cerca "Flusso Operativo Software House" e premi Installa.
      Odoo installa da solo anche CRM, Vendite, Progetto, Fogli ore, Fatturazione e i moduli OCA.
 
+Video e documentazione (dentro l'app, cartella lab_workflow_custom/static/description/):
+  - Nella scheda dell'app (Applicazioni > Flusso Operativo Software House) ci sono la guida
+    passo-passo, il video dimostrativo con i capitoli e il link all'analisi tecnica.
+  - Si aprono anche direttamente, a Odoo avviato:
+      <indirizzo Odoo>/lab_workflow_custom/static/description/video.html
+      <indirizzo Odoo>/lab_workflow_custom/static/description/analisi_tecnica.html
+  - Il video da solo: lab_workflow_custom/static/description/demo_flusso_operativo.mp4
+
 Note:
   - Funziona solo su Odoo 18.0 Community (non su altre versioni).
-  - Gli utenti di prova (Carla Commerciale, Paolo PM, ...) si creano SOLO se il database
+  - Gli utenti di prova (Giuseppe Commerciale, Marco Project Manager, ...) si creano SOLO se il database
     ha i dati demo. In un database "vero" assegna i ruoli agli utenti da
     Impostazioni > Utenti (sezione "Ruoli Flusso Operativo").
   - I moduli OCA sono distribuiti con licenza AGPL-3, la nostra app con LGPL-3.
 TXT
 } > "$OUT/LEGGIMI.txt"
 
+# ZIP con percorsi "/" (leggibile anche su server Linux). Compress-Archive di Windows PowerShell 5.1
+# scrive "\" nei percorsi: resta solo come ultima scelta.
+PY=""
+for c in python3 python py; do   # su Windows "python3" può essere solo l'alias del Microsoft Store
+  if command -v "$c" >/dev/null 2>&1 && "$c" -c "import zipfile" >/dev/null 2>&1; then PY=$c; break; fi
+done
 if command -v zip >/dev/null 2>&1; then
   (cd dist && zip -qr "$NAME.zip" "$NAME")
+elif [ -n "$PY" ] && (cd dist && "$PY" -m zipfile -c "$NAME.zip" "$NAME"); then
+  :
 elif command -v powershell.exe >/dev/null 2>&1; then
   powershell.exe -NoProfile -Command "Compress-Archive -Path 'dist/$NAME' -DestinationPath 'dist/$NAME.zip' -Force"
 fi

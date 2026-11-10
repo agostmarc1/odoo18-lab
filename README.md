@@ -8,6 +8,22 @@ Sul PC non si installa niente oltre a Docker e Git.
 
 ---
 
+## Dati sintetici: solo la nostra software house
+
+Il database `lab18` **non** contiene i dati demo standard di Odoo (niente arredamento, "Costruzione
+casa", aziende di Chicago): si vedono solo dati coerenti con il nostro flusso, creati da
+`models/lab_demo_data.py` con date relative a oggi.
+
+| Cliente | Contratto | Cosa si verifica |
+|---|---|---|
+| Rossi Meccanica | Monte ore 50h | alert giallo all'80%, ore per task, fattura anticipata, consulente fatturato (solo costo) |
+| Bianchi Logistica | T&M 60h | fattura di Carlo ribaltata +15%, spese vive AI, ore parallele approvate e da approvare |
+| Verdi Retail | Canone AMS 20h/mese | ticket del Supporto, consumo del mese |
+| Neri Assicurazioni | Sviluppo a corpo 120h | task di analisi oltre il 90%, ore del consulente in attesa di fattura |
+
+In più: 3 opportunità e un preventivo AMS in bozza (Commerciale), turni della settimana (Niccolò a
+32h, Carlo con fattore 1,5), mese scorso dei costi AI chiuso dall'Amministrazione.
+
 ## Azienda demo: Italia, euro, localizzazione italiana
 
 Il database `lab18` nasce già come azienda italiana (**Software House Lab S.r.l.**, valuta **euro**,
@@ -106,9 +122,10 @@ git clone https://github.com/agostmarc1/odoo18-lab ~/odoo18-lab && ~/odoo18-lab/
 Lo script, da solo:
 1. crea il file `.env` con **password casuali**;
 2. scarica i moduli OCA (solo branch 18.0);
-3. crea il database `lab18` (Italia, euro) con i dati demo, la localizzazione italiana e la nostra
-   app (15-25 minuti la prima volta);
-4. lancia i test automatici (devono risultare `0 failed, 0 error(s) of 17 tests`);
+3. crea il database `lab18` (Italia, euro) con la localizzazione italiana e la nostra app, **senza i
+   dati demo standard di Odoo**, e carica i **dati sintetici** della software house (15-25 minuti la
+   prima volta);
+4. lancia i test automatici (devono risultare `0 failed, 0 error(s) of 18 tests`);
 5. stampa **link e credenziali**.
 
 Si può rilanciare senza rischi: se il database è già installato non lo tocca.
@@ -174,7 +191,7 @@ Windows montate in Docker), usa `docker compose restart odoo`.
 ./scripts/run_tests.sh
 ```
 
-Simulano l'intero flusso e i costi di commessa (17 test). Deve comparire `0 failed, 0 error(s) of 17 tests`.
+Simulano l'intero flusso e i costi di commessa (18 test). Deve comparire `0 failed, 0 error(s) of 18 tests`.
 
 ### Resettare il database e ripartire da zero
 
@@ -182,8 +199,8 @@ Simulano l'intero flusso e i costi di commessa (17 test). Deve comparire `0 fail
 ./scripts/reset_db.sh
 ```
 
-Chiede di scrivere `SI`, cancella il database `lab18` e i suoi allegati, poi lo ricrea con i dati demo
-e tutti i moduli. Le password tornano quelle del file `.env`.
+Chiede di scrivere `SI`, cancella il database `lab18` e i suoi allegati, poi lo ricrea con tutti i moduli
+e i dati sintetici. Le password tornano quelle del file `.env`.
 
 ### Aggiornare i moduli OCA
 
@@ -205,8 +222,10 @@ Crea `dist/flusso_operativo_18.0.zip`: dentro ci sono l'app e i moduli OCA 18.0 
 più un file `LEGGIMI.txt` con le istruzioni. Nell'altro Odoo 18.0 Community si copiano tutte le
 cartelle nella cartella dei moduli, si riavvia Odoo e poi si va in **Applicazioni → Aggiorna elenco
 applicazioni → "Flusso Operativo Software House" → Installa**.
-Gli utenti di prova si creano solo nei database con dati demo; altrimenti i ruoli si assegnano da
-Impostazioni → Utenti (sezione "Ruoli Flusso Operativo").
+Gli utenti di prova e lo scenario sintetico si creano solo nei database con dati demo; altrimenti i
+ruoli si assegnano da Impostazioni → Utenti (sezione "Ruoli Flusso Operativo"). La descrizione
+dell'app (Applicazioni → Flusso Operativo Software House) contiene la documentazione funzionale con
+screenshot annotati e diagrammi BPMN.
 
 Regola: **ogni nuova personalizzazione va dentro questa app**, mai in impostazioni fatte a mano o
 in altri moduli, altrimenti non viaggia con il pacchetto.
@@ -331,12 +350,35 @@ Alla **chiusura del mese**, i consumi diretti delle commesse **T&M** diventano u
 mm/aaaa* sull'ordine del cliente, al costo + ricarico, pronta da fatturare. Riaprendo il mese (se non
 ancora fatturata) la spesa torna a zero e si ricalcola alla nuova chiusura, senza doppioni.
 
-Nei dati demo ci sono tre consumi del mese scorso, uno per caso: diretto (workspace della commessa
-"Design ufficio"), personale (Claude Code di Carlo) e senza corrispondenza.
+Nei dati sintetici ci sono tre consumi del mese scorso, uno per caso: diretto (workspace della
+commessa Bianchi Logistica), personale (Claude Code di Carlo) e senza corrispondenza.
 
 ### Prossima fase (non ancora fatta)
 
 - **Fase 3:** commit Git come base di ripartizione dei costi AI (in alternativa o insieme alle ore).
+
+---
+
+## Video dimostrativo e documentazione dell'app
+
+Nella scheda dell'app (Applicazioni → *Flusso Operativo Software House*) ci sono:
+
+- il **video dimostrativo** (`static/description/demo_flusso_operativo.mp4`), con capitoli e didascalie;
+- la **guida passo-passo** per ruolo (sezione 3 della pagina);
+- il link all'**analisi funzionale e tecnica** per i tecnici
+  (`static/description/analisi_tecnica.html`, anche su
+  http://127.0.0.1:8069/lab_workflow_custom/static/description/analisi_tecnica.html).
+
+Dopo una modifica all'app il video si rigenera con Odoo avviato:
+
+```bash
+./scripts/registra_video.sh          # registra il video (circa 6 minuti)
+./scripts/registra_video.sh --prova  # solo schermate di controllo in dist/video_lavoro
+```
+
+Lo script guida Chrome con Playwright (ambiente `.venv-video`, creato da solo la prima volta) e monta
+il video con il ffmpeg del PC. Crea un ordine di prova per *Ferri Automazione S.r.l.* e alla
+registrazione successiva lo cancella, insieme a progetto, turni e fogli ore.
 
 ---
 

@@ -1,0 +1,52 @@
+[
+ {
+  "n": 0,
+  "titolo": "Flusso Operativo Software House",
+  "secondi": 0
+ },
+ {
+  "n": 1,
+  "titolo": "Il Commerciale vende un pacchetto di ore",
+  "secondi": 5
+ },
+ {
+  "n": 2,
+  "titolo": "Il Project Manager trova la commessa pronta",
+  "secondi": 65
+ },
+ {
+  "n": 3,
+  "titolo": "Pianificazione con la regola 80/20",
+  "secondi": 118
+ },
+ {
+  "n": 4,
+  "titolo": "L'analista conferma il turno",
+  "secondi": 199
+ },
+ {
+  "n": 5,
+  "titolo": "Alert sul monte ore",
+  "secondi": 249
+ },
+ {
+  "n": 6,
+  "titolo": "Lavoro in parallelo",
+  "secondi": 290
+ },
+ {
+  "n": 7,
+  "titolo": "Costi, ricavi e margine della commessa",
+  "secondi": 313
+ },
+ {
+  "n": 8,
+  "titolo": "Costi AI e chiusura del mese",
+  "secondi": 358
+ },
+ {
+  "n": 9,
+  "titolo": "Riepilogo",
+  "secondi": 417
+ }
+]
