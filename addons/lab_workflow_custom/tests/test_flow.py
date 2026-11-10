@@ -126,8 +126,13 @@ class TestLabFlow(TransactionCase):
         self.assertEqual(margin.invoiced_amount, 2750)
 
     def test_07_ams_monthly_alert_and_subscription(self):
+        support = new_test_user(self.env, "t_support",
+                                groups="lab_workflow_custom.group_lab_support")
         order = self._confirmed_order(self.ams)
         project = order.order_line.project_id
+        self.assertIn(support.partner_id, project.message_partner_ids,
+                      "Il Supporto segue in automatico le commesse AMS")
+        self.assertTrue(project.with_user(support).search_count([("id", "=", project.id)]))
         self.assertTrue(project.lab_is_monthly)
         self.assertEqual(project.lab_sold_hours, 20)
         self.assertTrue(order.subscriptions_count)
@@ -136,3 +141,34 @@ class TestLabFlow(TransactionCase):
             "unit_amount": 16})
         project.invalidate_recordset()
         self.assertEqual(project.lab_alert_level, "warning")
+
+    def test_08_package_traced_by_task(self):
+        """Ogni ora scalata dal pacchetto ha il suo task; il progetto mostra i margini."""
+        order = self._confirmed_order(self.pack)
+        line = order.order_line
+        project = line.task_id.project_id
+        tasks = project.task_ids
+        self._timesheet(tasks[0], 6)
+        self._timesheet(tasks[1], 4)
+        line.invalidate_recordset()
+        self.assertEqual(line.lab_consumed_hours, 10)
+        self.assertEqual(line.lab_remaining_hours, 40)
+        self.assertEqual(line.lab_task_count, 2)
+        action = line.action_lab_open_consumption()
+        timesheets = self.env["account.analytic.line"].search(action["domain"])
+        self.assertEqual(len(timesheets), 2)
+        self.assertEqual(set(timesheets.task_id.ids), set(tasks[:2].ids))
+        # senza task il foglio ore su una commessa venduta non si salva
+        with self.assertRaises(ValidationError):
+            self.env["account.analytic.line"].create({
+                "name": "senza task", "project_id": project.id,
+                "employee_id": self.dev_employee.id, "unit_amount": 1})
+        # costi, ricavi e margine nel progetto (stessi numeri del report)
+        project.invalidate_recordset()
+        report = self.env["lab.margin.report"].browse(project.id)
+        self.assertIn(line, project.lab_package_line_ids)
+        self.assertAlmostEqual(project.lab_revenue, report.sold_amount + report.passthrough_revenue)
+        # 10h nello stesso giorno su 8h di calendario: costo diviso (ore parallele) = 8h x 35
+        self.assertAlmostEqual(project.lab_cost_labor, 280)
+        self.assertAlmostEqual(project.lab_margin, project.lab_revenue - project.lab_total_cost)
+        self.assertTrue(project.with_user(self.pm).lab_margin)

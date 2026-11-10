@@ -3,7 +3,7 @@
     <!-- App Pianificazione -->
     <menuitem id="menu_planning_root" name="Pianificazione" sequence="45"
               web_icon="lab_workflow_custom,static/description/icon.png"
-              groups="group_lab_planning_user"/>
+              groups="group_lab_planning_user,group_lab_amministrazione"/>
     <menuitem id="menu_my_slots" name="I miei turni" parent="menu_planning_root"
               action="action_my_slots" sequence="10"/>
     <menuitem id="menu_all_slots" name="Pianificazione team" parent="menu_planning_root"
@@ -14,6 +14,29 @@
               action="action_slots_report" sequence="10"/>
     <menuitem id="menu_margin_report_planning" name="Margini per commessa"
               parent="menu_planning_reporting" action="action_margin_report" sequence="20"/>
+
+    <menuitem id="menu_parallel_to_approve" name="Ore parallele da approvare"
+              parent="menu_planning_root" action="action_parallel_to_approve" sequence="25"
+              groups="group_lab_planning_manager"/>
+    <menuitem id="menu_planning_capacity" name="Fattore parallelo per settimana"
+              parent="menu_planning_root" action="action_planning_capacity" sequence="27"
+              groups="group_lab_planning_manager"/>
+
+    <!-- Costi commessa e AI -->
+    <menuitem id="menu_costs_root" name="Costi e AI" parent="menu_planning_root" sequence="40"
+              groups="group_lab_pm,group_lab_amministrazione,base.group_system"/>
+    <menuitem id="menu_cost_periods" name="Ripartizione per mese" parent="menu_costs_root"
+              action="action_cost_periods" sequence="10"/>
+    <menuitem id="menu_cost_allocations" name="Costi AI per commessa" parent="menu_costs_root"
+              action="action_cost_allocations" sequence="20"/>
+    <menuitem id="menu_ai_usage" name="Consumi AI" parent="menu_costs_root"
+              action="action_ai_usage" sequence="25"/>
+    <menuitem id="menu_ai_mapping" name="Corrispondenze consumi" parent="menu_costs_root"
+              action="action_ai_mapping" sequence="27"/>
+    <menuitem id="menu_ai_licenses" name="Licenze AI" parent="menu_costs_root"
+              action="action_ai_licenses" sequence="30"/>
+    <menuitem id="menu_ai_tools" name="Strumenti AI" parent="menu_costs_root"
+              action="action_ai_tools" sequence="40"/>
 
     <!-- Report margini anche in Progetti > Report -->
     <menuitem id="menu_margin_report_project" name="Margini per commessa"

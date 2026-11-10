@@ -63,9 +63,21 @@
                             <field name="company_id" groups="base.group_multi_company"/>
                         </group>
                     </group>
+                    <group string="Regola 80/20 della settimana" name="weekly_load"
+                           invisible="not employee_id">
+                        <group>
+                            <field name="weekly_planned" widget="float_time"
+                                   decoration-danger="weekly_planned &gt; weekly_limit"/>
+                            <field name="weekly_limit" widget="float_time"/>
+                        </group>
+                        <group>
+                            <field name="weekly_factor"/>
+                        </group>
+                    </group>
                     <div class="text-muted">
-                        Regola 80/20: max 32h pianificate a settimana per persona.
-                        Alla conferma il turno diventa una riga del Foglio Ore.
+                        Limite = 32h (80% del tempo) × fattore parallelo della persona, o quello
+                        impostato dal PM per questa settimana. Alla conferma il turno diventa
+                        una riga del Foglio Ore.
                     </div>
                 </sheet>
                 <chatter/>
@@ -143,7 +155,8 @@
         <field name="view_mode">calendar,list,pivot,form</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">Pianifica il primo turno</p>
-            <p>Assegna ore di un dipendente su un task. Regola 80/20: max 32h a settimana.
+            <p>Assegna ore di un dipendente su un task. Regola 80/20: max 32h a settimana
+               × fattore parallelo della persona (es. 48h con fattore 1,5).
                Poi premi <b>Pubblica</b> per mandarlo al dipendente.</p>
         </field>
     </record>

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <data noupdate="1">
+        <!-- Ricarico predefinito sul pass-through (consulenti e spese vive ribaltate al cliente).
+             Si cambia qui o sulla singola commessa (0 = al puro costo). -->
+        <record id="param_passthrough_markup" model="ir.config_parameter">
+            <field name="key">lab_workflow_custom.passthrough_markup_pct</field>
+            <field name="value">15</field>
+        </record>
+
+        <!-- Prodotto a consuntivo (Time & Material): si fattura in base ai fogli ore -->
+        <record id="product_tm_hourly" model="product.template">
+            <field name="name">Consulenza a consuntivo (T&amp;M)</field>
+            <field name="default_code">TM-ORA</field>
+            <field name="type">service</field>
+            <field name="sale_ok" eval="True"/>
+            <field name="purchase_ok" eval="False"/>
+            <field name="list_price">60</field>
+            <field name="uom_id" ref="uom.product_uom_hour"/>
+            <field name="uom_po_id" ref="uom.product_uom_hour"/>
+            <field name="service_policy">delivered_timesheet</field>
+            <field name="service_tracking">task_in_project</field>
+            <field name="description_sale">Attività a consuntivo: si fatturano le ore lavorate.</field>
+        </record>
+
+        <!-- Prestazione del consulente esterno: si usa sulla sua fattura (fornitore).
+             Sui contratti T&M viene ribaltata al cliente al costo + ricarico. -->
+        <record id="product_external_consultant" model="product.template">
+            <field name="name">Prestazione consulente esterno</field>
+            <field name="default_code">CONS-EXT</field>
+            <field name="type">service</field>
+            <field name="sale_ok" eval="True"/>
+            <field name="purchase_ok" eval="True"/>
+            <field name="list_price">0</field>
+            <field name="uom_id" ref="uom.product_uom_hour"/>
+            <field name="uom_po_id" ref="uom.product_uom_hour"/>
+            <field name="invoice_policy">delivery</field>
+            <field name="expense_policy">cost</field>
+            <field name="description_sale">Prestazione di consulente esterno (spesa ribaltata).</field>
+        </record>
+
+        <!-- Spese vive (es. consumi API dedicati alla commessa) da ribaltare al cliente -->
+        <record id="product_passthrough_expense" model="product.template">
+            <field name="name">Spese vive ribaltate (pass-through)</field>
+            <field name="default_code">SPESE-VIVE</field>
+            <field name="type">service</field>
+            <field name="sale_ok" eval="True"/>
+            <field name="purchase_ok" eval="True"/>
+            <field name="list_price">0</field>
+            <field name="invoice_policy">delivery</field>
+            <field name="expense_policy">cost</field>
+        </record>
+
+        <!-- Strumenti AI di esempio: il costo mensile è un esempio, va aggiornato -->
+        <record id="ai_tool_claude_team" model="lab.ai.tool">
+            <field name="name">Claude Team (licenza)</field>
+            <field name="tool_type">license</field>
+            <field name="monthly_cost">30</field>
+        </record>
+        <record id="ai_tool_claude_max" model="lab.ai.tool">
+            <field name="name">Claude Max / Claude Code (licenza)</field>
+            <field name="tool_type">license</field>
+            <field name="monthly_cost">100</field>
+        </record>
+        <record id="ai_tool_claude_api" model="lab.ai.tool">
+            <field name="name">API Anthropic (a consumo)</field>
+            <field name="tool_type">usage</field>
+        </record>
+    </data>
+
+    <!-- Ogni notte: importa i consumi AI dal connettore Anthropic, SE configurato
+         (in un ambiente demo non c'e' la chiave e il job non fa nulla) -->
+    <record id="cron_import_anthropic" model="ir.cron">
+        <field name="name">Consumi AI: import da Anthropic (se configurato)</field>
+        <field name="model_id" ref="model_lab_ai_usage"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_import_anthropic()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="active" eval="True"/>
+    </record>
+
+    <!-- Ogni notte: ripartisce le licenze AI del mese in corso (e del precedente se aperto) -->
+    <record id="cron_cost_allocation" model="ir.cron">
+        <field name="name">Costi commessa: ripartizione costi AI (licenze e consumi)</field>
+        <field name="model_id" ref="model_lab_cost_period"/>
+        <field name="state">code</field>
+        <field name="code">model._cron_compute_open_periods()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="active" eval="True"/>
+    </record>
+</odoo>

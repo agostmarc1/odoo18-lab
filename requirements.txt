@@ -1,0 +1,6 @@
+# Librerie Python in più rispetto all'immagine odoo:18.0 (richieste da OCA l10n-italy 18.0).
+# packaging serve a Odoo per leggere le versioni minime nei manifest (es. num2words>=0.5.12).
+# Le altre (num2words, unidecode, reportlab, xlsxwriter) sono già nell'immagine ufficiale.
+openupgradelib==3.13.7
+codicefiscale==0.9
+packaging==26.3

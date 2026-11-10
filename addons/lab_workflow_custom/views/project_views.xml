@@ -25,12 +25,65 @@
                         <field name="lab_consumed_hours" widget="float_time"/>
                     </group>
                     <group>
+                        <field name="lab_contract_type"/>
+                        <field name="lab_passthrough_markup_pct"
+                               invisible="lab_contract_type != 'tm'"/>
+                    </group>
+                    <group>
                         <field name="lab_consumption_pct" widget="progressbar"/>
                         <div class="text-muted" colspan="2" invisible="not lab_is_monthly">
                             Canone mensile: ore vendute e consuntivate sono del mese corrente.
                         </div>
                     </group>
                 </group>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="Costi, ricavi e margine" name="lab_economics"
+                      groups="lab_workflow_custom.group_lab_pm,lab_workflow_custom.group_lab_amministrazione,project.group_project_manager">
+                    <field name="currency_id" invisible="1"/>
+                    <group>
+                        <group string="Ricavi">
+                            <field name="lab_revenue" class="fw-bold"/>
+                            <field name="lab_sold_amount"/>
+                            <field name="lab_passthrough_revenue"/>
+                            <field name="lab_invoiced_amount"/>
+                        </group>
+                        <group string="Costi">
+                            <field name="lab_total_cost" class="fw-bold"/>
+                            <field name="lab_cost_labor"/>
+                            <field name="lab_cost_ai"/>
+                            <field name="lab_cost_external"/>
+                            <field name="lab_cost_external_accrued"
+                                   invisible="not lab_cost_external_accrued"/>
+                            <field name="lab_cost_other"/>
+                        </group>
+                        <group string="Margine">
+                            <field name="lab_margin" class="fw-bold"
+                                   decoration-danger="lab_margin &lt; 0"
+                                   decoration-success="lab_margin &gt; 0"/>
+                            <field name="lab_margin_pct" decoration-danger="lab_margin_pct &lt; 0"/>
+                        </group>
+                    </group>
+                    <separator string="Pacchetti ore venduti: ore scalate per task"/>
+                    <field name="lab_package_line_ids" nolabel="1" readonly="1">
+                        <list decoration-danger="lab_remaining_hours &lt; 0">
+                            <field name="order_id"/>
+                            <field name="name"/>
+                            <field name="lab_sold_hours" widget="float_time" sum="Totale"/>
+                            <field name="lab_consumed_hours" widget="float_time" sum="Totale"/>
+                            <field name="lab_remaining_hours" widget="float_time" sum="Totale"/>
+                            <field name="lab_task_count"/>
+                            <field name="qty_invoiced" optional="hide"/>
+                            <button name="action_lab_open_consumption" type="object"
+                                    string="Ore per task" icon="fa-tasks"/>
+                        </list>
+                    </field>
+                    <div class="text-muted">
+                        Ogni ora scalata dal pacchetto viene da un foglio ore con il suo task e la
+                        riga dell'ordine. Costi e margine sono gli stessi del report
+                        "Margini per commessa".
+                    </div>
+                </page>
             </xpath>
         </field>
     </record>
@@ -46,6 +99,27 @@
                       invisible="lab_alert_level != 'warning'">⚠ monte ore &gt; 75%</span>
                 <span class="badge rounded-pill text-bg-danger"
                       invisible="lab_alert_level != 'danger'">🛑 monte ore &gt; 90%</span>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_order_form_lab_package" model="ir.ui.view">
+        <field name="name">sale.order.form.lab.package</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='order_line']/list/field[@name='qty_invoiced']" position="after">
+                <field name="lab_sold_hours" column_invisible="parent.state != 'sale'"
+                       widget="float_time" optional="hide"/>
+                <field name="lab_consumed_hours" column_invisible="parent.state != 'sale'"
+                       widget="float_time" optional="show"/>
+                <field name="lab_remaining_hours" column_invisible="parent.state != 'sale'"
+                       widget="float_time" optional="show"
+                       decoration-danger="lab_remaining_hours &lt; 0"/>
+                <button name="action_lab_open_consumption" type="object" icon="fa-tasks"
+                        title="Ore scalate per task"
+                        column_invisible="parent.state != 'sale'"
+                        invisible="not lab_consumed_hours"/>
             </xpath>
         </field>
     </record>

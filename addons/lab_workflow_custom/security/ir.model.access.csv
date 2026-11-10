@@ -5,3 +5,25 @@ access_default_task_user,default task user,model_lab_default_task,project.group_
 access_default_task_manager,default task manager,model_lab_default_task,project.group_project_manager,1,1,1,1
 access_margin_pm,margin pm,model_lab_margin_report,project.group_project_manager,1,0,0,0
 access_margin_account,margin account,model_lab_margin_report,account.group_account_manager,1,0,0,0
+access_ai_tool_pm,ai tool pm,model_lab_ai_tool,group_lab_pm,1,0,0,0
+access_ai_tool_admin,ai tool amministrazione,model_lab_ai_tool,group_lab_amministrazione,1,1,1,1
+access_ai_tool_system,ai tool system,model_lab_ai_tool,base.group_system,1,1,1,1
+access_ai_license_pm,ai license pm,model_lab_ai_license,group_lab_pm,1,0,0,0
+access_ai_license_admin,ai license amministrazione,model_lab_ai_license,group_lab_amministrazione,1,1,1,1
+access_ai_license_system,ai license system,model_lab_ai_license,base.group_system,1,1,1,1
+access_cost_period_pm,cost period pm,model_lab_cost_period,group_lab_pm,1,1,0,0
+access_cost_period_admin,cost period amministrazione,model_lab_cost_period,group_lab_amministrazione,1,1,1,1
+access_cost_period_system,cost period system,model_lab_cost_period,base.group_system,1,1,1,1
+access_cost_alloc_pm,cost allocation pm,model_lab_cost_allocation,group_lab_pm,1,0,0,0
+access_cost_alloc_admin,cost allocation amministrazione,model_lab_cost_allocation,group_lab_amministrazione,1,0,0,0
+access_cost_alloc_system,cost allocation system,model_lab_cost_allocation,base.group_system,1,1,1,1
+access_capacity_user,capacity user,model_lab_planning_capacity,group_lab_planning_user,1,0,0,0
+access_capacity_manager,capacity manager,model_lab_planning_capacity,group_lab_planning_manager,1,1,1,1
+access_margin_lab_pm,margin lab pm,model_lab_margin_report,group_lab_pm,1,0,0,0
+access_margin_lab_admin,margin lab amministrazione,model_lab_margin_report,group_lab_amministrazione,1,0,0,0
+access_ai_usage_pm,ai usage pm,model_lab_ai_usage,group_lab_pm,1,0,0,0
+access_ai_usage_admin,ai usage amministrazione,model_lab_ai_usage,group_lab_amministrazione,1,1,1,1
+access_ai_usage_system,ai usage system,model_lab_ai_usage,base.group_system,1,1,1,1
+access_ai_mapping_pm,ai mapping pm,model_lab_ai_mapping,group_lab_pm,1,1,1,0
+access_ai_mapping_admin,ai mapping amministrazione,model_lab_ai_mapping,group_lab_amministrazione,1,1,1,1
+access_ai_mapping_system,ai mapping system,model_lab_ai_mapping,base.group_system,1,1,1,1

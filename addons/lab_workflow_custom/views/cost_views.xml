@@ -1,0 +1,281 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ===== Scheda persona: Costi e AI ===== -->
+    <record id="view_employee_form_lab_costs" model="ir.ui.view">
+        <field name="name">hr.employee.form.lab.costs</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[@name='hr_settings']" position="after">
+                <page name="lab_costs" string="Costi e AI"
+                      groups="hr.group_hr_user,lab_workflow_custom.group_lab_amministrazione,lab_workflow_custom.group_lab_pm">
+                    <group>
+                        <group string="Tipo di risorsa">
+                            <field name="lab_resource_type" widget="radio"/>
+                            <field name="lab_vendor_id" invisible="lab_resource_type != 'external'"/>
+                            <label for="lab_external_rate" invisible="lab_resource_type != 'external'"/>
+                            <div class="o_row" invisible="lab_resource_type != 'external'">
+                                <field name="lab_external_rate"/>
+                                <field name="lab_external_rate_unit"/>
+                            </div>
+                            <div class="text-muted" colspan="2" invisible="lab_resource_type != 'external'">
+                                Il costo del consulente arriva dalla sua fattura fornitore. Finché non
+                                arriva, la commessa vede il costo maturato: ore × tariffa concordata.
+                            </div>
+                        </group>
+                        <group string="Costo pieno">
+                            <field name="lab_ai_monthly_cost"/>
+                            <field name="lab_ai_hourly_uplift"/>
+                            <field name="lab_fully_loaded_cost"/>
+                            <field name="lab_parallel_factor"/>
+                        </group>
+                    </group>
+                    <field name="lab_ai_license_ids" context="{'default_employee_id': id}">
+                        <list editable="bottom">
+                            <field name="tool_id"/>
+                            <field name="monthly_cost"/>
+                            <field name="currency_id" column_invisible="True"/>
+                            <field name="allocation_mode"/>
+                            <field name="date_start"/>
+                            <field name="date_end"/>
+                        </list>
+                    </field>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ===== Strumenti e licenze AI ===== -->
+    <record id="view_ai_tool_list" model="ir.ui.view">
+        <field name="name">lab.ai.tool.list</field>
+        <field name="model">lab.ai.tool</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="name"/>
+                <field name="tool_type"/>
+                <field name="vendor_id"/>
+                <field name="monthly_cost"/>
+                <field name="currency_id" groups="base.group_multi_currency"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_ai_tools" model="ir.actions.act_window">
+        <field name="name">Strumenti AI</field>
+        <field name="res_model">lab.ai.tool</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <record id="view_ai_license_list" model="ir.ui.view">
+        <field name="name">lab.ai.license.list</field>
+        <field name="model">lab.ai.license</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="employee_id"/>
+                <field name="tool_id"/>
+                <field name="monthly_cost" sum="Totale"/>
+                <field name="currency_id" column_invisible="True"/>
+                <field name="allocation_mode"/>
+                <field name="date_start"/>
+                <field name="date_end"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_ai_licenses" model="ir.actions.act_window">
+        <field name="name">Licenze AI</field>
+        <field name="res_model">lab.ai.license</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <!-- ===== Mesi di ripartizione ===== -->
+    <record id="view_cost_period_list" model="ir.ui.view">
+        <field name="name">lab.cost.period.list</field>
+        <field name="model">lab.cost.period</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="state == 'closed'">
+                <field name="name"/>
+                <field name="total_amount"/>
+                <field name="unallocated_amount"/>
+                <field name="currency_id" column_invisible="True"/>
+                <field name="state" widget="badge" decoration-success="state == 'closed'"/>
+            </list>
+        </field>
+    </record>
+    <record id="view_cost_period_form" model="ir.ui.view">
+        <field name="name">lab.cost.period.form</field>
+        <field name="model">lab.cost.period</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_compute" type="object" string="Ricalcola mese"
+                            class="btn-primary" invisible="state != 'open'"/>
+                    <button name="action_close" type="object" string="Chiudi mese"
+                            invisible="state != 'open'"
+                            groups="lab_workflow_custom.group_lab_amministrazione,base.group_system"
+                            confirm="Il mese viene ricalcolato con il conguaglio finale e bloccato. Procedere?"/>
+                    <button name="action_reopen" type="object" string="Riapri"
+                            invisible="state != 'closed'"
+                            groups="lab_workflow_custom.group_lab_amministrazione,base.group_system"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name" readonly="1"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="date_start" readonly="id"/>
+                            <field name="date_end"/>
+                        </group>
+                        <group>
+                            <field name="total_amount"/>
+                            <field name="unallocated_amount"/>
+                            <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <div class="text-muted">
+                        Consumi AI (API, Claude Code): diretti sulla commessa se il workspace o la
+                        chiave le appartiene, altrimenti ripartiti sulle ore della persona. Alla
+                        chiusura, i consumi diretti delle commesse T&amp;M diventano spese vive
+                        sull'ordine del cliente (costo + ricarico).
+                        Mese in corso: le licenze si ripartiscono con la maggiorazione oraria
+                        (licenza / ore standard). A mese finito il calcolo diventa esatto:
+                        licenza × ore della commessa / ore totali della persona.
+                    </div>
+                    <field name="allocation_ids" readonly="1">
+                        <list>
+                            <field name="project_id"/>
+                            <field name="employee_id"/>
+                            <field name="cost_type"/>
+                            <field name="basis"/>
+                            <field name="passthrough" optional="show"/>
+                            <field name="sale_line_id" optional="show"/>
+                            <field name="basis_qty" widget="float_time"/>
+                            <field name="basis_pct"/>
+                            <field name="amount" sum="Totale"/>
+                            <field name="currency_id" column_invisible="True"/>
+                        </list>
+                    </field>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="action_cost_periods" model="ir.actions.act_window">
+        <field name="name">Ripartizione costi per mese</field>
+        <field name="res_model">lab.cost.period</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+    <record id="view_cost_allocation_pivot" model="ir.ui.view">
+        <field name="name">lab.cost.allocation.pivot</field>
+        <field name="model">lab.cost.allocation</field>
+        <field name="arch" type="xml">
+            <pivot>
+                <field name="project_id" type="row"/>
+                <field name="date" type="col" interval="month"/>
+                <field name="amount" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+    <record id="view_cost_allocation_list" model="ir.ui.view">
+        <field name="name">lab.cost.allocation.list</field>
+        <field name="model">lab.cost.allocation</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="period_id"/>
+                <field name="project_id"/>
+                <field name="employee_id"/>
+                <field name="cost_type"/>
+                <field name="basis"/>
+                <field name="basis_pct"/>
+                <field name="amount" sum="Totale"/>
+                <field name="currency_id" column_invisible="True"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_cost_allocations" model="ir.actions.act_window">
+        <field name="name">Costi AI per commessa</field>
+        <field name="res_model">lab.cost.allocation</field>
+        <field name="view_mode">pivot,list</field>
+    </record>
+
+    <!-- ===== Fattore parallelo settimanale (PM) ===== -->
+    <record id="view_planning_capacity_list" model="ir.ui.view">
+        <field name="name">lab.planning.capacity.list</field>
+        <field name="model">lab.planning.capacity</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="employee_id"/>
+                <field name="week_start"/>
+                <field name="parallel_factor"/>
+                <field name="note"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_planning_capacity" model="ir.actions.act_window">
+        <field name="name">Fattore parallelo per settimana</field>
+        <field name="res_model">lab.planning.capacity</field>
+        <field name="view_mode">list</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiley_face">Nessuna correzione settimanale</p>
+            <p>Di norma vale il fattore parallelo della scheda persona. Qui il PM lo può
+               correggere per una singola settimana (es. 1,0 durante l'onboarding).</p>
+        </field>
+    </record>
+
+    <!-- ===== Fogli ore: ore parallele da approvare ===== -->
+    <record id="view_timesheet_list_lab_parallel" model="ir.ui.view">
+        <field name="name">account.analytic.line.list.lab.parallel</field>
+        <field name="model">account.analytic.line</field>
+        <field name="inherit_id" ref="hr_timesheet.hr_timesheet_line_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='unit_amount']" position="after">
+                <field name="lab_parallel_state" widget="badge" optional="show"
+                       decoration-warning="lab_parallel_state == 'to_approve'"
+                       decoration-success="lab_parallel_state == 'approved'"
+                       invisible="lab_parallel_state == 'normal'"/>
+                <button name="action_lab_approve_parallel" type="object" string="Approva"
+                        icon="fa-check" invisible="lab_parallel_state != 'to_approve'"
+                        groups="lab_workflow_custom.group_lab_pm,project.group_project_manager"/>
+            </xpath>
+        </field>
+    </record>
+    <record id="view_timesheet_search_lab_parallel" model="ir.ui.view">
+        <field name="name">account.analytic.line.search.lab.parallel</field>
+        <field name="model">account.analytic.line</field>
+        <field name="inherit_id" ref="hr_timesheet.hr_timesheet_line_search"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='mine']" position="after">
+                <filter name="lab_parallel_to_approve" string="Ore parallele da approvare"
+                        domain="[('lab_parallel_state', '=', 'to_approve')]"/>
+            </xpath>
+        </field>
+    </record>
+    <record id="action_parallel_to_approve" model="ir.actions.act_window">
+        <field name="name">Ore parallele da approvare</field>
+        <field name="res_model">account.analytic.line</field>
+        <field name="view_mode">list,form</field>
+        <field name="view_id" ref="hr_timesheet.hr_timesheet_line_tree"/>
+        <field name="search_view_id" ref="hr_timesheet.hr_timesheet_line_search"/>
+        <field name="domain">[('project_id', '!=', False)]</field>
+        <field name="context">{'search_default_lab_parallel_to_approve': 1, 'search_default_groupby_employee': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiley_face">Nessuna giornata da approvare</p>
+            <p>Quando una persona segna in un giorno più ore di quelle del suo calendario
+               (lavoro in parallelo su più commesse), le ore restano fatturabili ma vanno
+               approvate qui prima della fattura. Il costo della giornata non raddoppia.</p>
+        </field>
+    </record>
+
+    <!-- ===== Fattura fornitore: riga del consulente ===== -->
+    <record id="view_move_form_lab_consultant" model="ir.ui.view">
+        <field name="name">account.move.form.lab.consultant</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='invoice_line_ids']/list/field[@name='name']" position="after">
+                <field name="lab_consultant_id" optional="hide"
+                       column_invisible="parent.move_type not in ('in_invoice', 'in_refund')"/>
+                <field name="lab_variance" optional="hide"
+                       column_invisible="parent.move_type not in ('in_invoice', 'in_refund')"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
