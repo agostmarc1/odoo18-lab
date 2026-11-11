@@ -17,7 +17,17 @@ Marco non è uno sviluppatore e lavora solo parlando con Claude, senza editor.
   La localizzazione è configurazione d'ambiente: NON metterla in `depends` dell'app.
 - Utenti demo: giuseppe (Commerciale), marco (PM), carlo e niccolo (Sviluppatori, consulenti
   esterni), giulia e gianluca (Analisti funzionali), nicola (Supporto AMS), luana (Amministrazione).
-- Database unico: `lab18` (con dati demo). Odoo è su http://127.0.0.1:8069.
+- Database unico: `lab18`, creato **senza i dati demo standard di Odoo** (`--without-demo=all`) e con
+  lo scenario sintetico dell'app (`lab.demo.data._lab_load_synthetic`, idempotente, date relative a oggi;
+  in altri db parte con i dati demo dell'app). Se aggiungi una funzionalità, aggiungi allo scenario i dati
+  che la mostrano. Odoo è su http://127.0.0.1:8069.
+- La documentazione per l'utente sta in `static/description/index.html` (pagina dell'app): aggiornala
+  insieme alla specifica quando cambia una funzionalità.
+- **Tutto allineato, sempre (richiesta di Marco).** Ogni correzione o funzionalità dell'app si chiude solo
+  quando sono allineati: codice e test, guida `index.html`, analisi tecnica `analisi_tecnica.html` (requisiti,
+  sicurezza, limiti noti), copione e video (`scripts/registra_video.py` → `./scripts/registra_video.sh`) se il
+  flusso o una schermata mostrata cambia, README/LEGGIMI e, se l'app va condivisa, il pacchetto ZIP
+  (`./scripts/package_app.sh`). Nel resoconto finale elenca cosa hai allineato.
 - Dev mode: `--dev=xml,reload` nel `command` di `docker-compose.yml`. Odoo 18 **non** legge `dev_mode` da `odoo.conf`.
 - Credenziali solo in `.env` (gitignored). **Mai password o token in file versionati.** Gli utenti demo
   non hanno password nell'XML: le imposta `scripts/init_db.sh` leggendole da `.env`.
@@ -40,6 +50,9 @@ se è OCA va anche nell'elenco `OCA` di `scripts/package_app.sh`. A ogni modific
 ## Comandi
 - Installazione completa su un PC nuovo: `./scripts/setup_pc.sh` (idempotente: genera `.env`, OCA, db, test)
 - Pacchetto per un altro Odoo 18: `./scripts/package_app.sh` (crea `dist/flusso_operativo_18.0.zip` con app + moduli OCA)
+- Video dell'app: `./scripts/registra_video.sh` (Odoo avviato; `--prova` = solo schermate). Rigeneralo quando
+  cambia un flusso mostrato; se cambia una vista, aggiorna prima il copione in `scripts/registra_video.py`.
+  Documentazione per i tecnici: `static/description/analisi_tecnica.html` (aggiornala insieme a `index.html`).
 - Aggiornare un modulo: `./scripts/update_module.sh [modulo]`, che fa `-u` con Odoo fermo
 - Test: `./scripts/run_tests.sh`. Esegui sempre i test dopo una modifica e aggiungine per ogni nuova logica.
 - Log: `docker compose logs -f odoo` · Shell Odoo: `docker compose run --rm -T odoo odoo shell -d lab18 --no-http`

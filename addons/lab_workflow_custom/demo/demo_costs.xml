@@ -41,36 +41,42 @@
         <field name="employee_id" ref="employee_carlo"/>
         <field name="tool_id" ref="ai_tool_claude_max"/>
         <field name="monthly_cost">100</field>
+        <field name="date_start" eval="(DateTime.today().replace(day=1) - relativedelta(months=2)).strftime('%Y-%m-%d')"/>
         <field name="allocation_mode">hours</field>
     </record>
     <record id="license_niccolo" model="lab.ai.license">
         <field name="employee_id" ref="employee_niccolo"/>
         <field name="tool_id" ref="ai_tool_claude_max"/>
         <field name="monthly_cost">100</field>
+        <field name="date_start" eval="(DateTime.today().replace(day=1) - relativedelta(months=2)).strftime('%Y-%m-%d')"/>
         <field name="allocation_mode">hours</field>
     </record>
     <record id="license_giulia" model="lab.ai.license">
         <field name="employee_id" ref="employee_giulia"/>
         <field name="tool_id" ref="ai_tool_claude_team"/>
         <field name="monthly_cost">30</field>
+        <field name="date_start" eval="(DateTime.today().replace(day=1) - relativedelta(months=2)).strftime('%Y-%m-%d')"/>
         <field name="allocation_mode">hours</field>
     </record>
     <record id="license_gianluca" model="lab.ai.license">
         <field name="employee_id" ref="employee_gianluca"/>
         <field name="tool_id" ref="ai_tool_claude_team"/>
         <field name="monthly_cost">30</field>
+        <field name="date_start" eval="(DateTime.today().replace(day=1) - relativedelta(months=2)).strftime('%Y-%m-%d')"/>
         <field name="allocation_mode">hours</field>
     </record>
     <record id="license_nicola" model="lab.ai.license">
         <field name="employee_id" ref="employee_nicola"/>
         <field name="tool_id" ref="ai_tool_claude_team"/>
         <field name="monthly_cost">30</field>
+        <field name="date_start" eval="(DateTime.today().replace(day=1) - relativedelta(months=2)).strftime('%Y-%m-%d')"/>
         <field name="allocation_mode">hours</field>
     </record>
     <record id="license_marco" model="lab.ai.license">
         <field name="employee_id" ref="employee_marco"/>
         <field name="tool_id" ref="ai_tool_claude_team"/>
         <field name="monthly_cost">30</field>
+        <field name="date_start" eval="(DateTime.today().replace(day=1) - relativedelta(months=2)).strftime('%Y-%m-%d')"/>
         <field name="allocation_mode">governance</field>
     </record>
 </odoo>

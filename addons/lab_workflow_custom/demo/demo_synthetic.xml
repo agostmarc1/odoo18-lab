@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Scenario sintetico della software house (clienti, ordini, fogli ore, fatture, costi AI).
+         Lo stesso che scripts/init_db.sh carica nel database lab18 senza i dati demo di Odoo. -->
+    <function model="lab.demo.data" name="_lab_load_synthetic"/>
+</odoo>

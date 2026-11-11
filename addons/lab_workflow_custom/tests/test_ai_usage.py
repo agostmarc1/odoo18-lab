@@ -1,7 +1,7 @@
 from datetime import date, timedelta
 
-from odoo.exceptions import UserError
-from odoo.tests import TransactionCase, tagged
+from odoo.exceptions import AccessError, UserError
+from odoo.tests import TransactionCase, new_test_user, tagged
 
 # Esempio di risposta di GET /v1/organizations/analytics/cost (forma documentata da Anthropic):
 # importi in centesimi di USD con 6 decimali.
@@ -35,8 +35,14 @@ class TestLabAiUsage(TransactionCase):
         cls.pack = cls.env.ref("lab_workflow_custom.product_hours_pack_50").product_variant_id
         cls.dev = cls.env["hr.employee"].create({"name": "Dev AI", "hourly_cost": 35})
         cls.company_currency = cls.env.company.currency_id
-        today = date.today()
-        cls.last_day = today.replace(day=1) - timedelta(days=1)
+        # un mese senza i dati sintetici (che chiudono il mese scorso)
+        start = date.today().replace(day=1)
+        for _i in range(3):
+            start = (start - timedelta(days=1)).replace(day=1)
+        cls.last_day = (start + timedelta(days=32)).replace(day=1) - timedelta(days=1)
+        # il mese lo chiude l'Amministrazione, che non può modificare le ripartizioni a mano
+        cls.accountant = new_test_user(
+            cls.env, "ai_amm", groups="lab_workflow_custom.group_lab_amministrazione")
         cls.first_day = cls.last_day.replace(day=1)
 
     def _order(self, product, qty=1):
@@ -115,7 +121,9 @@ class TestLabAiUsage(TransactionCase):
                                      ).passthrough, "Diretto su T&M: da ribaltare")
 
         # chiusura del mese: i 100 diretti diventano spesa viva sull'ordine T&M (+15%)
-        period.action_close()
+        with self.assertRaises(AccessError):
+            period.allocation_ids[:1].with_user(self.accountant).write({"amount": 0})
+        period.with_user(self.accountant).action_close()
         expense = order_tm.order_line.filtered("is_expense")
         self.assertEqual(len(expense), 1)
         self.assertAlmostEqual(expense.price_unit, 115)
@@ -128,8 +136,8 @@ class TestLabAiUsage(TransactionCase):
         self.assertAlmostEqual(report.passthrough_cost, 100)
 
         # riapertura (spesa non ancora fatturata): la spesa torna a zero, poi si richiude
-        period.action_reopen()
+        period.with_user(self.accountant).action_reopen()
         self.assertEqual(expense.qty_delivered, 0)
-        period.action_close()
+        period.with_user(self.accountant).action_close()
         self.assertEqual(len(order_tm.order_line.filtered("is_expense")), 1, "Nessun doppione")
         self.assertEqual(expense.qty_delivered, 1)

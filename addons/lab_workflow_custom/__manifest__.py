@@ -2,7 +2,7 @@
     "name": "Flusso Operativo Software House",
     "summary": "Flusso operativo software house: CRM > Vendite > Progetto > "
                "Pianificazione > Fogli ore > Alert monte ore > Margini",
-    "version": "18.0.1.6.0",
+    "version": "18.0.1.7.2",
     "category": "Services/Project",
     "description": """
 Unica app che contiene TUTTE le personalizzazioni rispetto a Odoo 18 CE standard.
@@ -42,7 +42,7 @@ Per installarla in un altro Odoo 18: vedi scripts/package_app.sh nel repository 
     "demo": [
         "demo/demo_users.xml",
         "demo/demo_costs.xml",
-        "demo/demo_ai_usage.xml",
+        "demo/demo_synthetic.xml",
     ],
     "installable": True,
     "application": True,

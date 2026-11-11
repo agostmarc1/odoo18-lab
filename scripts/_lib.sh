@@ -85,6 +85,14 @@ print("Conti bancari aziendali verificati:", len(banks))
 print("Aziende:", "; ".join("%s (%s)" % (c.name, c.currency_id.name) for c in env['res.company'].search([])))
 PY
 }
+load_synthetic_data() {
+  # Scenario sintetico (clienti, ordini, fogli ore, fatture, costi AI): vedi models/lab_demo_data.py
+  odoo_shell <<'PY'
+env['lab.demo.data']._lab_load_synthetic()
+env.cr.commit()
+print("Dati sintetici caricati")
+PY
+}
 set_passwords() {
   # admin + tutti gli utenti di prova creati dalla nostra app (dati demo)
   odoo_shell <<'PY'
