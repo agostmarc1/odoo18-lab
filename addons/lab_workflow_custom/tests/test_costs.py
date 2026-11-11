@@ -243,3 +243,21 @@ class TestLabCosts(TransactionCase):
         with self.assertRaises(ValidationError):
             Slot.create({"employee_id": self.dev.id, "project_id": task.project_id.id,
                          "date": next_monday, "allocated_hours": 33})
+
+    # ---- 5. l'Amministrazione gestisce i consulenti esterni --------------------------
+    def test_08_admin_manages_consultant_employee(self):
+        """RF-23: l'Amministrazione apre la scheda dipendente e aggiorna tariffa e fornitore."""
+        other_vendor = self.env["res.partner"].create({"name": "Nuovo Fornitore Srl"})
+        consultant = self.consultant.with_user(self.accountant)
+        self.assertEqual(consultant.lab_external_rate, 400)
+        consultant.write({"lab_external_rate": 450, "lab_vendor_id": other_vendor.id})
+        self.assertEqual(self.consultant.lab_external_rate, 450)
+        self.assertEqual(self.consultant.lab_vendor_id, other_vendor)
+        new = self.env["hr.employee"].with_user(self.accountant).create({
+            "name": "Consulente Nuovo", "lab_resource_type": "external",
+            "lab_vendor_id": other_vendor.id, "lab_external_rate": 60,
+            "lab_external_rate_unit": "hour"})
+        self.assertEqual(new.lab_resource_type, "external")
+        # chi ha solo il ruolo di team non modifica le tariffe
+        with self.assertRaises(AccessError):
+            self.consultant.with_user(self.dev_user).write({"lab_external_rate": 1})

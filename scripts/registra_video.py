@@ -482,8 +482,8 @@ def copione(r, rpc):
     r.foto("margini")
 
     # 8. Amministrazione: costi AI e chiusura mese
-    r.capitolo(8, "Costi AI e chiusura del mese",
-               "Licenze e consumi AI ripartiti sulle commesse; il mese lo chiude l'Amministrazione",
+    r.capitolo(8, "Costi AI, consulenti e chiusura del mese",
+               "Licenze e consumi AI ripartiti sulle commesse, tariffe dei consulenti, chiusura del mese",
                "")
     r.login("luana", "Amministrazione")
     r.vai("/odoo/action-lab_workflow_custom.action_cost_periods")
@@ -503,6 +503,21 @@ def copione(r, rpc):
     r.dici("<b>Licenze AI</b> assegnate alle persone: il costo mensile si divide sulle "
            "commesse in base alle ore, o come quota di governance per i PM.", 6.5)
     r.foto("licenze")
+    carlo = rpc.search("hr.employee", [("name", "ilike", "Carlo"),
+                                       ("lab_resource_type", "=", "external")], limit=1)
+    if carlo:
+        r.vai(f"/odoo/action-hr.open_view_employee_list_my/{carlo[0]}")
+        r.scheda("Costi e AI")
+        r.page.evaluate("() => document.querySelector('.o_notebook')"
+                        ".scrollIntoView({block: 'start', behavior: 'smooth'})")
+        r.pausa(1.0)
+        r.evidenzia(r.page.locator("div[name=lab_vendor_id]"), 0.5)
+        r.dici("Scheda persona di Carlo, <b>consulente esterno</b>: l'Amministrazione indica il "
+               "fornitore che fattura e la tariffa concordata.", 6)
+        r.evidenzia(r.page.locator("div[name=lab_external_rate]"), 0.5)
+        r.dici("Finché la fattura non arriva, la commessa vede il costo <b>maturato</b>: ore × "
+               "tariffa.", 5)
+        r.foto("consulente")
 
     # Chiusura
     r.ruolo("")

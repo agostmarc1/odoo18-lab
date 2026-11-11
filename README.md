@@ -125,7 +125,7 @@ Lo script, da solo:
 3. crea il database `lab18` (Italia, euro) con la localizzazione italiana e la nostra app, **senza i
    dati demo standard di Odoo**, e carica i **dati sintetici** della software house (15-25 minuti la
    prima volta);
-4. lancia i test automatici (devono risultare `0 failed, 0 error(s) of 18 tests`);
+4. lancia i test automatici (devono risultare `0 failed, 0 error(s) of 19 tests`);
 5. stampa **link e credenziali**.
 
 Si può rilanciare senza rischi: se il database è già installato non lo tocca.
@@ -191,7 +191,7 @@ Windows montate in Docker), usa `docker compose restart odoo`.
 ./scripts/run_tests.sh
 ```
 
-Simulano l'intero flusso e i costi di commessa (18 test). Deve comparire `0 failed, 0 error(s) of 18 tests`.
+Simulano l'intero flusso e i costi di commessa (19 test). Deve comparire `0 failed, 0 error(s) of 19 tests`.
 
 ### Resettare il database e ripartire da zero
 

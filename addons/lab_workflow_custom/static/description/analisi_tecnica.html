@@ -35,7 +35,7 @@
 <h1>Flusso Operativo Software House</h1>
 <p class="lead">Analisi funzionale e tecnica del modulo <code>lab_workflow_custom</code>, per chi deve installarlo, mantenerlo o estenderlo.</p>
 <div class="meta">
-  <span class="chip">Odoo 18.0 Community</span><span class="chip">Versione modulo 18.0.1.7.1</span>
+  <span class="chip">Odoo 18.0 Community</span><span class="chip">Versione modulo 18.0.1.7.2</span>
   <span class="chip">Licenza LGPL-3</span><span class="chip">Categoria Services/Project</span>
 </div>
 
@@ -101,7 +101,7 @@
 ├── security/                gruppi, regole di record, ACL (ir.model.access.csv)
 ├── data/                    parametri, prodotti, task di default, strumenti AI, cron
 ├── demo/                    utenti demo, costi demo, scenario sintetico
-├── tests/                   test_flow, test_costs, test_ai_usage (18 test)
+├── tests/                   test_flow, test_costs, test_ai_usage (19 test)
 └── static/description/      pagina dell'app, video, questa analisi</pre>
 <h3>Principi di progetto</h3>
 <ul>
@@ -138,6 +138,7 @@
   <tr><td>RF-20</td><td>Canone AMS con abbonamento OCA; il Supporto segue in automatico le commesse a canone</td><td><code>sale.subscription.create</code>, <code>_timesheet_create_project</code></td><td>test_flow 07</td><td>Supporto</td></tr>
   <tr><td>RF-21</td><td>Report margini per commessa e scheda <i>Costi, ricavi e margine</i> sul progetto</td><td><code>lab.margin.report</code>, <code>project.project._compute_lab_economics</code></td><td>test_costs 03–06</td><td>PM, Amministrazione</td></tr>
   <tr><td>RF-22</td><td>Import dei consumi dall'API costi Anthropic, facoltativo e spento senza chiave</td><td><code>_lab_fetch_anthropic</code>, <code>_lab_parse_anthropic_rows</code>, <code>_lab_upsert</code></td><td>test_ai_usage 01, 02</td><td>Amministrazione</td></tr>
+  <tr><td>RF-23</td><td>L'Amministrazione apre le schede persona e gestisce tipo di risorsa, fornitore e tariffa dei consulenti esterni; il team non modifica le tariffe</td><td><code>group_lab_amministrazione</code> → <code>hr.group_hr_user</code>, vista <code>view_employee_form_lab_costs</code></td><td>test_costs 08</td><td>Amministrazione</td></tr>
 </table></div>
 <h3>Requisiti non funzionali</h3>
 <table>
@@ -294,7 +295,7 @@ ore risparmiate = ore stimate dei task principali attivi − ore consuntivate</p
   <tr><td>Ruoli / Project Manager</td><td>project.group_project_manager, hr_timesheet.group_timesheet_manager, Responsabile turni, sales_team.group_sale_salesman_all_leads</td><td>Progetti, turni, approvazioni, margini</td></tr>
   <tr><td>Ruoli / Analista Funzionale / Sviluppatore</td><td>project.group_project_user, hr_timesheet.group_hr_timesheet_user, Utente turni</td><td>Task, turni e fogli ore propri</td></tr>
   <tr><td>Ruoli / Supporto (AMS)</td><td>Analista / Sviluppatore</td><td>In più segue in automatico le commesse a canone</td></tr>
-  <tr><td>Ruoli / Amministrazione</td><td>account.group_account_manager, sales_team.group_sale_manager</td><td>Contabilità, costi AI, chiusura mese</td></tr>
+  <tr><td>Ruoli / Amministrazione</td><td>account.group_account_manager, sales_team.group_sale_manager, hr.group_hr_user</td><td>Contabilità, costi AI, chiusura mese, schede persona e tariffe dei consulenti</td></tr>
 </table></div>
 <h3>Accessi ai nuovi modelli (L = lettura, S = scrittura, C = creazione, E = eliminazione)</h3>
 <div class="wrap"><table>
@@ -314,7 +315,7 @@ ore risparmiate = ore stimate dei task principali attivi − ore consuntivate</p
   <li><code>rule_planning_slot_own</code>: l'utente turni vede solo i propri turni non in bozza; <code>rule_planning_slot_all</code>: il responsabile vede tutto; <code>rule_planning_slot_company</code>: regola globale multi-azienda.</li>
   <li><code>lab.planning.slot.write</code>: chi non è responsabile può cambiare solo <code>confirmed_hours</code> e solo su turni pubblicati; <code>action_confirm</code> accetta solo i propri turni.</li>
   <li>Approvazione ore parallele: gruppo PM o <code>project.group_project_manager</code>. Chiusura e riapertura mese: Amministrazione o <code>base.group_system</code>. Registrazione fatture: vietata al Commerciale senza Amministrazione.</li>
-  <li>Costi e tariffe su <code>hr.employee</code>: attributo <code>groups</code> su HR, Amministrazione, PM.</li>
+  <li>Costi e tariffe su <code>hr.employee</code>: attributo <code>groups</code> su HR, Amministrazione, PM. L'Amministrazione include <i>Dipendenti / Funzionario</i> (<code>hr.group_hr_user</code>), quindi apre, crea e modifica le schede persona.</li>
 </ul>
 <h3>Uso di <code>sudo</code></h3>
 <p>È usato dove il risultato è un dato di sistema e non deve dipendere da chi preme il pulsante: ricalcolo dei giorni paralleli, ripartizioni del mese, ricerca dell'ordine da rifatturare (la commessa è riservata agli invitati e l'Amministrazione spesso non la vede), creazione del foglio ore dalla conferma del turno, lettura del report margini nella scheda progetto (protetta dal gruppo della scheda). La riga creata sull'ordine nel pass-through resta con i permessi dell'utente.</p>
@@ -360,7 +361,7 @@ ore risparmiate = ore stimate dei task principali attivi − ore consuntivate</p
 
 <!-- ============================================================== -->
 <h2 id="test">11. Test automatici</h2>
-<p>18 test con <code>TransactionCase</code>, eseguiti con <code>./scripts/run_tests.sh</code> (Odoo fermo, <code>--test-tags</code> sul modulo).</p>
+<p>19 test con <code>TransactionCase</code>, eseguiti con <code>./scripts/run_tests.sh</code> (Odoo fermo, <code>--test-tags</code> sul modulo).</p>
 <div class="wrap"><table>
   <tr><th>File</th><th>Test</th><th>Cosa verifica</th></tr>
   <tr><td rowspan="8">test_flow.py</td><td>01 products_configured</td><td>Prodotti di base con le giuste politiche</td></tr>
@@ -371,13 +372,14 @@ ore risparmiate = ore stimate dei task principali attivi − ore consuntivate</p
   <tr><td>06 invoice_draft_by_sales_post_by_admin</td><td>Separazione Commerciale / Amministrazione</td></tr>
   <tr><td>07 ams_monthly_alert_and_subscription</td><td>Canone: consumo mensile e abbonamento OCA</td></tr>
   <tr><td>08 package_traced_by_task</td><td>Task obbligatorio e ore scalate per task</td></tr>
-  <tr><td rowspan="7">test_costs.py</td><td>01 parallel_day_splits_cost</td><td>Costo diviso nel giorno parallelo</td></tr>
+  <tr><td rowspan="8">test_costs.py</td><td>01 parallel_day_splits_cost</td><td>Costo diviso nel giorno parallelo</td></tr>
   <tr><td>02 tm_parallel_hours_need_pm_approval</td><td>Consegnato T&amp;M dopo approvazione</td></tr>
   <tr><td>03 consultant_accrual_bill_and_passthrough_tm</td><td>Maturato, fattura, scostamento, ribaltamento con ricarico</td></tr>
   <tr><td>04 no_passthrough_on_fixed_price</td><td>Nessun ribaltamento sui contratti a corpo</td></tr>
   <tr><td>05 markup_zero_on_project</td><td>Ricarico 0 = puro costo</td></tr>
   <tr><td>06 ai_license_allocation_month</td><td>Ripartizione licenze nel mese finito e in corso</td></tr>
   <tr><td>07 planning_parallel_factor</td><td>Fattore della persona e correzione settimanale</td></tr>
+  <tr><td>08 admin_manages_consultant_employee</td><td>L'Amministrazione modifica tariffa e fornitore del consulente e crea una scheda; il team no</td></tr>
   <tr><td rowspan="3">test_ai_usage.py</td><td>01 parse_anthropic_payload</td><td>Conversione della risposta API</td></tr>
   <tr><td>02 connector_off_in_demo</td><td>Connettore spento senza chiave</td></tr>
   <tr><td>03 mapping_and_allocation</td><td>Corrispondenze, ripartizione, spese vive alla chiusura</td></tr>
@@ -399,7 +401,6 @@ ore risparmiate = ore stimate dei task principali attivi − ore consuntivate</p
 <div class="wrap"><table>
   <tr><th>Tema</th><th>Descrizione</th><th>Impatto / mitigazione</th></tr>
   <tr><td>Campi di progetto non salvati</td><td>Ore, alert, tipo contratto ed economia del progetto sono calcolati a ogni lettura (una ricerca sui fogli ore per progetto).</td><td>Non filtrabili né ordinabili; con molte commesse il kanban può rallentare. Se serve, salvarli e ricalcolarli dagli hook dei fogli ore.</td></tr>
-  <tr><td>Amministrazione e schede dipendente</td><td>I campi costo di <code>hr.employee</code> sono visibili all'Amministrazione, ma il gruppo non dà accesso al modello dipendente (serve un ruolo HR).</td><td>Per gestire tariffe e fornitori dei consulenti, l'Amministrazione deve avere anche <i>Dipendenti / Funzionario</i>, oppure va aggiunto l'accesso nell'app.</td></tr>
   <tr><td>Tipo contratto dedotto</td><td>Se un ordine mescola prodotti a canone, T&amp;M e a corpo, vince nell'ordine: canone, T&amp;M, corpo.</td><td>Vendere tipologie diverse su ordini separati.</td></tr>
   <tr><td>Ripartizione ricalcolata</td><td>A ogni ricalcolo le allocazioni del mese aperto vengono eliminate e ricreate.</td><td>Non modificarle a mano (sono in sola lettura); i mesi chiusi non si ricalcolano.</td></tr>
   <tr><td>Costi fornitori per conto analitico</td><td>Il report somma le fatture fornitore per conto analitico del progetto.</td><td>Un conto analitico condiviso da più progetti duplicherebbe i costi: mantenere un conto per commessa (default di Odoo).</td></tr>

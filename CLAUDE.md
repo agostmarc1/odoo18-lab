@@ -23,6 +23,11 @@ Marco non è uno sviluppatore e lavora solo parlando con Claude, senza editor.
   che la mostrano. Odoo è su http://127.0.0.1:8069.
 - La documentazione per l'utente sta in `static/description/index.html` (pagina dell'app): aggiornala
   insieme alla specifica quando cambia una funzionalità.
+- **Tutto allineato, sempre (richiesta di Marco).** Ogni correzione o funzionalità dell'app si chiude solo
+  quando sono allineati: codice e test, guida `index.html`, analisi tecnica `analisi_tecnica.html` (requisiti,
+  sicurezza, limiti noti), copione e video (`scripts/registra_video.py` → `./scripts/registra_video.sh`) se il
+  flusso o una schermata mostrata cambia, README/LEGGIMI e, se l'app va condivisa, il pacchetto ZIP
+  (`./scripts/package_app.sh`). Nel resoconto finale elenca cosa hai allineato.
 - Dev mode: `--dev=xml,reload` nel `command` di `docker-compose.yml`. Odoo 18 **non** legge `dev_mode` da `odoo.conf`.
 - Credenziali solo in `.env` (gitignored). **Mai password o token in file versionati.** Gli utenti demo
   non hanno password nell'XML: le imposta `scripts/init_db.sh` leggendole da `.env`.
