@@ -364,6 +364,9 @@ commessa Bianchi Logistica), personale (Claude Code di Carlo) e senza corrispond
 - **Come arrivano.** Email all'indirizzo dell'assistenza (alias `assistenza@` + dominio della posta),
   modulo pubblico **Assistenza** sul sito (http://127.0.0.1:8069/assistenza, senza login) oppure
   portale clienti (*I miei ticket*). Il contatto si riconosce dall'email.
+- **Descrizione come una email.** Nel modulo del sito la descrizione ha una barra con grassetto,
+  corsivo, sottolineato, elenchi, link e immagini; le schermate si incollano con Ctrl+V o si
+  trascinano. Le immagini diventano allegati del ticket; il testo viene ripulito da codice pericoloso.
 - **Commessa.** Se il cliente ha un **canone AMS**, il ticket va da solo sulla sua commessa: le ore
   segnate sul ticket (scheda *Fogli ore*) scalano le 20h del mese e fanno scattare gli alert 75%/90%.
   Per monte ore, T&M e a corpo la commessa (e il task) li sceglie il Supporto.

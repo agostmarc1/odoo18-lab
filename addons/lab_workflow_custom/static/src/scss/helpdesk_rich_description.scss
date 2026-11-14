@@ -1,0 +1,36 @@
+// Modulo pubblico "Apri un ticket": editor della descrizione (static/src/js/helpdesk_rich_description.js)
+#lab_helpdesk_form {
+    .lab_rich_toolbar {
+        gap: 2px;
+        border-bottom: 0 !important;
+        .lab_rich_sep {
+            align-self: stretch;
+        }
+    }
+    .lab_rich_editor {
+        position: relative;
+        min-height: 12rem;
+        max-height: 32rem;
+        overflow-y: auto;
+        cursor: text;
+        p {
+            margin-bottom: 0.5rem;
+        }
+        ul, ol {
+            padding-left: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        img {
+            max-width: 100%;
+            height: auto;
+            margin: 0.25rem 0;
+        }
+        &:empty::before,
+        &:has(> p:only-child > br:only-child)::before {
+            content: attr(data-placeholder);
+            color: var(--bs-secondary-color, #6c757d);
+            position: absolute;
+            pointer-events: none;
+        }
+    }
+}
