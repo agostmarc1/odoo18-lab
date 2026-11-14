@@ -4,10 +4,14 @@
 - Il contatto si riconosce dall'email; la commessa a canone (AMS) del cliente si collega da sola,
   così le ore segnate sul ticket scalano il monte ore del mese e fanno scattare gli alert 75%/90%.
 - Gli SLA guardano il tipo di contratto della commessa (campo ``lab_contract_type``).
+- Dal modulo pubblico il ticket nasce "da confermare": il cliente riceve un'email con il link di
+  conferma e solo dopo il ticket si collega all'azienda (chi scrive un'email altrui non può
+  aprire ticket a nome di quel cliente né consumare il suo monte ore).
 """
 import base64
 import binascii
 import re
+import secrets
 from datetime import timedelta
 
 from odoo import _, api, fields, models, tools
@@ -37,6 +41,11 @@ class HelpdeskTicket(models.Model):
         ALERT_LEVELS, "Alert monte ore", compute="_compute_lab_contract",
         help="Consumo del monte ore della commessa (per il canone AMS: mese corrente).")
     lab_consumption_pct = fields.Float("% monte ore", compute="_compute_lab_contract")
+    lab_web_confirmed = fields.Boolean(
+        "Richiesta confermata", default=True, copy=False, index=True,
+        help="Falso per i ticket aperti dal sito finché il cliente non clicca il link di "
+             "conferma ricevuto per email: fino ad allora il ticket non è collegato all'azienda.")
+    lab_confirm_token = fields.Char(copy=False, groups="base.group_system")
 
     @api.depends("project_id")
     def _compute_lab_contract(self):
@@ -81,10 +90,18 @@ class HelpdeskTicket(models.Model):
         # Dal sito e dalle email il ticket lo crea l'utente tecnico (OdooBot/superutente):
         # senza questo, l'assegnatario predefinito sarebbe lui invece di "nessuno"
         system_user = self.env.su or self.env.user._is_public()
+        # Dal sito, se chi scrive non è un utente collegato con quella stessa email
+        # (lab_web_trusted, vedi controllers), il ticket aspetta la conferma via email
+        to_confirm = (self.env.context.get("lab_from_website")
+                      and not self.env.context.get("lab_web_trusted"))
         for vals in vals_list:
             if system_user and "user_id" not in vals:
                 vals["user_id"] = False
-            if not vals.get("partner_id") and vals.get("partner_email"):
+            if to_confirm and not vals.get("partner_id"):
+                vals.update(lab_web_confirmed=False, lab_confirm_token=secrets.token_urlsafe(32))
+            # finché non conferma, nessun collegamento a contatto e commessa
+            if (vals.get("lab_web_confirmed", True) and not vals.get("partner_id")
+                    and vals.get("partner_email")):
                 vals["partner_id"] = self._lab_partner_from_email(vals["partner_email"]).id
             partner = Partner.browse(vals.get("partner_id")).sudo()
             if partner and not vals.get("partner_email"):
@@ -101,7 +118,77 @@ class HelpdeskTicket(models.Model):
         tickets._lab_subscribe_customer()
         if self.env.context.get("lab_from_website"):
             tickets._lab_store_inline_images()
+        tickets.filtered(lambda t: not t.lab_web_confirmed)._lab_send_confirmation()
         return tickets
+
+    # ---- Conferma via email dei ticket aperti dal sito ------------------------------
+    def set_sla(self):
+        # Gli SLA partono dalla conferma (vedi _lab_web_confirm)
+        return super(HelpdeskTicket, self.filtered("lab_web_confirmed")).set_sla()
+
+    def _track_template(self, tracking):
+        res = super()._track_template(tracking)
+        if not self[0].lab_web_confirmed:
+            res.pop("stage_id", None)  # al posto di "ricevuto" parte l'email di conferma
+        return res
+
+    def _lab_confirm_url(self):
+        self.ensure_one()
+        return (f"{self.get_base_url()}/assistenza/conferma/{self.id}/"
+                f"{self.sudo().lab_confirm_token}")
+
+    def _lab_send_confirmation(self):
+        template = self.env.ref("lab_workflow_custom.mail_template_ticket_confirm",
+                                raise_if_not_found=False)
+        for ticket in self:
+            if template and ticket.partner_email:
+                # il link con il codice passa dal contesto: il codice non è leggibile dai template
+                template.sudo().with_context(lab_confirm_url=ticket._lab_confirm_url()).send_mail(
+                    ticket.id, email_layout_xmlid="mail.mail_notification_light")
+
+    @api.model
+    def _lab_check_confirm_token(self, ticket_id, token):
+        """Ticket da confermare con quel codice (confronto a tempo costante), oppure vuoto."""
+        ticket = self.sudo().with_context(active_test=False).browse(ticket_id).exists()
+        if (ticket and not ticket.lab_web_confirmed and ticket.active and token
+                and ticket.lab_confirm_token
+                and secrets.compare_digest(ticket.lab_confirm_token, token)):
+            return ticket
+        return self.browse()
+
+    def _lab_web_confirm(self):
+        """Il cliente ha cliccato il link (o il Supporto conferma a mano): il ticket si collega
+        al contatto e alla commessa, partono gli SLA e l'email "Abbiamo ricevuto"."""
+        for ticket in self.sudo().filtered(lambda t: not t.lab_web_confirmed):
+            ticket.write({"lab_web_confirmed": True, "lab_confirm_token": False})
+            partner = ticket._lab_partner_from_email(ticket.partner_email)
+            if partner and not ticket.partner_id:
+                ticket.partner_id = partner  # write: commessa AMS e cliente follower
+            ticket.set_sla()
+            ticket.ticket_sla_ids.write({"last_state_date": fields.Datetime.now()})
+            template = ticket.stage_id.mail_template_id
+            if template:
+                template.send_mail(ticket.id, email_layout_xmlid="mail.mail_notification_light")
+            ticket.message_post(body=_("Richiesta confermata dal cliente tramite il link "
+                                       "ricevuto all'indirizzo %s.", ticket.partner_email),
+                                subtype_xmlid="mail.mt_note")
+        return True
+
+    def action_lab_web_confirm(self):
+        """Pulsante del Supporto: conferma a mano (es. il cliente ha telefonato)."""
+        if not self.env.user.has_group("helpdesk_mgmt.group_helpdesk_user"):
+            raise UserError(_("Solo il Supporto può confermare una richiesta."))
+        return self._lab_web_confirm()
+
+    @api.model
+    def _lab_archive_unconfirmed(self):
+        """Cron: i ticket mai confermati dopo N giorni si archiviano (spam o errori)."""
+        days = int(self.env["ir.config_parameter"].sudo().get_param(
+            "lab_workflow_custom.helpdesk_web_confirm_days", 7))
+        old = self.sudo().search([("lab_web_confirmed", "=", False),
+                                  ("create_date", "<", fields.Datetime.now() - timedelta(days=days))])
+        old.write({"active": False, "lab_confirm_token": False})
+        return len(old)
 
     # ---- Descrizione dal modulo pubblico (editor con formattazione e immagini) ------
     def website_form_input_filter(self, request, values):
@@ -161,7 +248,8 @@ class HelpdeskTicket(models.Model):
         if {"partner_id", "project_id", "priority", "type_id", "category_id"} & set(vals):
             # Gli SLA dipendono da contratto e priorità: se cambiano si riallineano
             # (si aggiungono quelli nuovi, si tolgono quelli che non valgono più)
-            for ticket in self.filtered(lambda t: t.team_id.use_sla and not t.closed):
+            for ticket in self.filtered(
+                    lambda t: t.team_id.use_sla and not t.closed and t.lab_web_confirmed):
                 ticket.refresh_sla()
         return res
 

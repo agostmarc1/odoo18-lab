@@ -574,11 +574,19 @@ def copione(r, rpc):
     r.clic(form.locator(".s_website_form_send"), 1.0)
     r.page.wait_for_url("**/assistenza-grazie", timeout=60000)
     r.pausa(1.0)
-    r.dici("Richiesta inviata: arriva un'email con il numero del ticket e il pulsante "
-           "<b>Segui il ticket</b>.", 5)
+    r.dici("Richiesta inviata. Ultimo passaggio: il cliente <b>conferma dalla sua email</b> "
+           "che l'indirizzo è suo.", 5)
     r.foto("ticket_inviato")
     ticket_id = rpc.search("helpdesk.ticket", [("name", "=", TICKET_VIDEO)],
                            order="id desc", limit=1)[0]
+    # Il link "Conferma la richiesta" dell'email (nel lab non c'è posta: lo leggiamo da Odoo)
+    token = rpc("helpdesk.ticket", "read", [ticket_id], ["lab_confirm_token"])[0][
+        "lab_confirm_token"]
+    r.page.goto(f"{URL}/assistenza/conferma/{ticket_id}/{token}", wait_until="domcontentloaded")
+    r.pausa(1.0)
+    r.dici("Clic su <b>Conferma la richiesta</b>: solo ora il ticket si collega all'azienda e "
+           "partono gli SLA. Chi usa l'email di un altro non può aprire ticket a suo nome.", 6.5)
+    r.foto("ticket_confermato")
 
     r.login("nicola", "Supporto")
     r.vai(f"/odoo/action-helpdesk_mgmt.helpdesk_ticket_action/{ticket_id}")

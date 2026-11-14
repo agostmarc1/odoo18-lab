@@ -22,12 +22,12 @@
  {
   "n": 4,
   "titolo": "L'analista conferma il turno",
-  "secondi": 195
+  "secondi": 196
  },
  {
   "n": 5,
   "titolo": "Alert sul monte ore",
-  "secondi": 245
+  "secondi": 248
  },
  {
   "n": 6,
@@ -37,21 +37,21 @@
  {
   "n": 7,
   "titolo": "Costi, ricavi e margine della commessa",
-  "secondi": 308
+  "secondi": 309
  },
  {
   "n": 8,
   "titolo": "Costi AI, consulenti e chiusura del mese",
-  "secondi": 352
+  "secondi": 353
  },
  {
   "n": 9,
   "titolo": "Ticket di assistenza",
-  "secondi": 430
+  "secondi": 432
  },
  {
   "n": 10,
   "titolo": "Riepilogo",
-  "secondi": 538
+  "secondi": 549
  }
 ]

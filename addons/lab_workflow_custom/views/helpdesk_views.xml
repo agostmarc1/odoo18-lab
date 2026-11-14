@@ -27,4 +27,40 @@
             </xpath>
         </field>
     </record>
+
+    <!-- Conferma via email dei ticket dal sito: avviso, pulsante per il Supporto, filtro -->
+    <record id="helpdesk_ticket_form_lab_confirm" model="ir.ui.view">
+        <field name="name">helpdesk.ticket.form.lab.confirm</field>
+        <field name="model">helpdesk.ticket</field>
+        <field name="inherit_id" ref="helpdesk_mgmt.ticket_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//header/button[@name='assign_to_me']" position="before">
+                <button name="action_lab_web_confirm" type="object" string="Conferma richiesta"
+                        class="btn-primary" invisible="lab_web_confirmed"
+                        groups="helpdesk_mgmt.group_helpdesk_user"
+                        confirm="Confermi a mano la richiesta? Fallo solo se hai verificato chi l'ha inviata (es. ti ha telefonato): il ticket verrà collegato all'azienda dell'email."/>
+            </xpath>
+            <xpath expr="//sheet" position="before">
+                <field name="lab_web_confirmed" invisible="1"/>
+                <div class="alert alert-warning mb-0" role="alert" invisible="lab_web_confirmed">
+                    <strong>Da confermare.</strong> Richiesta arrivata dal sito: il cliente non ha ancora
+                    cliccato il link di conferma inviato per email.
+                    Finché non conferma, il ticket non è collegato all'azienda e gli SLA non partono.
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="helpdesk_ticket_search_lab_confirm" model="ir.ui.view">
+        <field name="name">helpdesk.ticket.search.lab.confirm</field>
+        <field name="model">helpdesk.ticket</field>
+        <field name="inherit_id" ref="helpdesk_mgmt.helpdesk_ticket_view_search"/>
+        <field name="arch" type="xml">
+            <xpath expr="//filter[@name='unassigned']" position="before">
+                <filter string="Da confermare (sito)" name="lab_to_confirm"
+                        domain="[('lab_web_confirmed', '=', False)]"/>
+                <separator/>
+            </xpath>
+        </field>
+    </record>
 </odoo>

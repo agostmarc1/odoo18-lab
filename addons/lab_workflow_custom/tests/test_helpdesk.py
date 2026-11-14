@@ -81,17 +81,45 @@ class TestLabHelpdesk(TransactionCase):
                       ticket.sla_ids)
         self.assertTrue(ticket.sla_deadline)
 
-    def test_03_web_email_matches_contact(self):
-        # come il form del sito: creazione con il superutente
+    def test_03_web_ticket_waits_for_email_confirmation(self):
+        """Dal sito: il ticket aspetta la conferma via email prima di collegarsi all'azienda."""
         Ticket = self.env["helpdesk.ticket"].with_user(self.env.ref("base.user_root")).sudo()
         ticket = Ticket.with_context(lab_from_website=True).create({
             "name": "Dal sito", "description": "<p>x</p>", "partner_name": "Mario",
             "partner_email": "Mario.Verdi@Cliente-AMS.example"})
-        self.assertEqual(ticket.partner_id, self.contact, "Email riconosciuta anche in maiuscolo")
+        self.assertFalse(ticket.lab_web_confirmed)
+        self.assertFalse(ticket.partner_id, "Chiunque può scrivere un'email altrui: niente azienda")
+        self.assertFalse(ticket.project_id, "...e niente ore sul monte ore del cliente")
+        self.assertFalse(ticket.sla_ids, "Gli SLA partono dalla conferma")
         self.assertFalse(ticket.user_id, "Il ticket dal sito non va assegnato a OdooBot")
-        self.assertEqual(ticket.project_id, self.ams_project)
         self.assertEqual(ticket.channel_id,
                          self.env.ref("helpdesk_mgmt.helpdesk_ticket_channel_web"))
+        mails = self.env["mail.mail"].search([("model", "=", "helpdesk.ticket"),
+                                              ("res_id", "=", ticket.id)])
+        self.assertEqual(len(mails), 1, "Solo l'email di conferma, non quella di ticket ricevuto")
+        self.assertIn("Conferma la tua richiesta", mails.subject)
+        self.assertIn(f"/assistenza/conferma/{ticket.id}/{ticket.lab_confirm_token}",
+                      mails.body_html)
+        self.assertEqual(mails.email_to, "Mario.Verdi@Cliente-AMS.example")
+        # codice sbagliato: nulla
+        Model = self.env["helpdesk.ticket"]
+        self.assertFalse(Model._lab_check_confirm_token(ticket.id, "codice-inventato"))
+        self.assertFalse(Model._lab_check_confirm_token(ticket.id, ""))
+        # codice giusto: conferma
+        token = ticket.lab_confirm_token
+        found = Model._lab_check_confirm_token(ticket.id, token)
+        self.assertEqual(found, ticket)
+        found._lab_web_confirm()
+        self.assertTrue(ticket.lab_web_confirmed)
+        self.assertEqual(ticket.partner_id, self.contact, "Email riconosciuta anche in maiuscolo")
+        self.assertEqual(ticket.project_id, self.ams_project)
+        self.assertIn(self.env.ref("lab_workflow_custom.helpdesk_sla_ams_resolution"),
+                      ticket.sla_ids)
+        self.assertIn(self.contact, ticket.message_partner_ids)
+        received = self.env["mail.mail"].search([("model", "=", "helpdesk.ticket"),
+                                                 ("res_id", "=", ticket.id)]) - mails
+        self.assertIn("Abbiamo ricevuto", received.subject)
+        self.assertFalse(Model._lab_check_confirm_token(ticket.id, token), "Link usa e getta")
 
     def test_04_unknown_email_stays_unlinked(self):
         ticket = self._ticket(partner_name="Sconosciuto", partner_email="nuovo@altro.example")
@@ -201,3 +229,33 @@ class TestLabHelpdesk(TransactionCase):
         plain = self.env["helpdesk.ticket"].website_form_input_filter(
             fake_request, {"description": "<p>testo</p>"})
         self.assertEqual(plain["description"], "<p>testo</p>")
+
+    def test_11_confirmation_trusted_manual_and_cleanup(self):
+        Ticket = self.env["helpdesk.ticket"].with_context(lab_from_website=True)
+        # utente collegato che usa la propria email: niente conferma
+        trusted = Ticket.with_context(lab_web_trusted=True).create({
+            "name": "Dal portale", "description": "<p>x</p>",
+            "partner_email": self.contact.email})
+        self.assertTrue(trusted.lab_web_confirmed)
+        self.assertEqual(trusted.project_id, self.ams_project)
+        # conferma a mano del Supporto (il cliente ha telefonato); il Commerciale non può
+        pending = Ticket.create({"name": "Telefonata", "description": "<p>x</p>",
+                                 "partner_email": self.contact.email})
+        with self.assertRaises(UserError):
+            pending.with_user(self.sales).action_lab_web_confirm()
+        pending.with_user(self.support).action_lab_web_confirm()
+        self.assertTrue(pending.lab_web_confirmed)
+        self.assertEqual(pending.partner_id, self.contact)
+        # mai confermati da oltre 7 giorni: archiviati dalla pulizia notturna
+        stale = Ticket.create({"name": "Spam", "description": "<p>x</p>",
+                               "partner_email": "spam@bot.example"})
+        recent = Ticket.create({"name": "Recente", "description": "<p>x</p>",
+                                "partner_email": "nuovo@bot.example"})
+        self.env.cr.execute("UPDATE helpdesk_ticket SET create_date = now() - interval '8 days' "
+                            "WHERE id = %s", [stale.id])
+        stale.invalidate_recordset()
+        self.env["helpdesk.ticket"]._lab_archive_unconfirmed()
+        self.assertFalse(stale.active)
+        self.assertTrue(recent.active)
+        self.assertFalse(self.env["helpdesk.ticket"]._lab_check_confirm_token(
+            stale.id, stale.lab_confirm_token or "x"), "Il link di un ticket archiviato non vale")
