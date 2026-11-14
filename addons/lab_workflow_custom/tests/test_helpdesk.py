@@ -167,3 +167,37 @@ class TestLabHelpdesk(TransactionCase):
         self.assertNotIn(foreign, Ticket.search([]))
         with self.assertRaises(AccessError):
             ticket.with_user(self.sales).write({"name": "Modificato"})
+
+    def test_10_web_description_rich_text_and_images(self):
+        """Descrizione dall'editor del sito: formattazione e link restano, codice pericoloso no,
+        le immagini incollate diventano allegati del ticket."""
+        png = ("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAA"
+               "AABJRU5ErkJggg==")
+        raw = ('<p>La stampa <b>si blocca</b>, vedi <a href="https://www.esempio.it">guida</a>'
+               ' <a href="javascript:alert(1)">trappola</a></p>'
+               '<ul><li>apro i DDT</li><li>premo Stampa</li></ul>'
+               f'<p><img src="data:image/png;base64,{png}"></p>'
+               '<img src="data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=">'
+               '<img src="data:image/png;base64,bm9uIHVuJ2ltbWFnaW5l">'
+               '<script>alert(2)</script>')
+        Ticket = self.env["helpdesk.ticket"].with_context(lab_rich_description=True)
+        fake_request = type("FakeRequest", (), {"params": {"description": raw}})()
+        values = Ticket.website_form_input_filter(fake_request, {"description": "<p>testo</p>"})
+        self.assertIn("<b>si blocca</b>", values["description"])
+        self.assertIn('href="https://www.esempio.it"', values["description"])
+        self.assertNotIn("javascript", values["description"])
+        self.assertNotIn("<script", values["description"])
+        ticket = Ticket.with_context(lab_from_website=True).create({
+            "name": "Con immagini", "partner_email": "x@cliente.example", **values})
+        self.assertIn("<li>premo Stampa</li>", ticket.description)
+        self.assertNotIn("data:", ticket.description, "Niente immagini incorporate nel testo")
+        attachments = self.env["ir.attachment"].search(
+            [("res_model", "=", "helpdesk.ticket"), ("res_id", "=", ticket.id)])
+        self.assertEqual(len(attachments), 1, "Solo l'immagine PNG vera; SVG e falsi scartati")
+        self.assertEqual(attachments.mimetype, "image/png")
+        self.assertIn(f"/web/image/{attachments.id}?access_token={attachments.access_token}",
+                      ticket.description)
+        # senza editor (JavaScript spento) la descrizione resta quella del form builder
+        plain = self.env["helpdesk.ticket"].website_form_input_filter(
+            fake_request, {"description": "<p>testo</p>"})
+        self.assertEqual(plain["description"], "<p>testo</p>")

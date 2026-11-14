@@ -5,12 +5,23 @@
   così le ore segnate sul ticket scalano il monte ore del mese e fanno scattare gli alert 75%/90%.
 - Gli SLA guardano il tipo di contratto della commessa (campo ``lab_contract_type``).
 """
+import base64
+import binascii
+import re
 from datetime import timedelta
 
 from odoo import _, api, fields, models, tools
 from odoo.exceptions import UserError
+from odoo.tools.mimetypes import guess_mimetype
 
 from .project_task import ALERT_LEVELS
+
+# Immagini dentro la descrizione scritta sul sito (editor del modulo pubblico)
+INLINE_IMAGE = re.compile(r'<img\b[^>]*?\ssrc="data:([^";,]+);base64,([^"]*)"[^>]*>', re.I)
+INLINE_IMAGE_TYPES = {"image/png": "png", "image/jpeg": "jpg", "image/gif": "gif",
+                      "image/webp": "webp"}
+INLINE_IMAGE_MAX = 10
+INLINE_IMAGE_MAX_BYTES = 5 * 1024 * 1024
 
 CONTRACT_TYPES = [("corpo", "A corpo / monte ore"), ("tm", "Time & Material"),
                   ("canone", "Canone ricorrente"), ("interno", "Interno (senza ordine)")]
@@ -88,7 +99,56 @@ class HelpdeskTicket(models.Model):
                 vals["channel_id"] = self.env.ref("helpdesk_mgmt.helpdesk_ticket_channel_web").id
         tickets = super().create(vals_list)
         tickets._lab_subscribe_customer()
+        if self.env.context.get("lab_from_website"):
+            tickets._lab_store_inline_images()
         return tickets
+
+    # ---- Descrizione dal modulo pubblico (editor con formattazione e immagini) ------
+    def website_form_input_filter(self, request, values):
+        """Hook standard di /website/form. Il form builder tratta i campi HTML come testo
+        semplice; se la descrizione arriva dall'editor (flag lab_rich, vedi controllers) si usa
+        l'HTML così com'è: lo ripulisce il campo stesso (sanitize: via script, eventi, link
+        javascript:, immagini SVG)."""
+        values = super().website_form_input_filter(request, values) \
+            if hasattr(super(), "website_form_input_filter") else values
+        raw = request.params.get("description")
+        if self.env.context.get("lab_rich_description") and raw and raw.strip():
+            values["description"] = tools.html_sanitize(raw, sanitize_style=True)
+        return values
+
+    def _lab_store_inline_images(self):
+        """Le immagini incollate nella descrizione (data URI) diventano allegati del ticket:
+        il testo resta leggero e le immagini si aprono anche dal link "Segui il ticket"."""
+        Attachment = self.env["ir.attachment"].sudo()
+        for ticket in self.sudo():
+            description = ticket.description or ""
+            if "data:" not in description:
+                continue
+            counter = {"n": 0}
+
+            def replace(match, ticket=ticket, counter=counter):
+                declared = match.group(1).lower()
+                try:
+                    data = base64.b64decode(match.group(2), validate=False)
+                except (binascii.Error, ValueError):
+                    return ""
+                mimetype = guess_mimetype(data)
+                if (declared not in INLINE_IMAGE_TYPES or mimetype not in INLINE_IMAGE_TYPES
+                        or len(data) > INLINE_IMAGE_MAX_BYTES
+                        or counter["n"] >= INLINE_IMAGE_MAX):
+                    return ""  # tipo non ammesso, troppo grande o troppe: si scarta
+                counter["n"] += 1
+                attachment = Attachment.create({
+                    "name": f"immagine_{counter['n']}.{INLINE_IMAGE_TYPES[mimetype]}",
+                    "raw": data, "mimetype": mimetype,
+                    "res_model": ticket._name, "res_id": ticket.id})
+                token = attachment.generate_access_token()[0]
+                return (f'<img src="/web/image/{attachment.id}?access_token={token}" '
+                        f'class="img-fluid" alt="{attachment.name}">')
+
+            new_description = INLINE_IMAGE.sub(replace, description)
+            if new_description != description:
+                ticket.description = new_description
 
     def write(self, vals):
         res = super().write(vals)

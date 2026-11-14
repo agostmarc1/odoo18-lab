@@ -12,46 +12,46 @@
  {
   "n": 2,
   "titolo": "Il Project Manager trova la commessa pronta",
-  "secondi": 63
+  "secondi": 65
  },
  {
   "n": 3,
   "titolo": "Pianificazione con la regola 80/20",
-  "secondi": 110
+  "secondi": 117
  },
  {
   "n": 4,
   "titolo": "L'analista conferma il turno",
-  "secondi": 188
+  "secondi": 195
  },
  {
   "n": 5,
   "titolo": "Alert sul monte ore",
-  "secondi": 234
+  "secondi": 245
  },
  {
   "n": 6,
   "titolo": "Lavoro in parallelo",
-  "secondi": 270
+  "secondi": 286
  },
  {
   "n": 7,
   "titolo": "Costi, ricavi e margine della commessa",
-  "secondi": 293
+  "secondi": 308
  },
  {
   "n": 8,
   "titolo": "Costi AI, consulenti e chiusura del mese",
-  "secondi": 335
+  "secondi": 352
  },
  {
   "n": 9,
   "titolo": "Ticket di assistenza",
-  "secondi": 409
+  "secondi": 430
  },
  {
   "n": 10,
   "titolo": "Riepilogo",
-  "secondi": 504
+  "secondi": 538
  }
 ]
