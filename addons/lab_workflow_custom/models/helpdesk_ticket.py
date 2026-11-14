@@ -27,6 +27,10 @@ INLINE_IMAGE_TYPES = {"image/png": "png", "image/jpeg": "jpg", "image/gif": "gif
 INLINE_IMAGE_MAX = 10
 INLINE_IMAGE_MAX_BYTES = 5 * 1024 * 1024
 
+# Campi che il cliente vede nel Kanban del portale: se cambiano, la sua bacheca si aggiorna
+PORTAL_FIELDS = {"stage_id", "name", "priority", "partner_id", "user_id", "type_id", "active",
+                 "lab_web_confirmed"}
+
 CONTRACT_TYPES = [("corpo", "A corpo / monte ore"), ("tm", "Time & Material"),
                   ("canone", "Canone ricorrente"), ("interno", "Interno (senza ordine)")]
 
@@ -119,6 +123,7 @@ class HelpdeskTicket(models.Model):
         if self.env.context.get("lab_from_website"):
             tickets._lab_store_inline_images()
         tickets.filtered(lambda t: not t.lab_web_confirmed)._lab_send_confirmation()
+        tickets._lab_notify_portal()
         return tickets
 
     # ---- Conferma via email dei ticket aperti dal sito ------------------------------
@@ -238,6 +243,8 @@ class HelpdeskTicket(models.Model):
                 ticket.description = new_description
 
     def write(self, vals):
+        notify = bool(PORTAL_FIELDS & set(vals))
+        before = self.sudo().mapped("commercial_partner_id") if notify else None
         res = super().write(vals)
         if vals.get("partner_id"):
             for ticket in self.filtered(lambda t: not t.project_id):
@@ -251,7 +258,25 @@ class HelpdeskTicket(models.Model):
             for ticket in self.filtered(
                     lambda t: t.team_id.use_sla and not t.closed and t.lab_web_confirmed):
                 ticket.refresh_sla()
+        if notify:
+            self._lab_notify_portal(before)
         return res
+
+    # ---- Portale: Kanban aggiornato in tempo reale ---------------------------------
+    def _lab_notify_portal(self, extra_companies=None):
+        """Avviso istantaneo (bus) agli utenti portale dell'azienda del ticket: la loro bacheca
+        Kanban si ricarica. Il messaggio contiene solo gli id: i dati li rilegge la pagina con i
+        permessi del cliente. Le altre aziende non ricevono nulla."""
+        tickets = self.sudo()
+        companies = tickets.mapped("commercial_partner_id") | (extra_companies or self.env["res.partner"])
+        if not companies:
+            return
+        users = self.env["res.users"].sudo().search([
+            ("share", "=", True), ("partner_id.commercial_partner_id", "in", companies.ids)])
+        for user in users:
+            company = user.partner_id.commercial_partner_id
+            ids = tickets.filtered(lambda t, c=company: t.commercial_partner_id == c).ids
+            user.partner_id._bus_send("lab_ticket_update", {"ticket_ids": ids})
 
     def _lab_subscribe_customer(self):
         """Il cliente segue il ticket: riceve per email le risposte del Supporto."""

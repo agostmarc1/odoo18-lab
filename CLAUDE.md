@@ -143,7 +143,10 @@ filtri data non accettano `default_period="week"`.
   (`_lab_store_inline_images`). Dopo modifiche agli asset serve il riavvio di Odoo.
   Ticket dal sito **da confermare** (`lab_web_confirmed`, codice `lab_confirm_token` solo admin,
   rotta `/assistenza/conferma/<id>/<codice>`): niente contatto/commessa/SLA prima della conferma;
-  esenti gli utenti collegati con la propria email (`lab_web_trusted`). Nessun server di posta nel lab:
+  esenti gli utenti collegati con la propria email (`lab_web_trusted`).
+  Portale: Kanban `/my/tickets/kanban` (`controllers/portal_kanban.py`), mai sudo nelle letture;
+  separazione per azienda con la regola globale `rule_helpdesk_ticket_portal_company`; tempo reale
+  con `_lab_notify_portal` (bus, solo id). Utenti portale demo: `mario.verdi@…`, `luca.rossi@…`. Nessun server di posta nel lab:
   le email in arrivo si testano con `message_process`, mai con caselle reali.
 
 ## Owner per funzionalità

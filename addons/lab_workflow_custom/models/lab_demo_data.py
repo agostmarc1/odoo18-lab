@@ -54,7 +54,9 @@ class LabDemoData(models.AbstractModel):
     def _lab_load_synthetic(self):
         if self.env.ref(f"{MODULE}.{MARKER}", raise_if_not_found=False):
             # scenario caricato con una versione precedente dell'app: aggiunge solo i ticket
-            if self._lab_load_helpdesk():
+            loaded = self._lab_load_helpdesk()
+            loaded = self._lab_load_portal_users() or loaded
+            if loaded:
                 return True
             _logger.info("Dati sintetici già presenti: nulla da fare")
             return False
@@ -68,6 +70,7 @@ class LabDemoData(models.AbstractModel):
         self._previous_month(ctx)
         self._current_month(ctx)
         self._planning(ctx)
+        self._lab_load_portal_users()
         self.env["lab.cost.period"]._cron_compute_open_periods()
         _logger.info("Dati sintetici caricati")
         return True
@@ -88,6 +91,28 @@ class LabDemoData(models.AbstractModel):
         return {"today": today, "month_start": month_start, "prev_start": prev_start,
                 "prev_end": prev_end, "prev_days": prev_days, "cur_days": cur_days,
                 "users": users, "emp": emp}
+
+    def _lab_load_portal_users(self):
+        """Clienti con accesso al portale (Kanban dei ticket): Mario Verdi per Verdi Retail e
+        Luca Rossi per Rossi Meccanica. Password da .env (scripts/_lib.sh set_passwords, che
+        prende tutti gli utenti con xmlid di questa app). Idempotente."""
+        if (self.env.ref(f"{MODULE}.synth_user_portal_verdi", raise_if_not_found=False)
+                or not self.env.ref(f"{MODULE}.{MARKER}", raise_if_not_found=False)):
+            return False
+        self = self.sudo()
+        portal = self.env.ref("base.group_portal")
+        for key, company_xmlid, name, login in (
+                ("verdi", "synth_partner_verdi", "Mario Verdi", "mario.verdi@verdiretail.example"),
+                ("rossi", "synth_partner_rossi", "Luca Rossi", "luca.rossi@rossimeccanica.example")):
+            company = self._ref(company_xmlid)
+            contact = self.env["res.partner"].create({
+                "name": name, "parent_id": company.id, "email": login, "lang": "it_IT"})
+            user = self.env["res.users"].with_context(no_reset_password=True).create({
+                "name": name, "login": login, "email": login, "partner_id": contact.id,
+                "groups_id": [(6, 0, [portal.id])]})
+            self._xmlid(f"synth_user_portal_{key}", user)
+        _logger.info("Utenti portale dei clienti creati")
+        return True
 
     def _partner(self, xmlid, name, city, email):
         partner = self.env["res.partner"].create({
