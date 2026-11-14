@@ -33,7 +33,8 @@ URL = "http://127.0.0.1:8069"
 DB = "lab18"
 CLIENTE = "Ferri Automazione S.r.l."
 TICKET_VIDEO = "Stampa delle bolle bloccata"   # ticket aperto dal modulo web nel video
-EMAIL_AMS = "helpdesk@verdiretail.example"       # Verdi Retail, canone AMS dei dati sintetici
+EMAIL_AMS = "helpdesk@verdiretail.example"
+PORTAL_VERDI = "mario.verdi@verdiretail.example"  # utente portale di Verdi Retail       # Verdi Retail, canone AMS dei dati sintetici
 PROVA = "--prova" in sys.argv
 W, H = 1280, 720
 
@@ -609,6 +610,27 @@ def copione(r, rpc):
     r.dici("Per stadio: ticket nuovi, in corso, in attesa del cliente e chiusi con valutazione; "
            "l'urgente con lo SLA scaduto va gestito subito.", 6)
     r.foto("ticket_lista")
+
+    # Il cliente segue i suoi ticket nel Kanban del portale (solo quelli della sua azienda)
+    r.nuova_pagina()
+    r.page.goto(URL + "/web/session/logout", wait_until="domcontentloaded")
+    r.page.goto(URL + "/web/login", wait_until="domcontentloaded")
+    r.ruolo("Cliente (portale)")
+    r.dici("Accesso come <b>Mario Verdi</b> (cliente, portale)", 1.5)
+    form = r.page.locator("form.oe_login_form")
+    r.scrivi(form.locator("input[name=login]"), PORTAL_VERDI)
+    form.locator("input[name=password]").fill(PWD_USERS)
+    r.clic(form.locator("button[type=submit]"))
+    r.page.wait_for_load_state("domcontentloaded")
+    r.page.goto(URL + "/my/tickets/kanban", wait_until="domcontentloaded")
+    r.page.locator(".lab_kanban_board").wait_for(timeout=60000)
+    r.pausa(1.0)
+    r.dici("Il cliente segue i ticket nel <b>Kanban del portale</b>: vede solo quelli della "
+           "sua azienda, divisi per fase.", 5)
+    r.evidenzia(r.page.locator(".lab_kanban_card", has_text=TICKET_VIDEO), 2.0)
+    r.dici("La bacheca si aggiorna da sola, in tempo reale, quando il Supporto sposta un ticket.",
+           4.5)
+    r.foto("ticket_kanban_portale")
 
     # Chiusura
     r.ruolo("")

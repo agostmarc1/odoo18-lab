@@ -1,0 +1,30 @@
+// Portale clienti: Kanban dei ticket (views/portal_templates.xml)
+#lab_ticket_kanban {
+    .lab_kanban_columns {
+        overflow-x: auto;
+        align-items: flex-start;
+    }
+    .lab_kanban_column {
+        flex: 1 0 14rem; // le 4 fasi stanno in una pagina; sullo schermo stretto scorrono
+        max-width: 22rem;
+        min-height: 8rem;
+    }
+    .lab_kanban_card {
+        transition: box-shadow 0.2s;
+        &:hover {
+            box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.15) !important;
+        }
+    }
+    .lab_kanban_card_changed {
+        animation: lab-kanban-flash 2.5s ease-out;
+    }
+}
+
+@keyframes lab-kanban-flash {
+    0% {
+        background-color: #fff3cd;
+    }
+    100% {
+        background-color: inherit;
+    }
+}

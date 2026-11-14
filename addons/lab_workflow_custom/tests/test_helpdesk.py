@@ -1,5 +1,5 @@
 from odoo.exceptions import AccessError, UserError, ValidationError
-from odoo.tests import TransactionCase, new_test_user, tagged
+from odoo.tests import HttpCase, TransactionCase, new_test_user, tagged
 
 RAW_EMAIL = """From: Mario Verdi <{email}>
 To: assistenza@example.com
@@ -259,3 +259,72 @@ class TestLabHelpdesk(TransactionCase):
         self.assertTrue(recent.active)
         self.assertFalse(self.env["helpdesk.ticket"]._lab_check_confirm_token(
             stale.id, stale.lab_confirm_token or "x"), "Il link di un ticket archiviato non vale")
+
+    def _portal_user(self, login, company):
+        user = new_test_user(self.env, login, groups="base.group_portal")
+        user.partner_id.write({"parent_id": company.id, "email": f"{login}@x.example"})
+        return user
+
+    def test_12_portal_segregation_by_company(self):
+        """Ogni cliente vede solo i ticket della propria azienda, anche se è follower di altri."""
+        other_company = self.env["res.partner"].create({"name": "Altra Srl", "is_company": True})
+        mine = self._ticket(partner_id=self.contact.id)
+        foreign = self._ticket(partner_id=other_company.id)
+        verdi = self._portal_user("t_portal_ams", self.customer)
+        altra = self._portal_user("t_portal_altra", other_company)
+        # errore del Supporto: il cliente AMS aggiunto come follower al ticket dell'altra azienda
+        foreign.message_subscribe(partner_ids=verdi.partner_id.ids)
+        seen = self.env["helpdesk.ticket"].with_user(verdi).search([])
+        self.assertIn(mine, seen)
+        self.assertNotIn(foreign, seen, "Il follower di un'altra azienda non vede il ticket")
+        with self.assertRaises(AccessError):
+            foreign.with_user(verdi).read(["name"])
+        self.assertEqual(self.env["helpdesk.ticket"].with_user(altra).search([]), foreign)
+        # gli utenti interni non sono toccati dalla regola
+        self.assertIn(foreign, self.env["helpdesk.ticket"].with_user(self.support).search([]))
+
+    def test_13_portal_realtime_notification_only_to_own_company(self):
+        from unittest.mock import patch
+        other_company = self.env["res.partner"].create({"name": "Altra Srl", "is_company": True})
+        verdi = self._portal_user("t_portal_ams2", self.customer)
+        altra = self._portal_user("t_portal_altra2", other_company)
+        ticket = self._ticket(partner_id=self.contact.id)
+        sent = []
+        Partner = type(self.env["res.partner"])
+
+        def fake_send(partners, notification_type, message, *args, **kwargs):
+            sent.extend((p, notification_type, message) for p in partners)
+
+        with patch.object(Partner, "_bus_send", fake_send):
+            ticket.stage_id = self.env.ref("helpdesk_mgmt.helpdesk_ticket_stage_in_progress")
+        self.assertEqual([(p, t) for p, t, _m in sent], [(verdi.partner_id, "lab_ticket_update")])
+        self.assertEqual(sent[0][2], {"ticket_ids": [ticket.id]})
+        self.assertNotIn(altra.partner_id, [p for p, _t, _m in sent])
+
+
+@tagged("post_install", "-at_install")
+class TestLabPortalKanban(HttpCase):
+    """La pagina Kanban del portale, vista da un cliente collegato."""
+
+    def test_portal_kanban_page(self):
+        env = self.env(context=dict(self.env.context, tracking_disable=True))
+        company = env["res.partner"].create({"name": "Cliente Kanban Srl", "is_company": True})
+        other = env["res.partner"].create({"name": "Concorrente Srl", "is_company": True})
+        user = new_test_user(env, "t_portal_kanban", groups="base.group_portal")
+        user.partner_id.write({"parent_id": company.id, "email": "kanban@cliente.example"})
+        Ticket = env["helpdesk.ticket"]
+        mine = Ticket.create({"name": "Ticket del cliente", "description": "<p>x</p>",
+                              "partner_id": company.id})
+        foreign = Ticket.create({"name": "Ticket del concorrente", "description": "<p>x</p>",
+                                 "partner_id": other.id})
+        self.authenticate("t_portal_kanban", "t_portal_kanban")
+        page = self.url_open("/my/tickets/kanban")
+        self.assertEqual(page.status_code, 200)
+        self.assertIn(mine.number, page.text)
+        self.assertIn("Ticket del cliente", page.text)
+        self.assertNotIn(foreign.number, page.text)
+        self.assertNotIn("Ticket del concorrente", page.text)
+        self.assertIn('id="lab_ticket_kanban"', page.text)
+        fragment = self.url_open("/my/tickets/kanban?fragment=1&scope=mine")
+        self.assertIn("lab_kanban_board", fragment.text)
+        self.assertNotIn(mine.number, fragment.text, "Solo i miei: il ticket è dell'azienda")

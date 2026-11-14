@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Portale clienti: Kanban dei ticket per fase (controllers/portal_kanban.py).
+     Il cliente vede solo i ticket della propria azienda (regole di sicurezza) e la bacheca si
+     aggiorna da sola quando un ticket cambia (static/src/js/portal_ticket_kanban.js). -->
+<odoo>
+    <template id="portal_my_tickets_kanban" name="I miei ticket – Kanban">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="False"/>
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mt-3 mb-3">
+                <h3 class="mb-0">I miei ticket</h3>
+                <div class="d-flex flex-wrap gap-2">
+                    <div class="btn-group" role="group" aria-label="Quali ticket">
+                        <a t-attf-href="/my/tickets/kanban?scope=company"
+                           t-attf-class="btn btn-sm #{'btn-primary' if scope == 'company' else 'btn-outline-primary'}">Tutta l'azienda</a>
+                        <a t-attf-href="/my/tickets/kanban?scope=mine"
+                           t-attf-class="btn btn-sm #{'btn-primary' if scope == 'mine' else 'btn-outline-primary'}">Solo i miei</a>
+                    </div>
+                    <div class="btn-group" role="group" aria-label="Vista">
+                        <a href="/my/tickets" class="btn btn-sm btn-outline-secondary"><i class="fa fa-list"/> Elenco</a>
+                        <span class="btn btn-sm btn-secondary disabled"><i class="fa fa-th-large"/> Kanban</span>
+                    </div>
+                    <a href="/assistenza" class="btn btn-sm btn-success"><i class="fa fa-plus"/> Nuova richiesta</a>
+                </div>
+            </div>
+            <div id="lab_ticket_kanban" t-att-data-scope="scope">
+                <t t-call="lab_workflow_custom.portal_ticket_kanban_board"/>
+            </div>
+            <p class="text-muted small mt-2" id="lab_ticket_kanban_status">
+                La bacheca si aggiorna da sola quando un ticket cambia fase.
+            </p>
+        </t>
+    </template>
+
+    <template id="portal_ticket_kanban_board" name="I miei ticket – bacheca">
+        <div class="lab_kanban_board">
+            <div t-if="not ticket_count" class="alert alert-info">Nessun ticket da mostrare.</div>
+            <div class="lab_kanban_columns d-flex gap-3 pb-2">
+                <div t-foreach="columns" t-as="column" class="lab_kanban_column card bg-light"
+                     t-att-data-stage-id="column[0].id">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <strong t-out="column[0].name"/>
+                        <span class="badge rounded-pill text-bg-secondary" t-out="len(column[1])"/>
+                    </div>
+                    <div class="card-body p-2 d-flex flex-column gap-2">
+                        <a t-foreach="column[1]" t-as="ticket" t-attf-href="/my/ticket/#{ticket.id}"
+                           class="lab_kanban_card card text-reset text-decoration-none shadow-sm"
+                           t-att-data-ticket-id="ticket.id">
+                            <div class="card-body p-2">
+                                <div class="d-flex justify-content-between">
+                                    <small class="text-muted" t-out="ticket.number"/>
+                                    <small class="text-warning" t-att-title="'Urgenza %s su 3' % ticket.priority">
+                                        <t t-foreach="range(int(ticket.priority or 0))" t-as="i"><i class="fa fa-star"/></t>
+                                    </small>
+                                </div>
+                                <div class="fw-semibold" t-out="ticket.name"/>
+                                <div t-if="ticket.type_id" class="small text-muted" t-out="ticket.type_id.name"/>
+                                <div class="small text-muted mt-1">
+                                    <t t-if="ticket.user_id">In carico a <t t-out="ticket.user_id.name"/> · </t>
+                                    aggiornato il <t t-out="ticket.last_stage_update" t-options="{'widget': 'date'}"/>
+                                </div>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- Dall'elenco dei ticket si passa al Kanban -->
+    <template id="portal_my_tickets_kanban_link" inherit_id="helpdesk_mgmt.portal_my_tickets"
+              name="I miei ticket – link al Kanban">
+        <xpath expr="//t[@t-if='not grouped_tickets']" position="before">
+            <div class="text-end mt-2">
+                <a href="/my/tickets/kanban" class="btn btn-sm btn-outline-secondary">
+                    <i class="fa fa-th-large"/> Vista Kanban</a>
+            </div>
+        </xpath>
+    </template>
+</odoo>

@@ -156,6 +156,8 @@ WSL integration → attiva **Ubuntu** → Apply, poi rilancia.
 | `gianluca` | Gianluca Analista | Analista funzionale (38 €/h): task assegnati, turni, fogli ore |
 | `nicola` | Nicola Supporto | Supporto AMS (30 €/h): come il team, e segue in automatico le commesse a canone |
 | `luana` | Luana Amministrazione | Amministrazione: Fatturazione completa, fatture dei consulenti, chiusura mese costi |
+| `mario.verdi@verdiretail.example` | Mario Verdi | **Cliente (portale)** di Verdi Retail: Kanban dei ticket della sua azienda |
+| `luca.rossi@rossimeccanica.example` | Luca Rossi | **Cliente (portale)** di Rossi Meccanica: vede solo i ticket di Rossi |
 
 Per provare più utenti insieme usa una **finestra anonima** del browser per ognuno.
 
@@ -364,6 +366,10 @@ commessa Bianchi Logistica), personale (Claude Code di Carlo) e senza corrispond
 - **Come arrivano.** Email all'indirizzo dell'assistenza (alias `assistenza@` + dominio della posta),
   modulo pubblico **Assistenza** sul sito (http://127.0.0.1:8069/assistenza, senza login) oppure
   portale clienti (*I miei ticket*). Il contatto si riconosce dall'email.
+- **Kanban nel portale.** I clienti seguono i propri ticket in *I miei ticket → Vista Kanban*
+  (http://127.0.0.1:8069/my/tickets/kanban): colonne per fase, aggiornate in tempo reale quando il
+  Supporto sposta un ticket. Ogni cliente vede solo i ticket della propria azienda (regola di
+  sicurezza del database, valida anche se è follower del ticket di un altro cliente).
 - **Conferma via email.** Il ticket dal sito nasce *da confermare*: il cliente riceve un'email con
   il pulsante **Conferma la richiesta** e solo dopo il ticket si collega all'azienda e alla commessa
   (nessuno può aprire ticket a nome di un altro cliente). Chi è collegato con il proprio account e usa
@@ -460,6 +466,9 @@ Usa una finestra del browser per ogni utente (le finestre anonime vanno bene).
    `nicola` → Helpdesk → Ticket: il ticket è già sulla commessa AMS con i suoi SLA. *Assegna a me*,
    portalo a *In corso*, segna 1h nella scheda *Fogli ore* e chiudilo con *Fatto*. Sulla commessa il
    consumo del mese sale di 1h. `giuseppe` vede il ticket ma non lo può modificare.
+   In un'altra finestra anonima entra come `mario.verdi@verdiretail.example` e apri *I miei ticket →
+   Vista Kanban*: quando `nicola` cambia fase, la scheda si sposta da sola. Con
+   `luca.rossi@rossimeccanica.example` i ticket di Verdi non si vedono.
 
 ---
 
