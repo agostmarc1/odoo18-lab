@@ -93,6 +93,20 @@
             <field name="key">lab_workflow_custom.helpdesk_web_max_per_hour</field>
             <field name="value">5</field>
         </record>
+        <!-- Ticket dal sito mai confermati: archiviati dopo questi giorni -->
+        <record id="param_helpdesk_web_confirm_days" model="ir.config_parameter">
+            <field name="key">lab_workflow_custom.helpdesk_web_confirm_days</field>
+            <field name="value">7</field>
+        </record>
+        <record id="cron_helpdesk_archive_unconfirmed" model="ir.cron">
+            <field name="name">Ticket: archivia le richieste dal sito mai confermate</field>
+            <field name="model_id" ref="helpdesk_mgmt.model_helpdesk_ticket"/>
+            <field name="state">code</field>
+            <field name="code">model._lab_archive_unconfirmed()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="active" eval="True"/>
+        </record>
     </data>
 
     <!-- Il cliente può scegliere tipo e priorità nel modulo web -->

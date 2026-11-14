@@ -31,6 +31,34 @@
             </field>
         </record>
 
+        <!-- Ticket dal sito: prima di tutto il cliente conferma che l'email è sua.
+             Il link arriva dal contesto (ctx['lab_confirm_url']): il codice non è un campo
+             leggibile dai modelli di email. -->
+        <record id="mail_template_ticket_confirm" model="mail.template">
+            <field name="name">Ticket: conferma la richiesta (al cliente, dal sito)</field>
+            <field name="model_id" ref="helpdesk_mgmt.model_helpdesk_ticket"/>
+            <field name="email_from">{{ object.company_id.partner_id.email_formatted }}</field>
+            <field name="email_to">{{ object.partner_email }}</field>
+            <field name="subject">Conferma la tua richiesta di assistenza: {{ object.name }}</field>
+            <field name="auto_delete" eval="False"/>
+            <field name="body_html" type="html">
+<div>
+    <p>Gentile <t t-out="object.partner_name or 'cliente'"/>,</p>
+    <p>abbiamo ricevuto dal nostro sito una richiesta di assistenza inviata con questo indirizzo email:
+        «<t t-out="object.name"/>».</p>
+    <p>Per aprire il ticket conferma che la richiesta è tua:</p>
+    <p style="margin: 16px 0;">
+        <a t-att-href="ctx.get('lab_confirm_url')"
+           style="background-color: #875A7B; padding: 8px 16px; color: #fff; text-decoration: none; border-radius: 4px;">
+            Conferma la richiesta</a>
+    </p>
+    <p>Dopo la conferma ti mandiamo il numero del ticket e il link per seguirlo.
+        Se non hai scritto tu, ignora questa email: la richiesta verrà archiviata.</p>
+    <p>Il team <t t-out="object.team_id.name or 'Assistenza'"/><br/><t t-out="object.company_id.name"/></p>
+</div>
+            </field>
+        </record>
+
         <record id="mail_template_ticket_in_progress" model="mail.template">
             <field name="name">Ticket: preso in carico (al cliente)</field>
             <field name="model_id" ref="helpdesk_mgmt.model_helpdesk_ticket"/>

@@ -117,12 +117,40 @@
                 <section class="s_text_block pt48 pb48" data-snippet="s_text_block">
                     <div class="container">
                         <h1>Richiesta inviata</h1>
-                        <p class="lead">Grazie: abbiamo aperto il tuo ticket.</p>
-                        <p>Tra poco ricevi un'email con il numero del ticket e il pulsante <strong>Segui il ticket</strong>:
-                            da lì vedi lo stato, le nostre risposte e puoi aggiungere informazioni o allegati.
-                            Puoi anche rispondere direttamente all'email.</p>
+                        <p class="lead">Grazie! Ultimo passaggio: <strong>conferma la richiesta dalla tua email</strong>.</p>
+                        <p>Ti abbiamo mandato un'email con il pulsante <strong>Conferma la richiesta</strong>:
+                            serve a verificare che l'indirizzo sia tuo. Dopo la conferma ricevi il numero del ticket
+                            e il pulsante <strong>Segui il ticket</strong>, da cui vedi lo stato, le nostre risposte e
+                            puoi aggiungere informazioni o allegati.</p>
+                        <p>Se sei entrato con il tuo account e hai usato la tua email, la conferma non serve:
+                            ricevi subito il numero del ticket.</p>
                         <p>Non la trovi? Controlla la cartella dello spam.</p>
                         <a href="/assistenza" class="btn btn-secondary">Apri un'altra richiesta</a>
+                    </div>
+                </section>
+            </div>
+        </t>
+    </template>
+
+    <template id="helpdesk_page_confirmed_view" name="Assistenza – conferma della richiesta">
+        <t t-call="website.layout">
+            <div id="wrap" class="oe_structure">
+                <section class="s_text_block pt48 pb48" data-snippet="s_text_block">
+                    <div class="container">
+                        <t t-if="ticket">
+                            <h1>Richiesta confermata</h1>
+                            <p class="lead">Il tuo ticket è <strong t-out="ticket.number"/>: «<t t-out="ticket.name"/>».</p>
+                            <p>Ti abbiamo mandato un'email con il numero del ticket. Da qui puoi seguirlo, vedere le
+                                nostre risposte e aggiungere informazioni.</p>
+                            <a t-att-href="portal_url" class="btn btn-primary">Segui il ticket</a>
+                        </t>
+                        <t t-else="">
+                            <h1>Link non valido</h1>
+                            <p class="lead">Questo link di conferma è già stato usato oppure è scaduto.</p>
+                            <p>Se hai già confermato, trovi il ticket nell'email con il numero della richiesta.
+                                Altrimenti apri una nuova richiesta.</p>
+                            <a href="/assistenza" class="btn btn-secondary">Apri una richiesta</a>
+                        </t>
                     </div>
                 </section>
             </div>

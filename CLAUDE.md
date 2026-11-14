@@ -140,7 +140,10 @@ filtri data non accettano `default_period="week"`.
   (campo esca + `lab_workflow_custom.helpdesk_web_max_per_hour`). La descrizione del modulo pubblico
   è un editor (`static/src/js/helpdesk_rich_description.js`, flag `lab_rich`): l'HTML passa da
   `website_form_input_filter` (sanitize) e le immagini incollate diventano allegati
-  (`_lab_store_inline_images`). Dopo modifiche agli asset serve il riavvio di Odoo. Nessun server di posta nel lab:
+  (`_lab_store_inline_images`). Dopo modifiche agli asset serve il riavvio di Odoo.
+  Ticket dal sito **da confermare** (`lab_web_confirmed`, codice `lab_confirm_token` solo admin,
+  rotta `/assistenza/conferma/<id>/<codice>`): niente contatto/commessa/SLA prima della conferma;
+  esenti gli utenti collegati con la propria email (`lab_web_trusted`). Nessun server di posta nel lab:
   le email in arrivo si testano con `message_process`, mai con caselle reali.
 
 ## Owner per funzionalità

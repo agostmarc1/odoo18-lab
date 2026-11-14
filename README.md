@@ -364,6 +364,13 @@ commessa Bianchi Logistica), personale (Claude Code di Carlo) e senza corrispond
 - **Come arrivano.** Email all'indirizzo dell'assistenza (alias `assistenza@` + dominio della posta),
   modulo pubblico **Assistenza** sul sito (http://127.0.0.1:8069/assistenza, senza login) oppure
   portale clienti (*I miei ticket*). Il contatto si riconosce dall'email.
+- **Conferma via email.** Il ticket dal sito nasce *da confermare*: il cliente riceve un'email con
+  il pulsante **Conferma la richiesta** e solo dopo il ticket si collega all'azienda e alla commessa
+  (nessuno può aprire ticket a nome di un altro cliente). Chi è collegato con il proprio account e usa
+  la propria email non conferma. Il Supporto vede l'avviso e il filtro *Da confermare* e può
+  confermare a mano; le richieste mai confermate si archiviano dopo 7 giorni
+  (`lab_workflow_custom.helpdesk_web_confirm_days`). Nel lab l'email resta in coda: il link si legge
+  in Impostazioni → Tecnico → Email.
 - **Descrizione come una email.** Nel modulo del sito la descrizione ha una barra con grassetto,
   corsivo, sottolineato, elenchi, link e immagini; le schermate si incollano con Ctrl+V o si
   trascinano. Le immagini diventano allegati del ticket; il testo viene ripulito da codice pericoloso.
