@@ -1,6 +1,6 @@
 """Dati sintetici della software house: uno scenario coerente per verificare a colpo d'occhio
 che l'app funzioni (monte ore, T&M con consulente e pass-through, canone AMS, sviluppo a corpo,
-pianificazione 80/20, ore parallele, costi AI, chiusura del mese, margini).
+pianificazione 80/20, ore parallele, costi AI, chiusura del mese, margini, ticket di assistenza).
 
 Non parte mai da solo in un database di produzione: si carica
 - con i dati demo dell'app (demo/demo_synthetic.xml), oppure
@@ -53,6 +53,9 @@ class LabDemoData(models.AbstractModel):
     @api.model
     def _lab_load_synthetic(self):
         if self.env.ref(f"{MODULE}.{MARKER}", raise_if_not_found=False):
+            # scenario caricato con una versione precedente dell'app: aggiunge solo i ticket
+            if self._lab_load_helpdesk():
+                return True
             _logger.info("Dati sintetici già presenti: nulla da fare")
             return False
         self = self.sudo().with_context(tracking_disable=True, mail_notrack=True,
@@ -153,17 +156,8 @@ class LabDemoData(models.AbstractModel):
                                    "Assistenza applicativa mensile")
         ctx["neri"] = self._make_order(ctx, "synth_order_neri", neri, "product_dev_fixed", 1,
                                   "Gestionale sinistri – sviluppo a corpo")
-        # Canone AMS: i ticket sono task della commessa
-        project = ctx["verdi"][1]
-        tickets = self.env["project.task"]
-        for i, title in enumerate(["Errore nella stampa dei DDT",
-                                   "Nuovo utente per il magazzino",
-                                   "Report vendite lento a fine mese"], 101):
-            tickets |= self.env["project.task"].create({
-                "name": f"Ticket {i} – {title}", "project_id": project.id,
-                "partner_id": ctx["verdi"][0].partner_id.id,
-                "user_ids": [(6, 0, ctx["users"]["nicola"].ids)]})
-        ctx["tickets"] = tickets
+        # Assistenza: ticket dell'Helpdesk (il canone AMS di Verdi li riceve in automatico)
+        ctx["tickets"] = self._helpdesk(ctx)
         # Corrispondenze dei consumi AI
         Mapping = self.env["lab.ai.mapping"]
         self._xmlid("synth_mapping_bianchi", Mapping.create({
@@ -183,9 +177,131 @@ class LabDemoData(models.AbstractModel):
             "name": name, "project_id": task.project_id.id, "task_id": task.id,
             "employee_id": ctx["emp"][who].id, "unit_amount": hours, "date": day})
 
+    def _ts_ticket(self, ctx, who, ticket, day, hours, name):
+        """Ore segnate sul ticket: la commessa (canone AMS) arriva dal ticket."""
+        return self.env["account.analytic.line"].create({
+            "name": name, "ticket_id": ticket.id, "employee_id": ctx["emp"][who].id,
+            "unit_amount": hours, "date": day})
+
     def _post(self, ctx, move):
         move.with_user(ctx["users"]["luana"]).action_post()
         return move
+
+    # ---- Assistenza: ticket dell'Helpdesk ------------------------------------------------
+    def _helpdesk(self, ctx):
+        """Ticket di Verdi Retail (canone AMS, commessa collegata in automatico) e uno di Rossi
+        (monte ore: la commessa la sceglie il Supporto). Copre tutti gli stati: chiusi con
+        valutazione, in corso, in attesa del cliente, urgente con SLA scaduto, da smistare."""
+        users = ctx["users"]
+        team = self._ref("helpdesk_team_support")
+        team.write({"user_ids": [(4, users["nicola"].id)], "user_id": users["nicola"].id})
+        verdi = ctx["verdi"][0].partner_id
+        rossi = ctx["rossi"][0].partner_id
+        (verdi | rossi).user_id = users["giuseppe"]  # venditore: vede i ticket dei suoi clienti
+        ref = self.env.ref
+        stage = {k: ref(f"helpdesk_mgmt.helpdesk_ticket_stage_{k}")
+                 for k in ("new", "in_progress", "awaiting", "done")}
+        channel = {k: ref(f"helpdesk_mgmt.helpdesk_ticket_channel_{k}") for k in ("email", "web")}
+        kind = {k: self._ref(f"helpdesk_type_{k}") for k in ("bug", "question", "change")}
+        area = {k: self._ref(f"helpdesk_category_{k}")
+                for k in ("access", "sales", "stock", "reports")}
+        d, cur, today = ctx["prev_days"], ctx["cur_days"], ctx["today"]
+        at = lambda day, hour=9: fields.Datetime.to_datetime(day).replace(hour=hour - 1)  # noqa: E731  (UTC)
+        now = fields.Datetime.now()
+        # chiave, cliente, titolo, descrizione, tipo, area, priorità, canale,
+        # aperto il, stadio finale, chiuso il, valutazione (1-5)
+        specs = [
+            ("ddt", verdi, "Errore nella stampa dei DDT",
+             "Stampando il DDT del cliente Bianchi compare un errore e il PDF non si genera.",
+             "bug", "stock", "2", "email", at(d[1]), "done", at(d[12], 16), 5),
+            ("utente", verdi, "Nuovo utente per il magazzino",
+             "Serve un accesso per il nuovo magazziniere, Luca Gialli, con i permessi di Mario.",
+             "question", "access", "1", "web", at(d[4], 10), "done", at(d[6], 11), 4),
+            ("report", verdi, "Report vendite lento a fine mese",
+             "Il report vendite mensile impiega più di 5 minuti ad aprirsi.",
+             "bug", "reports", "1", "email", at(d[7], 11), "done", at(d[10], 15), 3),
+            ("listini", verdi, "Esportazione listini verso l'e-commerce",
+             "Vorremmo esportare in automatico i listini verso il sito e-commerce ogni notte.",
+             "change", "sales", "2", "web", now - timedelta(days=1), "in_progress", False, False),
+            ("import", verdi, "Errore nell'import degli ordini da Excel",
+             "L'import degli ordini da Excel si ferma alla riga 120 con un errore sulle date.",
+             "bug", "sales", "1", "email", now - timedelta(days=1, hours=-1), "awaiting", False, False),
+            ("etichette", verdi, "Etichette di spedizione disallineate",
+             "Le etichette del corriere escono spostate di qualche millimetro.",
+             "bug", "stock", "1", "email", at(cur[0], 9), "done",
+             at(cur[min(1, len(cur) - 1)], 17), 5),
+            ("fatture", verdi, "Bloccata l'emissione delle fatture elettroniche",
+             "Da stamattina l'invio delle fatture allo SdI va in errore: non riusciamo a fatturare.",
+             "bug", "sales", "3", "web", now - timedelta(days=2), "new", False, False),
+            ("rossi", rossi, "Come esporto l'elenco dei clienti?",
+             "Ci servirebbe l'elenco dei clienti del portale in Excel con l'ultima data di accesso.",
+             "question", "sales", "1", "email", now - timedelta(hours=3), "new", False, False),
+        ]
+        tickets = {}
+        for (key, partner, name, desc, kind_k, area_k, prio, chan, opened, final, closed,
+             score) in specs:
+            ticket = self.env["helpdesk.ticket"].create({
+                "name": name, "description": f"<p>{desc}</p>", "partner_id": partner.id,
+                "team_id": team.id, "type_id": kind[kind_k].id, "category_id": area[area_k].id,
+                "priority": prio, "channel_id": channel[chan].id})
+            # data di apertura nel passato (mai nel futuro), poi SLA ricalcolati da quella data
+            opened = min(opened, now - timedelta(minutes=30))
+            self.env.cr.execute("UPDATE helpdesk_ticket SET create_date = %s WHERE id = %s",
+                                (opened, ticket.id))
+            ticket.invalidate_recordset(["create_date"])
+            ticket.set_sla()
+            if final != "new":
+                ticket.write({"user_id": users["nicola"].id, "stage_id": stage[final].id})
+                # storia già avvenuta: gli stadi raggiunti lo sono stati in tempo (il ritardo
+                # dello scenario è solo sul ticket urgente ancora da prendere in carico)
+                reached = ticket.ticket_sla_ids.filtered(
+                    lambda s: ticket.stage_id.sequence >= s.expected_stage_id.sequence)
+                reached.write({"state": "accomplished"})
+                (ticket.ticket_sla_ids - reached).filtered(
+                    lambda s: s.state == "expired").write({"state": "in_progress"})
+            if closed:
+                closed = max(min(closed, now), opened)
+                ticket.write({"closed_date": closed, "last_stage_update": closed})
+                ticket.ticket_sla_ids.write({"last_state_date": closed})
+            if score:
+                self.env["rating.rating"].create({
+                    "res_model_id": self.env["ir.model"]._get_id("helpdesk.ticket"),
+                    "res_id": ticket.id, "partner_id": partner.id,
+                    "rated_partner_id": users["nicola"].partner_id.id, "rating": score,
+                    "consumed": True, "feedback": "Risposta rapida e chiara, grazie!"
+                    if score >= 4 else "Risolto, ma ci è voluto un po'."})
+            tickets[key] = self._xmlid(f"synth_ticket_{key}", ticket)
+        return tickets
+
+    @api.model
+    def _lab_load_helpdesk(self):
+        """Database con lo scenario già caricato (prima dei ticket): crea i ticket e sposta le
+        ore dei vecchi task "Ticket 101–103" di Verdi sui ticket, poi elimina quei task.
+        Idempotente: se i ticket ci sono già non fa nulla."""
+        if (self.env.ref(f"{MODULE}.synth_ticket_ddt", raise_if_not_found=False)
+                or not self.env.ref(f"{MODULE}.{MARKER}", raise_if_not_found=False)):
+            return False
+        self = self.sudo().with_context(tracking_disable=True, mail_notrack=True,
+                                        mail_create_nolog=True)
+        ctx = self._context_data()
+        for key, xmlid in (("rossi", MARKER), ("verdi", "synth_order_verdi")):
+            order = self._ref(xmlid)
+            line = order.order_line[:1]
+            ctx[key] = (order, line.task_id.project_id or line.project_id)
+        tickets = self._helpdesk(ctx)
+        old_tasks = ctx["verdi"][1].task_ids.filtered(
+            lambda t: t.name.startswith("Ticket 10")).sorted("name")
+        # mese scorso -> i tre ticket chiusi del mese scorso; mese in corso -> ticket "etichette"
+        # (chiuso a inizio mese), così le ore restano dopo l'apertura del ticket
+        targets = [("ddt", "etichette"), ("utente", "etichette"), ("report", "etichette")]
+        for task, (prev_key, cur_key) in zip(old_tasks, targets):
+            for line in task.timesheet_ids:
+                key = prev_key if line.date < ctx["month_start"] else cur_key
+                line.with_context(lab_skip_parallel=True).write(
+                    {"ticket_id": tickets[key].id, "task_id": False})
+            task.unlink()
+        _logger.info("Ticket di assistenza caricati (%s task convertiti)", len(old_tasks))
+        return True
 
     # ---- Mese scorso: lavoro, fatture, consumi AI, chiusura --------------------------------
     def _previous_month(self, ctx):
@@ -215,8 +331,8 @@ class LabDemoData(models.AbstractModel):
             ts(ctx, "gianluca", self._task(p_neri, "Analisi"), d[i], h, "Analisi processi sinistri")
         ts(ctx, "marco", self._task(p_neri, "Project"), d[8], 2, "Kick-off")
         # Verdi (AMS): ticket del mese scorso
-        for i, (t, h) in enumerate([(0, 4), (1, 1), (2, 5), (0, 3)]):
-            ts(ctx, "nicola", ctx["tickets"][t], d[2 + i * 3], h, "Assistenza")
+        for i, (t, h) in enumerate([("ddt", 4), ("utente", 1), ("report", 5), ("ddt", 3)]):
+            self._ts_ticket(ctx, "nicola", ctx["tickets"][t], d[2 + i * 3], h, "Assistenza")
 
         # Fatture dei consulenti (ultimo giorno del mese), confermate dall'Amministrazione
         product = self._ref("product_external_consultant").product_variant_id
@@ -280,8 +396,10 @@ class LabDemoData(models.AbstractModel):
         ts(ctx, "carlo", self._task(p_bianchi, "Sviluppo"), today, 6, "Gestione errori API")
         ts(ctx, "carlo", self._task(p_neri, "Sviluppo"), today, 6, "Prototipo con Claude Code")
         # AMS del mese: 12h su 20 (60%)
-        for (t, h), day in zip([(0, 3), (1, 2), (2, 5), (2, 2)], (days * 4)[:4]):
-            ts(ctx, "nicola", ctx["tickets"][t], day, h, "Assistenza")
+        # (etichette: ticket chiuso a inizio mese; listini e import: aperti ieri, ore di oggi)
+        for t, h, day in (("etichette", 3, days[0]), ("etichette", 2, days[min(1, len(days) - 1)]),
+                          ("listini", 5, today), ("import", 2, today)):
+            self._ts_ticket(ctx, "nicola", ctx["tickets"][t], day, h, "Assistenza")
         # Consumo API del mese in corso, dedicato alla commessa T&M
         self.env["lab.ai.usage"].create({
             "date": today, "source": "manual", "tool_id": self._ref("ai_tool_claude_api").id,

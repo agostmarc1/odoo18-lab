@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ticketing: sul ticket si vedono tipo di contratto e consumo del monte ore della commessa. -->
+<odoo>
+    <record id="helpdesk_ticket_form_lab" model="ir.ui.view">
+        <field name="name">helpdesk.ticket.form.lab</field>
+        <field name="model">helpdesk.ticket</field>
+        <field name="inherit_id" ref="helpdesk_mgmt_timesheet.ticket_view_form_project_required"/>
+        <field name="arch" type="xml">
+            <!-- OCA rende obbligatoria la commessa quando il team segna le ore: un ticket di un
+                 contatto nuovo o senza contratto deve poter restare senza commessa finché il
+                 Supporto non la sceglie (le ore, invece, richiedono sempre la commessa). -->
+            <xpath expr="//field[@name='project_id'][2]" position="attributes">
+                <attribute name="required">False</attribute>
+                <attribute name="string">Commessa</attribute>
+            </xpath>
+            <xpath expr="//field[@name='task_id'][2]" position="after">
+                <field name="lab_contract_type" invisible="not project_id" groups="project.group_project_user"/>
+                <label for="lab_consumption_pct" string="Monte ore"
+                       invisible="not project_id" groups="project.group_project_user"/>
+                <div class="o_row" invisible="not project_id" groups="project.group_project_user">
+                    <field name="lab_consumption_pct" widget="progressbar" nolabel="1"/>
+                    <field name="lab_hours_alert" widget="badge" nolabel="1"
+                           decoration-success="lab_hours_alert == 'ok'"
+                           decoration-warning="lab_hours_alert == 'warning'"
+                           decoration-danger="lab_hours_alert == 'danger'"/>
+                </div>
+            </xpath>
+        </field>
+    </record>
+</odoo>

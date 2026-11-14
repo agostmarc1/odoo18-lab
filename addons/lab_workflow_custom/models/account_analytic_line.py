@@ -44,6 +44,11 @@ class AccountAnalyticLine(models.Model):
             return
         for line in self.filtered(lambda l: l.project_id and not l.task_id):
             if line.sudo().project_id._lab_contract_type() in ("corpo", "tm"):
+                if line.ticket_id:
+                    raise ValidationError(_(
+                        "Il ticket %(t)s è sulla commessa %(p)s, venduta a ore: prima di segnare "
+                        "le ore collega il ticket a un task della commessa (campo Task).",
+                        t=line.ticket_id.display_name, p=line.project_id.display_name))
                 raise ValidationError(_(
                     "Sul progetto %s indica il task: le ore scalate dal pacchetto o fatturate "
                     "al cliente devono dire su quale attività sono state spese.",
@@ -68,6 +73,17 @@ class AccountAnalyticLine(models.Model):
     # ---- Hook su create / write / unlink ------------------------------------
     @api.model_create_multi
     def create(self, vals_list):
+        # Ore segnate su un ticket: commessa e task arrivano dal ticket (anche fuori dal modulo,
+        # dove l'onchange di OCA non scatta)
+        for vals in vals_list:
+            if not vals.get("ticket_id"):
+                continue
+            ticket = self.env["helpdesk.ticket"].sudo().browse(vals["ticket_id"])
+            if not vals.get("project_id") and ticket.project_id:
+                vals["project_id"] = ticket.project_id.id
+            if (not vals.get("task_id") and ticket.task_id
+                    and ticket.task_id.project_id.id == vals.get("project_id")):
+                vals["task_id"] = ticket.task_id.id
         lines = super().create(vals_list)
         if not self.env.context.get("lab_skip_parallel"):
             lines._lab_recompute_days(lines._lab_day_keys())

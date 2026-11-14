@@ -8,7 +8,8 @@ Uso:  ./scripts/registra_video.sh            (registra il video)
       ./scripts/registra_video.sh --prova    (solo schermate di controllo, nessun video)
 
 Il video crea un ordine di prova per il cliente "Ferri Automazione S.r.l." con il suo progetto,
-un turno e un foglio ore. A ogni avvio lo script cancella prima quelli della volta precedente
+un turno e un foglio ore, più un ticket aperto dal modulo web pubblico per Verdi Retail
+("Stampa delle bolle bloccata"). A ogni avvio lo script cancella prima quelli della volta precedente
 (via XML-RPC come amministratore), così lo scenario sintetico resta pulito.
 Le password si leggono da .env: nessuna credenziale in questo file.
 """
@@ -31,6 +32,8 @@ FRAMES = WORK / "fotogrammi"
 URL = "http://127.0.0.1:8069"
 DB = "lab18"
 CLIENTE = "Ferri Automazione S.r.l."
+TICKET_VIDEO = "Stampa delle bolle bloccata"   # ticket aperto dal modulo web nel video
+EMAIL_AMS = "helpdesk@verdiretail.example"       # Verdi Retail, canone AMS dei dati sintetici
 PROVA = "--prova" in sys.argv
 W, H = 1280, 720
 
@@ -57,7 +60,18 @@ class Rpc:
 
 
 def pulisci_dati_video(rpc):
-    """Toglie ordine, progetto, turni e fogli ore creati da una registrazione precedente."""
+    """Toglie ordine, progetto, turni, fogli ore e ticket creati da una registrazione precedente."""
+    tickets = rpc.search("helpdesk.ticket", [("name", "=", TICKET_VIDEO)],
+                         context={"active_test": False})
+    if tickets:
+        lines = rpc.search("account.analytic.line", [("ticket_id", "in", tickets)])
+        if lines:
+            rpc("account.analytic.line", "unlink", lines)
+        mails = rpc.search("mail.mail", [("model", "=", "helpdesk.ticket"), ("res_id", "in", tickets)])
+        if mails:
+            rpc("mail.mail", "unlink", mails)
+        rpc("helpdesk.ticket", "unlink", tickets)
+        print(f"Puliti {len(tickets)} ticket del video precedente")
     partners = rpc.search("res.partner", [("name", "=", CLIENTE)])
     if not partners:
         return
@@ -244,9 +258,12 @@ class Regia:
         self.page.goto(URL + "/web/login", wait_until="domcontentloaded")
         self.ruolo(ruolo)
         self.dici(f"Accesso come <b>{utente}</b> ({ruolo})", 1.5)
-        self.scrivi(self.page.locator("input[name=login]"), utente)
-        self.page.locator("input[name=password]").fill(PWD_USERS)
-        self.clic(self.page.locator("button[type=submit]"))
+        # con il Sito web installato la pagina di login ha anche altri pulsanti (es. ricerca):
+        # si usa quello del modulo di accesso
+        form = self.page.locator("form.oe_login_form")
+        self.scrivi(form.locator("input[name=login]"), utente)
+        form.locator("input[name=password]").fill(PWD_USERS)
+        self.clic(form.locator("button[type=submit]"))
         self.pronto()
 
     # -- mouse e tastiera visibili
@@ -519,12 +536,64 @@ def copione(r, rpc):
                "tariffa.", 5)
         r.foto("consulente")
 
+    # 9. Ticket di assistenza: il cliente scrive dal sito, il Supporto lo prende in carico
+    r.capitolo(9, "Ticket di assistenza",
+               "Il cliente apre la richiesta dal sito; il ticket va da solo sulla commessa AMS",
+               "Cliente (sito pubblico)")
+    r.nuova_pagina()
+    r.ruolo("Cliente (sito pubblico)")
+    r.page.goto(URL + "/assistenza", wait_until="domcontentloaded")
+    r.page.wait_for_selector("#lab_helpdesk_form")
+    r.pausa(1.0)
+    r.dici("Il cliente di un canone AMS apre la pagina pubblica <b>Assistenza</b>: "
+           "non serve un account.", 4)
+    form = r.page.locator("#lab_helpdesk_form")
+    r.scrivi(form.locator("input[name=partner_name]"), "Mario Verdi")
+    r.scrivi(form.locator("input[name=partner_email]"), EMAIL_AMS)
+    r.scrivi(form.locator("input[name=name]"), TICKET_VIDEO)
+    form.locator("select[name=type_id]").select_option(label="Malfunzionamento")
+    form.locator("select[name=priority]").select_option(value="2")
+    r.scrivi(form.locator("textarea[name=description]"),
+             "Dalle 9 la stampa delle bolle va in errore.")
+    r.foto("modulo_ticket")
+    r.dici("Tipo, urgenza, descrizione e allegati. Il modulo è protetto contro lo spam.", 3.5)
+    r.clic(form.locator(".s_website_form_send"), 1.0)
+    r.page.wait_for_url("**/assistenza-grazie", timeout=60000)
+    r.pausa(1.0)
+    r.dici("Richiesta inviata: arriva un'email con il numero del ticket e il pulsante "
+           "<b>Segui il ticket</b>.", 5)
+    r.foto("ticket_inviato")
+    ticket_id = rpc.search("helpdesk.ticket", [("name", "=", TICKET_VIDEO)],
+                           order="id desc", limit=1)[0]
+
+    r.login("nicola", "Supporto")
+    r.vai(f"/odoo/action-helpdesk_mgmt.helpdesk_ticket_action/{ticket_id}")
+    r.dici("Per il Supporto il ticket è già pronto: Odoo ha riconosciuto il cliente "
+           "dall'email…", 4)
+    r.evidenzia(r.page.locator("div[name=partner_id]"), 1.5)
+    r.evidenzia(r.page.locator("div[name=project_id]:visible"), 1.5)
+    r.dici("…e l'ha collegato alla sua <b>commessa a canone AMS</b>: le ore segnate sul ticket "
+           "scalano il monte ore del mese.", 5.5)
+    r.evidenzia(r.page.locator("div[name=lab_consumption_pct]"), 2.5)
+    r.foto("ticket_backend")
+    r.dici("Urgenza alta su un canone AMS: <b>SLA</b> di presa in carico entro 8 ore "
+           "lavorative.", 4.5)
+    r.bottone("assign_to_me", 1.5)
+    r.clic(r.page.locator(".o_statusbar_status button", has_text="In corso"), 2.0)
+    r.dici("Nicola lo prende in carico: il cliente riceve l'email «Stiamo lavorando alla tua "
+           "richiesta» e lo SLA risulta rispettato.", 5.5)
+    r.foto("ticket_in_corso")
+    r.vai("/odoo/action-helpdesk_mgmt.helpdesk_ticket_action?view_type=kanban")
+    r.dici("Per stadio: ticket nuovi, in corso, in attesa del cliente e chiusi con valutazione; "
+           "l'urgente con lo SLA scaduto va gestito subito.", 6)
+    r.foto("ticket_lista")
+
     # Chiusura
     r.ruolo("")
     r.page.evaluate("() => window.__labCaption('')")
-    r.capitolo(9, "Riepilogo",
+    r.capitolo(10, "Riepilogo",
                "Vendita → commessa → pianificazione 80/20 → foglio ore → alert → costi e "
-               "margini.<br>Documentazione completa nella scheda dell'app.")
+               "margini → ticket di assistenza.<br>Documentazione completa nella scheda dell'app.")
     r.pausa(1.5)
 
 

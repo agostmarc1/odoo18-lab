@@ -11,6 +11,19 @@ declare -A OCA=(
   [subscription_oca]=oca-contract
   [project_timeline]=oca-project
   [web_timeline]=oca-web
+  # ticketing (Helpdesk OCA)
+  [helpdesk_mgmt]=oca-helpdesk
+  [helpdesk_mgmt_project]=oca-helpdesk
+  [helpdesk_mgmt_timesheet]=oca-helpdesk
+  [project_timesheet_time_control]=oca-project
+  [helpdesk_type]=oca-helpdesk
+  [helpdesk_mgmt_sla]=oca-helpdesk
+  [helpdesk_mgmt_rating]=oca-helpdesk
+  [website_helpdesk_mgmt]=oca-helpdesk
+  # si installano da soli (auto_install) con Vendite/Prodotti: ticket <-> ordine e prodotto
+  [helpdesk_mgmt_sale]=oca-helpdesk
+  [helpdesk_mgmt_sale_project]=oca-helpdesk
+  [helpdesk_product]=oca-helpdesk
 )
 NAME=flusso_operativo_18.0
 OUT=dist/$NAME
@@ -45,7 +58,8 @@ Come installarla in un altro Odoo 18.0 Community:
   3. Accedi come amministratore, attiva la modalità sviluppatore e vai in
      Applicazioni > Aggiorna elenco applicazioni.
   4. Cerca "Flusso Operativo Software House" e premi Installa.
-     Odoo installa da solo anche CRM, Vendite, Progetto, Fogli ore, Fatturazione e i moduli OCA.
+     Odoo installa da solo anche CRM, Vendite, Progetto, Fogli ore, Fatturazione, Sito web e i moduli OCA
+     (compreso l'Helpdesk per i ticket dei clienti).
 
 Video e documentazione (dentro l'app, cartella lab_workflow_custom/static/description/):
   - Nella scheda dell'app (Applicazioni > Flusso Operativo Software House) ci sono la guida

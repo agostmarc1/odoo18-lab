@@ -1,8 +1,8 @@
 {
     "name": "Flusso Operativo Software House",
     "summary": "Flusso operativo software house: CRM > Vendite > Progetto > "
-               "Pianificazione > Fogli ore > Alert monte ore > Margini",
-    "version": "18.0.1.7.2",
+               "Pianificazione > Fogli ore > Alert monte ore > Margini > Ticket di assistenza",
+    "version": "18.0.1.8.0",
     "category": "Services/Project",
     "description": """
 Unica app che contiene TUTTE le personalizzazioni rispetto a Odoo 18 CE standard.
@@ -21,6 +21,12 @@ Per installarla in un altro Odoo 18: vedi scripts/package_app.sh nel repository 
         # OCA, branch 18.0 (inclusi nel pacchetto creato da scripts/package_app.sh)
         "subscription_oca",   # canoni ricorrenti (AMS mensile)
         "project_timeline",   # timeline dei task (porta con sé web_timeline)
+        # Ticketing (Helpdesk OCA): ticket, team, stadi, portale, email in arrivo
+        "helpdesk_mgmt_timesheet",   # ticket <-> commessa e ore sul ticket (porta helpdesk_mgmt_project)
+        "helpdesk_type",             # tipo di richiesta (malfunzionamento, domanda, modifica)
+        "helpdesk_mgmt_sla",         # tempi di presa in carico e risoluzione
+        "helpdesk_mgmt_rating",      # valutazione del cliente alla chiusura
+        "website_helpdesk_mgmt",     # modulo web pubblico "Apri un ticket" (porta il Sito web)
     ],
     "data": [
         "security/lab_security.xml",
@@ -37,6 +43,10 @@ Per installarla in un altro Odoo 18: vedi scripts/package_app.sh nel repository 
         "views/default_task_views.xml",
         "views/cost_views.xml",
         "views/ai_usage_views.xml",
+        "data/helpdesk_data.xml",
+        "data/helpdesk_mail_data.xml",
+        "data/helpdesk_website_data.xml",
+        "views/helpdesk_views.xml",
         "views/menus.xml",
     ],
     "demo": [

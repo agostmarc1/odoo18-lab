@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ticketing: email al cliente (in italiano). Ogni email contiene il link "Segui il ticket":
+     apre la pagina del ticket nel portale anche senza login (link con codice di accesso),
+     dove il cliente vede lo stato, la cronologia e può rispondere. -->
+<odoo>
+    <data noupdate="1">
+        <record id="mail_template_ticket_received" model="mail.template">
+            <field name="name">Ticket: ricevuto (al cliente)</field>
+            <field name="model_id" ref="helpdesk_mgmt.model_helpdesk_ticket"/>
+            <field name="email_from">{{ object.company_id.partner_id.email_formatted }}</field>
+            <field name="email_cc">{{ not object.partner_id and object.partner_email or '' }}</field>
+            <field name="partner_to">{{ object.partner_id.id or '' }}</field>
+            <field name="subject">[{{ object.number }}] Abbiamo ricevuto la tua richiesta: {{ object.name }}</field>
+            <field name="lang">{{ object.partner_id.lang }}</field>
+            <field name="auto_delete" eval="False"/>
+            <field name="body_html" type="html">
+<div>
+    <p>Gentile <t t-out="object.partner_name or object.partner_id.name or 'cliente'"/>,</p>
+    <p>abbiamo ricevuto la tua richiesta e le abbiamo assegnato il numero
+        <strong t-out="object.number"/>: «<t t-out="object.name"/>».</p>
+    <p t-if="object.sla_deadline">Ti risponderemo entro
+        <strong t-out="format_datetime(object.sla_deadline, tz=object.partner_id.tz or 'Europe/Rome', dt_format='dd/MM/yyyy HH:mm')"/>.</p>
+    <p>Per aggiungere informazioni o allegati rispondi a questa email, oppure apri la pagina del ticket.</p>
+    <p style="margin: 16px 0;">
+        <a t-att-href="object.get_base_url() + object.get_portal_url()"
+           style="background-color: #875A7B; padding: 8px 16px; color: #fff; text-decoration: none; border-radius: 4px;">
+            Segui il ticket</a>
+    </p>
+    <p>Il team <t t-out="object.team_id.name or 'Assistenza'"/><br/><t t-out="object.company_id.name"/></p>
+</div>
+            </field>
+        </record>
+
+        <record id="mail_template_ticket_in_progress" model="mail.template">
+            <field name="name">Ticket: preso in carico (al cliente)</field>
+            <field name="model_id" ref="helpdesk_mgmt.model_helpdesk_ticket"/>
+            <field name="email_from">{{ object.company_id.partner_id.email_formatted }}</field>
+            <field name="email_cc">{{ not object.partner_id and object.partner_email or '' }}</field>
+            <field name="partner_to">{{ object.partner_id.id or '' }}</field>
+            <field name="subject">[{{ object.number }}] Stiamo lavorando alla tua richiesta</field>
+            <field name="lang">{{ object.partner_id.lang }}</field>
+            <field name="auto_delete" eval="False"/>
+            <field name="body_html" type="html">
+<div>
+    <p>Gentile <t t-out="object.partner_name or object.partner_id.name or 'cliente'"/>,</p>
+    <p>il ticket <strong t-out="object.number"/> «<t t-out="object.name"/>» è stato preso in carico
+        <t t-if="object.user_id">da <t t-out="object.user_id.name"/></t>.</p>
+    <p>Ti aggiorneremo qui e per email a ogni novità.</p>
+    <p style="margin: 16px 0;">
+        <a t-att-href="object.get_base_url() + object.get_portal_url()"
+           style="background-color: #875A7B; padding: 8px 16px; color: #fff; text-decoration: none; border-radius: 4px;">
+            Segui il ticket</a>
+    </p>
+    <p>Il team <t t-out="object.team_id.name or 'Assistenza'"/><br/><t t-out="object.company_id.name"/></p>
+</div>
+            </field>
+        </record>
+
+        <record id="mail_template_ticket_awaiting" model="mail.template">
+            <field name="name">Ticket: in attesa del cliente</field>
+            <field name="model_id" ref="helpdesk_mgmt.model_helpdesk_ticket"/>
+            <field name="email_from">{{ object.company_id.partner_id.email_formatted }}</field>
+            <field name="email_cc">{{ not object.partner_id and object.partner_email or '' }}</field>
+            <field name="partner_to">{{ object.partner_id.id or '' }}</field>
+            <field name="subject">[{{ object.number }}] Ci serve una tua risposta</field>
+            <field name="lang">{{ object.partner_id.lang }}</field>
+            <field name="auto_delete" eval="False"/>
+            <field name="body_html" type="html">
+<div>
+    <p>Gentile <t t-out="object.partner_name or object.partner_id.name or 'cliente'"/>,</p>
+    <p>per proseguire con il ticket <strong t-out="object.number"/> «<t t-out="object.name"/>»
+        ci serve una tua risposta: trovi la nostra domanda nella pagina del ticket.</p>
+    <p>Puoi rispondere direttamente a questa email.</p>
+    <p style="margin: 16px 0;">
+        <a t-att-href="object.get_base_url() + object.get_portal_url()"
+           style="background-color: #875A7B; padding: 8px 16px; color: #fff; text-decoration: none; border-radius: 4px;">
+            Apri il ticket</a>
+    </p>
+    <p>Il team <t t-out="object.team_id.name or 'Assistenza'"/><br/><t t-out="object.company_id.name"/></p>
+</div>
+            </field>
+        </record>
+
+        <record id="mail_template_ticket_done" model="mail.template">
+            <field name="name">Ticket: risolto (al cliente)</field>
+            <field name="model_id" ref="helpdesk_mgmt.model_helpdesk_ticket"/>
+            <field name="email_from">{{ object.company_id.partner_id.email_formatted }}</field>
+            <field name="email_cc">{{ not object.partner_id and object.partner_email or '' }}</field>
+            <field name="partner_to">{{ object.partner_id.id or '' }}</field>
+            <field name="subject">[{{ object.number }}] Richiesta risolta: {{ object.name }}</field>
+            <field name="lang">{{ object.partner_id.lang }}</field>
+            <field name="auto_delete" eval="False"/>
+            <field name="body_html" type="html">
+<div>
+    <p>Gentile <t t-out="object.partner_name or object.partner_id.name or 'cliente'"/>,</p>
+    <p>il ticket <strong t-out="object.number"/> «<t t-out="object.name"/>» è stato risolto.</p>
+    <p>Se il problema si ripresenta rispondi a questa email entro qualche giorno: riapriamo lo stesso ticket.
+        A breve riceverai anche una richiesta di valutazione: ci aiuta a migliorare.</p>
+    <p style="margin: 16px 0;">
+        <a t-att-href="object.get_base_url() + object.get_portal_url()"
+           style="background-color: #875A7B; padding: 8px 16px; color: #fff; text-decoration: none; border-radius: 4px;">
+            Vedi il ticket</a>
+    </p>
+    <p>Il team <t t-out="object.team_id.name or 'Assistenza'"/><br/><t t-out="object.company_id.name"/></p>
+</div>
+            </field>
+        </record>
+    </data>
+
+    <!-- Email automatiche al cambio di stadio (gli stadi sono quelli dell'Helpdesk OCA).
+         Su "Fatto" parte anche la richiesta di valutazione (helpdesk_mgmt_rating).
+         Gli stadi OCA sono "noupdate": un <record> qui non li aggiornerebbe, quindi li imposta
+         un metodo, solo dove c'è ancora l'email OCA o nessuna email (le scelte fatte a mano restano). -->
+    <function model="helpdesk.ticket" name="_lab_setup_stage_templates"/>
+</odoo>

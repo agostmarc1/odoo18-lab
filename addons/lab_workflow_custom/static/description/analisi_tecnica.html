@@ -71,12 +71,14 @@
       <li>Consulenti esterni: costo maturato, fattura fornitore, ribaltamento T&amp;M</li>
       <li>Licenze e consumi AI ripartiti sulle commesse, chiusura mensile</li>
       <li>Report margini per commessa e scheda economica del progetto</li>
+      <li>Ticket di assistenza (Helpdesk OCA): email, modulo web pubblico, portale; commessa AMS collegata, ore sul ticket, SLA per contratto, email al cliente, valutazione</li>
       <li>Dati sintetici per demo e collaudo</li>
     </ul></td><td>
     <ul style="margin:0;padding-left:18px">
       <li>Localizzazione italiana (OCA <code>l10n-italy</code>): configurazione d'ambiente, non dipendenza</li>
       <li>Moduli Enterprise (<code>planning</code>, <code>sale_subscription</code>, <code>industry_fsm</code>, <code>project_forecast</code>)</li>
       <li>Ripartizione dei consumi AI per commit Git (fase 3, solo proposta)</li>
+      <li>Helpdesk Enterprise; configurazione del server di posta e delle chiavi reCAPTCHA (passi d'ambiente, in produzione)</li>
       <li>Contabilità analitica avanzata oltre la distribuzione standard di Odoo</li>
     </ul></td></tr>
 </table>
@@ -92,16 +94,22 @@
   <tr><td><code>account</code></td><td>Odoo CE</td><td>Fatture cliente e fornitore, distribuzione analitica</td></tr>
   <tr><td><code>subscription_oca</code></td><td>OCA <code>contract</code> 18.0</td><td>Canoni ricorrenti AMS (sostituisce <code>sale_subscription</code> Enterprise)</td></tr>
   <tr><td><code>project_timeline</code> (+ <code>web_timeline</code>)</td><td>OCA <code>project</code> / <code>web</code> 18.0</td><td>Vista timeline dei task</td></tr>
+  <tr><td><code>helpdesk_mgmt_timesheet</code> (+ <code>helpdesk_mgmt</code>, <code>helpdesk_mgmt_project</code>, <code>project_timesheet_time_control</code>)</td><td>OCA <code>helpdesk</code> / <code>project</code> 18.0</td><td>Ticket, team, stadi, portale, alias email; ticket collegato a commessa e task; ore sul ticket</td></tr>
+  <tr><td><code>helpdesk_type</code>, <code>helpdesk_mgmt_sla</code>, <code>helpdesk_mgmt_rating</code></td><td>OCA <code>helpdesk</code> 18.0</td><td>Tipo di richiesta, SLA con calendario lavorativo, valutazione del cliente</td></tr>
+  <tr><td><code>website_helpdesk_mgmt</code> (+ <code>website</code>)</td><td>OCA <code>helpdesk</code> 18.0 / Odoo CE</td><td>Il modello ticket è usabile dal form builder del sito: pagina pubblica <code>/assistenza</code></td></tr>
+  <tr><td><code>helpdesk_mgmt_sale</code>, <code>helpdesk_mgmt_sale_project</code>, <code>helpdesk_product</code></td><td>OCA <code>helpdesk</code> 18.0</td><td>Non in <code>depends</code>: si installano da soli (<code>auto_install</code>) con Vendite e Prodotti; inclusi nel pacchetto</td></tr>
 </table>
 <h3>Struttura del modulo</h3>
 <pre>lab_workflow_custom/
 ├── __manifest__.py          dipendenze, file dati, application=True
-├── models/                  15 file: 9 modelli estesi, 11 modelli nuovi (uno è una vista SQL)
-├── views/                   9 file XML: viste ereditate + viste dei nuovi modelli + menu
+├── models/                  16 file: 10 modelli estesi, 11 modelli nuovi (uno è una vista SQL)
+├── controllers/             website_form.py: protezioni anti-spam del modulo "Apri un ticket"
+├── views/                   10 file XML: viste ereditate + viste dei nuovi modelli + menu
 ├── security/                gruppi, regole di record, ACL (ir.model.access.csv)
-├── data/                    parametri, prodotti, task di default, strumenti AI, cron
+├── data/                    parametri, prodotti, task di default, strumenti AI, cron,
+│                            configurazione Helpdesk, email ai clienti, pagine del sito
 ├── demo/                    utenti demo, costi demo, scenario sintetico
-├── tests/                   test_flow, test_costs, test_ai_usage (19 test)
+├── tests/                   test_flow, test_costs, test_ai_usage, test_helpdesk (28 test)
 └── static/description/      pagina dell'app, video, questa analisi</pre>
 <h3>Principi di progetto</h3>
 <ul>
@@ -139,6 +147,13 @@
   <tr><td>RF-21</td><td>Report margini per commessa e scheda <i>Costi, ricavi e margine</i> sul progetto</td><td><code>lab.margin.report</code>, <code>project.project._compute_lab_economics</code></td><td>test_costs 03–06</td><td>PM, Amministrazione</td></tr>
   <tr><td>RF-22</td><td>Import dei consumi dall'API costi Anthropic, facoltativo e spento senza chiave</td><td><code>_lab_fetch_anthropic</code>, <code>_lab_parse_anthropic_rows</code>, <code>_lab_upsert</code></td><td>test_ai_usage 01, 02</td><td>Amministrazione</td></tr>
   <tr><td>RF-23</td><td>L'Amministrazione apre le schede persona e gestisce tipo di risorsa, fornitore e tariffa dei consulenti esterni; il team non modifica le tariffe</td><td><code>group_lab_amministrazione</code> → <code>hr.group_hr_user</code>, vista <code>view_employee_form_lab_costs</code></td><td>test_costs 08</td><td>Amministrazione</td></tr>
+  <tr><td>RF-24</td><td>Il cliente apre un ticket via email (alias <code>assistenza@</code>), dal modulo pubblico <code>/assistenza</code> (senza login) o dal portale; il canale si registra sul ticket; il ticket nasce senza assegnatario (non all'utente tecnico)</td><td><code>helpdesk_team_support</code> (alias), <code>helpdesk_page_form_view</code>, <code>LabWebsiteForm</code>, <code>helpdesk.ticket.create</code></td><td>test_helpdesk 01, 02, 03</td><td>Supporto</td></tr>
+  <tr><td>RF-25</td><td>Il contatto si riconosce dall'email (senza differenze di maiuscole); se il cliente ha un canone AMS il ticket si collega alla sua commessa; email sconosciute restano senza contatto e senza commessa</td><td><code>_lab_partner_from_email</code>, <code>_lab_find_project</code>, <code>_onchange_lab_partner_project</code></td><td>test_helpdesk 02, 03, 04</td><td>Supporto</td></tr>
+  <tr><td>RF-26</td><td>Le ore segnate sul ticket vanno sulla commessa (e sul task) del ticket, scalano il monte ore e fanno scattare gli alert; su corpo e T&amp;M serve il task</td><td><code>account.analytic.line.create</code>, <code>_check_lab_task_required</code>, <code>lab_hours_alert</code></td><td>test_helpdesk 05, 06</td><td>Supporto, PM</td></tr>
+  <tr><td>RF-27</td><td>SLA per contratto e priorità (AMS: presa in carico 4 h urgente / 8 h alta / 2 g, risoluzione 5 g; senza canone 3 g), pausa in <i>In attesa</i>, riallineati se cambiano cliente, commessa, priorità, tipo o area</td><td><code>helpdesk_sla_*</code> (dominio su <code>lab_contract_type</code>), <code>helpdesk.ticket.write</code> → <code>refresh_sla</code></td><td>test_helpdesk 02, 04, 07</td><td>PM, Commerciale</td></tr>
+  <tr><td>RF-28</td><td>Email al cliente in italiano su apertura, presa in carico, attesa e chiusura, con link al ticket valido anche senza account; il cliente segue il ticket e riceve le risposte; alla chiusura parte la richiesta di valutazione</td><td><code>mail_template_ticket_*</code> sugli stadi, <code>_lab_subscribe_customer</code>, <code>rating_mail_template_id</code></td><td>test_helpdesk 01, 02</td><td>Supporto</td></tr>
+  <tr><td>RF-29</td><td>Modulo pubblico protetto: campo esca, massimo N ticket all'ora per email, email obbligatoria e valida; reCAPTCHA standard se configurato</td><td><code>LabWebsiteForm._handle_website_form</code>, <code>_lab_check_website_rate</code></td><td>test_helpdesk 08 (+ prova manuale del campo esca)</td><td>Amministratore di sistema</td></tr>
+  <tr><td>RF-30</td><td>Ruoli: il Supporto gestisce tutti i ticket, il PM è responsabile Helpdesk, il Commerciale legge (senza modificare) i ticket dei clienti di cui è il venditore</td><td><code>lab_security.xml</code> (gruppi impliciti), <code>rule_helpdesk_ticket_salesman</code></td><td>test_helpdesk 09</td><td>Supporto, PM, Commerciale</td></tr>
 </table></div>
 <h3>Requisiti non funzionali</h3>
 <table>
@@ -147,7 +162,8 @@
   <tr><td>RNF-02</td><td>Nessuna modifica a core e OCA</td><td>Solo ereditarietà; il bug OCA sul listino è aggirato in <code>models/sale_subscription.py</code></td></tr>
   <tr><td>RNF-03</td><td>Nessuna credenziale versionata</td><td>Password in <code>.env</code> (gitignored); chiave Anthropic solo come parametro di sistema</td></tr>
   <tr><td>RNF-04</td><td>Nessun lavoro in più per chi segna le ore</td><td>Il task è l'unico dato richiesto in più (e solo su corpo/T&amp;M); tutto il resto è calcolato</td></tr>
-  <tr><td>RNF-05</td><td>Ambiente demo autonomo</td><td>Scenario sintetico idempotente con date relative a oggi; connettore esterno spento senza chiave</td></tr>
+  <tr><td>RNF-05</td><td>Ambiente demo autonomo</td><td>Scenario sintetico idempotente con date relative a oggi; connettore esterno spento senza chiave; email in arrivo simulate nei test, nessun server di posta richiesto</td></tr>
+  <tr><td>RNF-06</td><td>Il modulo pubblico non apre la porta allo spam né ai dati altrui</td><td>Il form crea solo ticket (campi in whitelist); il cliente vede solo i propri ticket (regole OCA) o quello del link con codice di accesso</td></tr>
 </table>
 
 <!-- ============================================================== -->
@@ -182,6 +198,7 @@
   <tr><td></td><td>lab_accrued_amount, lab_variance</td><td>No (calcolati)</td></tr>
   <tr><td><code>hr.employee</code></td><td>lab_resource_type, lab_vendor_id, lab_external_rate, lab_external_rate_unit, lab_parallel_factor, lab_ai_license_ids</td><td>Sì (visibili solo a HR, Amministrazione, PM)</td></tr>
   <tr><td></td><td>lab_ai_monthly_cost, lab_ai_hourly_uplift, lab_fully_loaded_cost</td><td>No (calcolati)</td></tr>
+  <tr><td><code>helpdesk.ticket</code></td><td>lab_contract_type (usato dai domini degli SLA), lab_hours_alert, lab_consumption_pct (dalla commessa); create/write: contatto da email, commessa AMS, team predefinito, canale web, cliente follower, riallineamento SLA</td><td>No (calcolati)</td></tr>
 </table></div>
 <h3>Relazioni principali</h3>
 <pre>sale.order.line ──(conferma)──▶ project.project ──▶ project.task (default + Sviluppo)
@@ -193,7 +210,9 @@ account.analytic.line ◀──(conferma)── lab.planning.slot ──▶ hr.e
 account.move.line (lab_consultant_id) ─────────────────────────┘
 lab.ai.usage ──(lab.ai.mapping)──▶ project / employee ──▶ lab.cost.allocation ◀── lab.cost.period
 lab.ai.license ──────────────────────────────────────────▶ lab.cost.allocation
-lab.margin.report (vista SQL) ◀── sale_order_line, account_analytic_line, lab_cost_allocation, project_task</pre>
+lab.margin.report (vista SQL) ◀── sale_order_line, account_analytic_line, lab_cost_allocation, project_task
+helpdesk.ticket ──project_id / task_id──▶ project.project (canone AMS) ◀── account.analytic.line (ticket_id)
+        └──ticket_sla_ids──▶ helpdesk.ticket.sla ──▶ helpdesk.sla (dominio su lab_contract_type, priority)</pre>
 
 <!-- ============================================================== -->
 <h2 id="calcoli">5. Regole di calcolo</h2>
@@ -262,6 +281,16 @@ margine   = venduto + ribaltato − costi
 margine % = margine / (venduto + ribaltato) × 100
 margine senza pass-through = venduto − (costi − costi ribaltati)
 ore risparmiate = ore stimate dei task principali attivi − ore consuntivate</pre>
+<h3>5.11 Ticket: contatto, commessa e SLA</h3>
+<pre>contatto  = partner con email normalizzata uguale a quella del ticket (il più vecchio); nessuno → resta vuoto
+commessa  = progetto del cliente (partner_id child_of azienda del contatto) con tipo contratto "canone",
+            il più recente; nessuno → vuota, la sceglie il Supporto
+ore sul ticket → riga di foglio ore con project_id del ticket (e task_id se è della stessa commessa):
+            entrano nel consumo del mese del canone e negli alert 75% / 90%
+SLA       = helpdesk.sla del team il cui dominio vale sul ticket (lab_contract_type, priority)
+            scadenza = apertura + ore (giorni × ore/giorno del calendario del team), solo in orario di lavoro
+            stadio "In attesa" = pausa; stadio raggiunto prima della scadenza = rispettato
+limite web = ticket del canale Web con la stessa email nell'ultima ora &lt; helpdesk_web_max_per_hour (5)</pre>
 
 <!-- ============================================================== -->
 <h2 id="estensioni">6. Punti di estensione di Odoo</h2>
@@ -280,9 +309,13 @@ ore risparmiate = ore stimate dei task principali attivi − ore consuntivate</p
   <tr><td>account.move.line</td><td><code>_sale_determine_order</code></td><td>Ricerca dell'ordine con <code>sudo</code> e filtro sui soli T&amp;M</td></tr>
   <tr><td>account.move.line</td><td><code>_sale_get_invoice_price</code></td><td>Ricarico sul prezzo di rifatturazione</td></tr>
   <tr><td>sale.subscription (OCA)</td><td><code>create</code></td><td>Listino di ripiego quando l'ordine non ne ha uno</td></tr>
+  <tr><td>helpdesk.ticket (OCA)</td><td><code>create</code> / <code>write</code></td><td>Contatto da email, commessa AMS, team predefinito, canale Web, nessun assegnatario se a creare è l'utente tecnico (sito, posta in arrivo), cliente follower, <code>refresh_sla</code> quando cambiano i dati che decidono gli SLA</td></tr>
+  <tr><td>helpdesk.ticket (OCA)</td><td><code>_onchange_team_id</code></td><td>Mantiene la commessa scelta quando il team non ne ha una predefinita</td></tr>
+  <tr><td>account.analytic.line</td><td><code>create</code></td><td>Commessa e task presi dal ticket (anche fuori dal form); messaggio dedicato se manca il task su corpo/T&amp;M</td></tr>
+  <tr><td>WebsiteForm (controller)</td><td><code>_handle_website_form</code></td><td>Solo per <code>helpdesk.ticket</code>: campo esca, limite orario per email, contesto <code>lab_from_website</code></td></tr>
 </table></div>
 <h3>Viste ereditate</h3>
-<p>Form progetto (banner alert, gruppo <i>Monte ore</i>, scheda <i>Costi, ricavi e margine</i>), kanban progetto (etichette alert), form/kanban/lista/ricerca task (banner, barra di consumo, filtri), form ordine (ore scalate/residue e pulsante <i>Ore per task</i>), form prodotto (campi ore), form dipendente (scheda <i>Costi e AI</i>), form fattura (consulente sulla riga). Menu: app <b>Pianificazione</b> (turni, ore parallele, fattore settimanale, report, <i>Costi e AI</i>), più <i>Margini per commessa</i> in Progetti › Rendicontazione e <i>Task di default commessa</i> in Progetti › Configurazione.</p>
+<p>Form progetto (banner alert, gruppo <i>Monte ore</i>, scheda <i>Costi, ricavi e margine</i>), kanban progetto (etichette alert), form/kanban/lista/ricerca task (banner, barra di consumo, filtri), form ordine (ore scalate/residue e pulsante <i>Ore per task</i>), form prodotto (campi ore), form dipendente (scheda <i>Costi e AI</i>), form fattura (consulente sulla riga). Menu: app <b>Pianificazione</b> (turni, ore parallele, fattore settimanale, report, <i>Costi e AI</i>), più <i>Margini per commessa</i> in Progetti › Rendicontazione e <i>Task di default commessa</i> in Progetti › Configurazione. Form ticket (OCA): commessa non obbligatoria, tipo contratto e consumo del monte ore accanto alla commessa. Sito: pagine <code>/assistenza</code> e <code>/assistenza-grazie</code>, voce di menu <i>Assistenza</i>; le pagine si possono ritoccare con l'editor del sito.</p>
 
 <!-- ============================================================== -->
 <h2 id="sicurezza">7. Sicurezza e permessi</h2>
@@ -291,10 +324,10 @@ ore risparmiate = ore stimate dei task principali attivi − ore consuntivate</p
   <tr><th>Gruppo (categoria)</th><th>Implica</th><th>Uso</th></tr>
   <tr><td>Pianificazione / Utente: i miei turni</td><td>base.group_user</td><td>Vede e conferma i propri turni pubblicati</td></tr>
   <tr><td>Pianificazione / Responsabile: tutti i turni</td><td>Utente turni</td><td>Crea, modifica, pubblica, annulla tutti i turni</td></tr>
-  <tr><td>Ruoli / Commerciale</td><td>sales_team.group_sale_salesman, account.group_account_invoice</td><td>Propri documenti di vendita, fatture solo in bozza</td></tr>
-  <tr><td>Ruoli / Project Manager</td><td>project.group_project_manager, hr_timesheet.group_timesheet_manager, Responsabile turni, sales_team.group_sale_salesman_all_leads</td><td>Progetti, turni, approvazioni, margini</td></tr>
+  <tr><td>Ruoli / Commerciale</td><td>sales_team.group_sale_salesman, account.group_account_invoice, helpdesk_mgmt.group_helpdesk_user_own</td><td>Propri documenti di vendita, fatture solo in bozza; ticket dei propri clienti in lettura</td></tr>
+  <tr><td>Ruoli / Project Manager</td><td>project.group_project_manager, hr_timesheet.group_timesheet_manager, Responsabile turni, sales_team.group_sale_salesman_all_leads, helpdesk_mgmt.group_helpdesk_manager</td><td>Progetti, turni, approvazioni, margini; configurazione Helpdesk e SLA</td></tr>
   <tr><td>Ruoli / Analista Funzionale / Sviluppatore</td><td>project.group_project_user, hr_timesheet.group_hr_timesheet_user, Utente turni</td><td>Task, turni e fogli ore propri</td></tr>
-  <tr><td>Ruoli / Supporto (AMS)</td><td>Analista / Sviluppatore</td><td>In più segue in automatico le commesse a canone</td></tr>
+  <tr><td>Ruoli / Supporto (AMS)</td><td>Analista / Sviluppatore, helpdesk_mgmt.group_helpdesk_user</td><td>In più segue in automatico le commesse a canone e gestisce tutti i ticket</td></tr>
   <tr><td>Ruoli / Amministrazione</td><td>account.group_account_manager, sales_team.group_sale_manager, hr.group_hr_user</td><td>Contabilità, costi AI, chiusura mese, schede persona e tariffe dei consulenti</td></tr>
 </table></div>
 <h3>Accessi ai nuovi modelli (L = lettura, S = scrittura, C = creazione, E = eliminazione)</h3>
@@ -316,9 +349,11 @@ ore risparmiate = ore stimate dei task principali attivi − ore consuntivate</p
   <li><code>lab.planning.slot.write</code>: chi non è responsabile può cambiare solo <code>confirmed_hours</code> e solo su turni pubblicati; <code>action_confirm</code> accetta solo i propri turni.</li>
   <li>Approvazione ore parallele: gruppo PM o <code>project.group_project_manager</code>. Chiusura e riapertura mese: Amministrazione o <code>base.group_system</code>. Registrazione fatture: vietata al Commerciale senza Amministrazione.</li>
   <li>Costi e tariffe su <code>hr.employee</code>: attributo <code>groups</code> su HR, Amministrazione, PM. L'Amministrazione include <i>Dipendenti / Funzionario</i> (<code>hr.group_hr_user</code>), quindi apre, crea e modifica le schede persona.</li>
+  <li>Ticket: <code>rule_helpdesk_ticket_salesman</code> (solo lettura) dà al Commerciale i ticket dei clienti di cui è il venditore (<code>commercial_partner_id.user_id</code>); in scrittura valgono solo le regole OCA (ticket assegnati a lui). Il cliente nel portale vede i ticket della propria azienda (regola OCA); chi ha il link dell'email vede solo quel ticket (codice di accesso di <code>portal.mixin</code>).</li>
+  <li>Modulo pubblico: Odoo crea il ticket come superutente con i soli campi in whitelist (<code>name</code>, <code>description</code>, <code>partner_name</code>, <code>partner_email</code>, <code>category_id</code>, <code>team_id</code>, più <code>type_id</code> e <code>priority</code> aggiunti dall'app); gli allegati diventano allegati del ticket.</li>
 </ul>
 <h3>Uso di <code>sudo</code></h3>
-<p>È usato dove il risultato è un dato di sistema e non deve dipendere da chi preme il pulsante: ricalcolo dei giorni paralleli, ripartizioni del mese, ricerca dell'ordine da rifatturare (la commessa è riservata agli invitati e l'Amministrazione spesso non la vede), creazione del foglio ore dalla conferma del turno, lettura del report margini nella scheda progetto (protetta dal gruppo della scheda). La riga creata sull'ordine nel pass-through resta con i permessi dell'utente.</p>
+<p>È usato dove il risultato è un dato di sistema e non deve dipendere da chi preme il pulsante: ricalcolo dei giorni paralleli, ripartizioni del mese, ricerca dell'ordine da rifatturare (la commessa è riservata agli invitati e l'Amministrazione spesso non la vede), creazione del foglio ore dalla conferma del turno, lettura del report margini nella scheda progetto (protetta dal gruppo della scheda), ricerca di contatto e commessa AMS di un ticket (chi scrive dal sito o via email non vede i progetti) e lettura del ticket nella creazione delle ore. La riga creata sull'ordine nel pass-through resta con i permessi dell'utente.</p>
 
 <!-- ============================================================== -->
 <h2 id="automazioni">8. Automazioni e notifiche</h2>
@@ -333,6 +368,10 @@ ore risparmiate = ore stimate dei task principali attivi − ore consuntivate</p
   <tr><td>Nuova corrispondenza consumi</td><td>Riattribuzione dei consumi già importati, esclusi i mesi chiusi</td></tr>
   <tr><td>Cron giornaliero <i>Costi commessa: ripartizione costi AI</i></td><td>Ricalcola il mese in corso e il precedente se ancora aperto</td></tr>
   <tr><td>Cron giornaliero <i>Consumi AI: import da Anthropic</i></td><td>Importa gli ultimi 3 giorni se la chiave è configurata; altrimenti non fa nulla</td></tr>
+  <tr><td>Email ad <code>assistenza@</code> (server di posta in arrivo)</td><td>Nuovo ticket (canale Email) o risposta su un ticket esistente</td></tr>
+  <tr><td>Nuovo ticket</td><td>Contatto e commessa AMS, SLA, cliente follower, email <i>Ticket ricevuto</i> con link <i>Segui il ticket</i></td></tr>
+  <tr><td>Ticket in <i>In corso</i> / <i>In attesa</i> / <i>Fatto</i></td><td>Email <i>preso in carico</i> / <i>ci serve una tua risposta</i> / <i>risolto</i>; su <i>Fatto</i> anche la richiesta di valutazione; stato degli SLA aggiornato</td></tr>
+  <tr><td>Messaggio del Supporto sul ticket</td><td>Email al cliente (follower); la risposta del cliente torna sul ticket</td></tr>
 </table>
 
 <!-- ============================================================== -->
@@ -342,6 +381,7 @@ ore risparmiate = ore stimate dei task principali attivi − ore consuntivate</p
   <tr><td><code>lab_workflow_custom.max_weekly_hours</code></td><td>32</td><td>Ore pianificabili a settimana con fattore 1 (regola 80/20); base delle ore standard del mese</td></tr>
   <tr><td><code>lab_workflow_custom.passthrough_markup_pct</code></td><td>15</td><td>Ricarico proposto sulle nuove commesse</td></tr>
   <tr><td><code>lab_workflow_custom.anthropic_admin_key</code></td><td>assente</td><td>Attiva il connettore Anthropic (chiave Admin)</td></tr>
+  <tr><td><code>lab_workflow_custom.helpdesk_web_max_per_hour</code></td><td>5</td><td>Ticket all'ora per indirizzo email dal modulo pubblico</td></tr>
 </table>
 <p><b>Prodotti di base</b> (<code>noupdate</code>): <i>Sviluppo Software a Corpo</i> (SVIL-CORPO, 120 h, task di default), <i>Pacchetto Monte Ore (50h)</i> (MONTE-50H, 50 h, task di default), <i>Canone Assistenza Mensile AMS</i> (AMS-MESE, 20 h/mese, abbonamento mensile), <i>Consulenza a consuntivo (T&amp;M)</i> (TM-ORA, a ore da fogli ore), <i>Prestazione consulente esterno</i> (CONS-EXT) e <i>Spese vive ribaltate</i> (SPESE-VIVE), entrambi con rifatturazione al costo. <b>Strumenti AI</b>: Claude Team (30 €/mese), Claude Max / Claude Code (100 €/mese), API Anthropic (a consumo).</p>
 
@@ -361,7 +401,7 @@ ore risparmiate = ore stimate dei task principali attivi − ore consuntivate</p
 
 <!-- ============================================================== -->
 <h2 id="test">11. Test automatici</h2>
-<p>19 test con <code>TransactionCase</code>, eseguiti con <code>./scripts/run_tests.sh</code> (Odoo fermo, <code>--test-tags</code> sul modulo).</p>
+<p>28 test con <code>TransactionCase</code>, eseguiti con <code>./scripts/run_tests.sh</code> (Odoo fermo, <code>--test-tags</code> sul modulo).</p>
 <div class="wrap"><table>
   <tr><th>File</th><th>Test</th><th>Cosa verifica</th></tr>
   <tr><td rowspan="8">test_flow.py</td><td>01 products_configured</td><td>Prodotti di base con le giuste politiche</td></tr>
@@ -383,6 +423,15 @@ ore risparmiate = ore stimate dei task principali attivi − ore consuntivate</p
   <tr><td rowspan="3">test_ai_usage.py</td><td>01 parse_anthropic_payload</td><td>Conversione della risposta API</td></tr>
   <tr><td>02 connector_off_in_demo</td><td>Connettore spento senza chiave</td></tr>
   <tr><td>03 mapping_and_allocation</td><td>Corrispondenze, ripartizione, spese vive alla chiusura</td></tr>
+  <tr><td rowspan="9">test_helpdesk.py</td><td>01 configuration</td><td>Team, alias, tipi, email sugli stadi, valutazione, pagina <code>/assistenza</code> pubblicata</td></tr>
+  <tr><td>02 email_creates_ticket_on_ams_project</td><td>Email in arrivo → ticket con contatto, commessa AMS, SLA, cliente follower</td></tr>
+  <tr><td>03 web_email_matches_contact</td><td>Dal sito: email riconosciuta senza badare alle maiuscole, canale Web</td></tr>
+  <tr><td>04 unknown_email_stays_unlinked</td><td>Email sconosciuta: niente contatto né commessa, SLA standard</td></tr>
+  <tr><td>05 hours_on_ticket_consume_ams_hours_and_alert</td><td>Ore sul ticket → commessa, consumo del mese, alert 80%</td></tr>
+  <tr><td>06 hours_package_ticket_needs_task</td><td>Monte ore: senza task le ore non si salvano; il task arriva dal ticket</td></tr>
+  <tr><td>07 urgent_sla_and_priority_change</td><td>Cambio di priorità → SLA urgente al posto di quello normale</td></tr>
+  <tr><td>08 website_rate_limit</td><td>Email non valida rifiutata, limite orario per indirizzo</td></tr>
+  <tr><td>09 roles</td><td>Supporto gestisce e prende in carico; Commerciale legge solo i ticket dei suoi clienti e non li modifica</td></tr>
 </table></div>
 <p>Il collaudo end-to-end con gli utenti dei ruoli è documentato nel video della pagina dell'app (registrato da <code>scripts/registra_video.sh</code>, rigenerabile dopo ogni modifica).</p>
 
@@ -392,7 +441,8 @@ ore risparmiate = ore stimate dei task principali attivi − ore consuntivate</p
   <li><b>Laboratorio</b>: <code>./scripts/setup_pc.sh</code> (Docker, OCA, database <code>lab18</code> senza demo standard, scenario sintetico, test).</li>
   <li><b>Altro Odoo 18 CE</b>: <code>./scripts/package_app.sh</code> crea <code>dist/flusso_operativo_18.0.zip</code> con l'app e i moduli OCA richiesti; copiare le cartelle nell'addons path e installare <i>Flusso Operativo Software House</i>.</li>
   <li><b>Aggiornamento</b>: <code>./scripts/update_module.sh</code> (<code>-u</code> con Odoo fermo). A ogni modifica si alza la versione <code>18.0.x.y.z</code> nel manifest.</li>
-  <li><b>Dati</b>: i file in <code>data/</code> con <code>noupdate="1"</code> (parametri, prodotti, task di default, strumenti AI) non vengono sovrascritti negli aggiornamenti; cron e gruppi sì.</li>
+  <li><b>Dati</b>: i file in <code>data/</code> con <code>noupdate="1"</code> (parametri, prodotti, task di default, strumenti AI) non vengono sovrascritti negli aggiornamenti; cron e gruppi sì. Anche team, SLA, tipi, categorie ed email dei ticket sono <code>noupdate</code>. Le email sugli stadi OCA le imposta <code>_lab_setup_stage_templates</code> a ogni aggiornamento, solo dove c'è ancora l'email OCA o nessuna.</li>
+  <li><b>Database già esistente</b>: dopo l'aggiornamento, <code>./scripts/load_synthetic.sh</code> aggiunge i ticket demo e sposta sui ticket le ore dei vecchi task "Ticket 101–103" (<code>_lab_load_helpdesk</code>, idempotente).</li>
   <li><b>Dipendenze Python</b>: <code>requests</code> (già in Odoo) per il connettore.</li>
 </ul>
 
@@ -406,6 +456,11 @@ ore risparmiate = ore stimate dei task principali attivi − ore consuntivate</p
   <tr><td>Costi fornitori per conto analitico</td><td>Il report somma le fatture fornitore per conto analitico del progetto.</td><td>Un conto analitico condiviso da più progetti duplicherebbe i costi: mantenere un conto per commessa (default di Odoo).</td></tr>
   <tr><td>Calendario</td><td>Le ore di una giornata si leggono da <code>hours_per_day</code> del calendario della persona (default 8), senza ferie o giorni ridotti.</td><td>Giornate parziali o permessi vanno gestiti a mano (approvazione PM).</td></tr>
   <tr><td>Cambio USD</td><td>Il tasso USD dei dati demo è dimostrativo (1,08).</td><td>In produzione attivare l'aggiornamento automatico dei cambi.</td></tr>
+  <tr><td>Posta del laboratorio</td><td>Senza server di posta le email ai clienti restano in coda e l'alias non riceve nulla.</td><td>In produzione: dominio alias e server di posta in arrivo; le email in arrivo sono coperte dai test.</td></tr>
+  <tr><td>Contatti sconosciuti</td><td>Un ticket da un'email non registrata resta senza contatto: niente commessa automatica, niente valutazione (serve un contatto).</td><td>Il Supporto collega o crea il contatto; da quel momento commessa e SLA si allineano da soli.</td></tr>
+  <tr><td>Più canoni per cliente</td><td>Se il cliente ha più commesse a canone si prende la più recente.</td><td>Il Supporto può cambiarla sul ticket.</td></tr>
+  <tr><td>Spam sul modulo pubblico</td><td>Campo esca e limite per email non fermano un attacco che cambia indirizzo a ogni invio.</td><td>In produzione attivare reCAPTCHA (Impostazioni › Sito web), già supportato da Odoo senza codice.</td></tr>
+  <tr><td>SLA e calendario</td><td>Le scadenze usano il calendario lavorativo del team (default: quello dell'azienda), con le sue festività.</td><td>Allineare il calendario agli orari del Supporto.</td></tr>
 </table></div>
 
 <!-- ============================================================== -->
@@ -419,6 +474,8 @@ ore risparmiate = ore stimate dei task principali attivi − ore consuntivate</p
   <tr><td>Fattore parallelo</td><td>Quante ore-progetto una persona può gestire per ogni ora reale lavorando in parallelo con l'AI</td></tr>
   <tr><td>Costo maturato</td><td>Stima del costo di un consulente esterno (ore × tariffa) in attesa della sua fattura</td></tr>
   <tr><td>Costi generali</td><td>Costi AI non attribuibili a una commessa (allocazioni senza progetto)</td></tr>
+  <tr><td>SLA</td><td>Service Level Agreement: tempo massimo, in ore lavorative, per prendere in carico o risolvere un ticket</td></tr>
+  <tr><td>Alias</td><td>Indirizzo email (es. assistenza@) le cui email entrano in Odoo come ticket</td></tr>
 </table>
 </main>
 </body>

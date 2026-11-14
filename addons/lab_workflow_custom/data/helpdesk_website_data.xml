@@ -1,0 +1,149 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ticketing: pagina pubblica del sito "Assistenza" (/assistenza) con il modulo "Apri un ticket"
+     e pagina di conferma (/assistenza-grazie). Il modulo usa il form builder standard del Sito web
+     (website_helpdesk_mgmt abilita il modello helpdesk.ticket); le protezioni anti-spam sono in
+     controllers/website_form.py. La pagina si può modificare dal Sito web con l'editor. -->
+<odoo>
+    <template id="helpdesk_page_form_view" name="Assistenza – apri un ticket">
+        <t t-call="website.layout">
+            <t t-set="pageName" t-value="'assistenza'"/>
+            <t t-set="lab_types" t-value="request.env['helpdesk.ticket.type'].sudo().search([])"/>
+            <t t-set="lab_categories" t-value="request.env['helpdesk.ticket.category'].sudo().search([])"/>
+            <div id="wrap" class="oe_structure">
+                <section class="s_title pt40 pb16" data-snippet="s_title">
+                    <div class="container">
+                        <h1>Assistenza clienti</h1>
+                        <p class="lead">Descrivi il problema o la richiesta: ti mandiamo subito un'email con il
+                            numero del ticket e il link per seguirlo, vedere le risposte e aggiungere informazioni.</p>
+                        <p>Sei già cliente con accesso al portale? Trovi tutti i tuoi ticket in
+                            <a href="/my/tickets">I miei ticket</a>. Puoi anche scrivere a
+                            <t t-set="lab_team" t-value="request.env.ref('lab_workflow_custom.helpdesk_team_support').sudo()"/>
+                            <a t-if="lab_team.alias_email" t-att-href="'mailto:%s' % lab_team.alias_email" t-out="lab_team.alias_email"/>
+                            <span t-else="">l'indirizzo email dell'assistenza</span>.</p>
+                    </div>
+                </section>
+                <section class="s_website_form pt16 pb48" data-vcss="001" data-snippet="s_website_form">
+                    <div class="container">
+                        <form id="lab_helpdesk_form" action="/website/form/" method="post" enctype="multipart/form-data"
+                              class="o_mark_required" data-mark="*" data-model_name="helpdesk.ticket"
+                              data-success-mode="redirect" data-success-page="/assistenza-grazie" data-pre-fill="true">
+                            <div class="s_website_form_rows row s_col_no_bgcolor">
+                                <div class="mb-3 col-lg-6 s_website_form_field s_website_form_required" data-type="char" data-name="Field">
+                                    <label class="s_website_form_label" for="lab_hd_name">
+                                        <span class="s_website_form_label_content">Nome e cognome</span>
+                                        <span class="s_website_form_mark"> *</span>
+                                    </label>
+                                    <input id="lab_hd_name" type="text" class="form-control s_website_form_input" name="partner_name" required="" data-fill-with="name"/>
+                                </div>
+                                <div class="mb-3 col-lg-6 s_website_form_field s_website_form_required" data-type="email" data-name="Field">
+                                    <label class="s_website_form_label" for="lab_hd_email">
+                                        <span class="s_website_form_label_content">Email</span>
+                                        <span class="s_website_form_mark"> *</span>
+                                    </label>
+                                    <input id="lab_hd_email" type="email" class="form-control s_website_form_input" name="partner_email" required="" data-fill-with="email"/>
+                                </div>
+                                <div class="mb-3 col-12 s_website_form_field s_website_form_required s_website_form_model_required" data-type="char" data-name="Field">
+                                    <label class="s_website_form_label" for="lab_hd_subject">
+                                        <span class="s_website_form_label_content">Oggetto</span>
+                                        <span class="s_website_form_mark"> *</span>
+                                    </label>
+                                    <input id="lab_hd_subject" type="text" class="form-control s_website_form_input" name="name" required=""/>
+                                </div>
+                                <div class="mb-3 col-lg-4 s_website_form_field" data-type="many2one" data-name="Field">
+                                    <label class="s_website_form_label" for="lab_hd_type">
+                                        <span class="s_website_form_label_content">Tipo di richiesta</span>
+                                    </label>
+                                    <select id="lab_hd_type" class="form-select s_website_form_input" name="type_id">
+                                        <option value="">–</option>
+                                        <option t-foreach="lab_types" t-as="ticket_type" t-att-value="ticket_type.id" t-out="ticket_type.name"/>
+                                    </select>
+                                </div>
+                                <div class="mb-3 col-lg-4 s_website_form_field" data-type="many2one" data-name="Field">
+                                    <label class="s_website_form_label" for="lab_hd_category">
+                                        <span class="s_website_form_label_content">Area</span>
+                                    </label>
+                                    <select id="lab_hd_category" class="form-select s_website_form_input" name="category_id">
+                                        <option value="">–</option>
+                                        <option t-foreach="lab_categories" t-as="category" t-att-value="category.id" t-out="category.name"/>
+                                    </select>
+                                </div>
+                                <div class="mb-3 col-lg-4 s_website_form_field" data-type="selection" data-name="Field">
+                                    <label class="s_website_form_label" for="lab_hd_priority">
+                                        <span class="s_website_form_label_content">Urgenza</span>
+                                    </label>
+                                    <select id="lab_hd_priority" class="form-select s_website_form_input" name="priority">
+                                        <option value="0">Bassa</option>
+                                        <option value="1" selected="selected">Normale</option>
+                                        <option value="2">Alta: il lavoro è rallentato</option>
+                                        <option value="3">Urgente: il lavoro è bloccato</option>
+                                    </select>
+                                </div>
+                                <div class="mb-3 col-12 s_website_form_field s_website_form_required s_website_form_model_required" data-type="text" data-name="Field">
+                                    <label class="s_website_form_label" for="lab_hd_description">
+                                        <span class="s_website_form_label_content">Descrizione</span>
+                                        <span class="s_website_form_mark"> *</span>
+                                    </label>
+                                    <textarea id="lab_hd_description" class="form-control s_website_form_input" name="description" required="" rows="8"
+                                              placeholder="Cosa stavi facendo, cosa ti aspettavi, cosa è successo (con l'eventuale messaggio di errore)"/>
+                                </div>
+                                <div class="mb-3 col-12 s_website_form_field s_website_form_custom" data-type="binary" data-name="Field">
+                                    <label class="s_website_form_label" for="lab_hd_files">
+                                        <span class="s_website_form_label_content">Allegati (schermate, file)</span>
+                                    </label>
+                                    <input id="lab_hd_files" type="file" class="form-control s_website_form_input" name="allegati" multiple=""/>
+                                </div>
+                                <!-- Campo esca anti-spam: nascosto alle persone, i bot lo compilano -->
+                                <div class="s_website_form_field s_website_form_dnone" aria-hidden="true"
+                                     style="position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden;">
+                                    <label for="lab_hd_hp">Lascia vuoto questo campo</label>
+                                    <input id="lab_hd_hp" type="text" name="lab_hp" tabindex="-1" autocomplete="off" class="s_website_form_input"/>
+                                </div>
+                                <div class="mb-0 py-2 col-12 s_website_form_submit s_website_form_no_submit_label text-end" data-name="Submit Button">
+                                    <a href="#" role="button" class="btn btn-primary s_website_form_send">Invia la richiesta</a>
+                                    <span id="s_website_form_result"></span>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </section>
+            </div>
+        </t>
+    </template>
+
+    <template id="helpdesk_page_thanks_view" name="Assistenza – richiesta inviata">
+        <t t-call="website.layout">
+            <t t-set="pageName" t-value="'assistenza-grazie'"/>
+            <div id="wrap" class="oe_structure">
+                <section class="s_text_block pt48 pb48" data-snippet="s_text_block">
+                    <div class="container">
+                        <h1>Richiesta inviata</h1>
+                        <p class="lead">Grazie: abbiamo aperto il tuo ticket.</p>
+                        <p>Tra poco ricevi un'email con il numero del ticket e il pulsante <strong>Segui il ticket</strong>:
+                            da lì vedi lo stato, le nostre risposte e puoi aggiungere informazioni o allegati.
+                            Puoi anche rispondere direttamente all'email.</p>
+                        <p>Non la trovi? Controlla la cartella dello spam.</p>
+                        <a href="/assistenza" class="btn btn-secondary">Apri un'altra richiesta</a>
+                    </div>
+                </section>
+            </div>
+        </t>
+    </template>
+
+    <record id="helpdesk_page_form" model="website.page">
+        <field name="url">/assistenza</field>
+        <field name="is_published" eval="True"/>
+        <field name="view_id" ref="helpdesk_page_form_view"/>
+    </record>
+    <record id="helpdesk_page_thanks" model="website.page">
+        <field name="url">/assistenza-grazie</field>
+        <field name="is_published" eval="True"/>
+        <field name="website_indexed" eval="False"/>
+        <field name="view_id" ref="helpdesk_page_thanks_view"/>
+    </record>
+    <record id="helpdesk_website_menu" model="website.menu">
+        <field name="name">Assistenza</field>
+        <field name="url">/assistenza</field>
+        <field name="parent_id" ref="website.main_menu"/>
+        <field name="sequence">50</field>
+    </record>
+</odoo>
