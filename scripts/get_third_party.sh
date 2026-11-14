@@ -7,6 +7,8 @@ declare -A REPOS=(
   [oca-contract]=https://github.com/OCA/contract
   [oca-project]=https://github.com/OCA/project
   [oca-web]=https://github.com/OCA/web
+  # ticketing (helpdesk_mgmt e moduli collegati)
+  [oca-helpdesk]=https://github.com/OCA/helpdesk
   # localizzazione italiana (l10n-italy) e repo OCA da cui dipende
   [oca-l10n-italy]=https://github.com/OCA/l10n-italy
   [oca-account-closing]=https://github.com/OCA/account-closing

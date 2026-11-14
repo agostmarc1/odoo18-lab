@@ -25,18 +25,22 @@
     <record id="group_lab_commerciale" model="res.groups">
         <field name="name">Commerciale</field>
         <field name="category_id" ref="module_category_lab_roles"/>
-        <field name="comment">CRM e Vendite (propri documenti), fatture solo in bozza.</field>
+        <field name="comment">CRM e Vendite (propri documenti), fatture solo in bozza.
+            Helpdesk: vede (in sola lettura) i ticket dei clienti di cui è il venditore.</field>
         <field name="implied_ids" eval="[(4, ref('sales_team.group_sale_salesman')),
-                                         (4, ref('account.group_account_invoice'))]"/>
+                                         (4, ref('account.group_account_invoice')),
+                                         (4, ref('helpdesk_mgmt.group_helpdesk_user_own'))]"/>
     </record>
     <record id="group_lab_pm" model="res.groups">
         <field name="name">Project Manager</field>
         <field name="category_id" ref="module_category_lab_roles"/>
-        <field name="comment">Progetti, Pianificazione, Fogli ore e Report completi.</field>
+        <field name="comment">Progetti, Pianificazione, Fogli ore e Report completi.
+            Helpdesk: responsabile (tutti i ticket, SLA, team e configurazione).</field>
         <field name="implied_ids" eval="[(4, ref('project.group_project_manager')),
                                          (4, ref('hr_timesheet.group_timesheet_manager')),
                                          (4, ref('group_lab_planning_manager')),
-                                         (4, ref('sales_team.group_sale_salesman_all_leads'))]"/>
+                                         (4, ref('sales_team.group_sale_salesman_all_leads')),
+                                         (4, ref('helpdesk_mgmt.group_helpdesk_manager'))]"/>
     </record>
     <record id="group_lab_team" model="res.groups">
         <field name="name">Analista Funzionale / Sviluppatore</field>
@@ -50,8 +54,22 @@
         <field name="name">Supporto (AMS)</field>
         <field name="category_id" ref="module_category_lab_roles"/>
         <field name="comment">Come il team (task, turni, fogli ore) e in più segue in automatico
-            tutte le commesse a canone di assistenza (AMS), dove arrivano le richieste.</field>
-        <field name="implied_ids" eval="[(4, ref('group_lab_team'))]"/>
+            tutte le commesse a canone di assistenza (AMS), dove arrivano le richieste.
+            Helpdesk: gestisce tutti i ticket (presa in carico, risposte, ore sul ticket).</field>
+        <field name="implied_ids" eval="[(4, ref('group_lab_team')),
+                                         (4, ref('helpdesk_mgmt.group_helpdesk_user'))]"/>
+    </record>
+
+    <!-- ===== Ticket: il Commerciale legge quelli dei propri clienti ===== -->
+    <record id="rule_helpdesk_ticket_salesman" model="ir.rule">
+        <field name="name">Ticket: clienti del Commerciale (lettura)</field>
+        <field name="model_id" ref="helpdesk_mgmt.model_helpdesk_ticket"/>
+        <field name="domain_force">[('commercial_partner_id.user_id', '=', user.id)]</field>
+        <field name="groups" eval="[(4, ref('group_lab_commerciale'))]"/>
+        <field name="perm_read" eval="True"/>
+        <field name="perm_write" eval="False"/>
+        <field name="perm_create" eval="False"/>
+        <field name="perm_unlink" eval="False"/>
     </record>
     <record id="group_lab_amministrazione" model="res.groups">
         <field name="name">Amministrazione</field>

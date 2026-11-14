@@ -14,6 +14,7 @@
   <span style="background:#eef2ff;border-radius:16px;padding:4px 14px">Consulenti esterni e pass-through</span>
   <span style="background:#eef2ff;border-radius:16px;padding:4px 14px">Costi AI per commessa</span>
   <span style="background:#eef2ff;border-radius:16px;padding:4px 14px">Margini per progetto e pacchetto</span>
+  <span style="background:#eef2ff;border-radius:16px;padding:4px 14px">Ticket di assistenza con SLA</span>
 </div>
 
 <p style="text-align:center;color:#57606a;font-size:14px">Indice: Video · 1. Esigenze · 2. Funzionalità · 3. Guida passo-passo · 4. Processi BPMN · 5. Ruoli · 6. Dati sintetici · 7. Installazione · 8. Note tecniche</p>
@@ -21,21 +22,22 @@
 
 <!-- ================================================================== -->
 <h2 style="border-bottom:1px solid #d0d7de;padding-bottom:6px;margin-top:36px">Video dimostrativo</h2>
-<p>Il video mostra l'app in uso con gli utenti demo di quattro ruoli (Commerciale, Project Manager, Analista, Amministrazione): un ordine nuovo diventa una commessa, il PM pianifica, l'analista consuntiva, scatta l'alert e si leggono costi e margini. Didascalie in italiano, nessun audio.</p>
+<p>Il video mostra l'app in uso con gli utenti demo di cinque ruoli (Commerciale, Project Manager, Analista, Amministrazione, Supporto): un ordine nuovo diventa una commessa, il PM pianifica, l'analista consuntiva, scatta l'alert, si leggono costi e margini e infine un cliente apre un ticket dal sito, che il Supporto trova già collegato alla commessa AMS. Didascalie in italiano, nessun audio.</p>
 <p style="text-align:center"><a href="/lab_workflow_custom/static/description/video.html" target="_blank"><img src="video_copertina.png" alt="Guarda il video dimostrativo" style="max-width:100%;width:880px;border:1px solid #d0d7de;border-radius:8px"/></a><br/>
 <a href="/lab_workflow_custom/static/description/video.html" target="_blank" style="display:inline-block;margin-top:10px;background:#714b67;color:#fff;border-radius:6px;padding:8px 20px;text-decoration:none;font-weight:600">▶ Guarda il video</a></p>
 <!-- CAPITOLI_VIDEO -->
 <p style="margin-bottom:4px"><b>Capitoli</b> (il minuto apre il video da quel punto)</p>
 <ol style="font-size:14px;columns:2;column-gap:32px">
-  <li><a href="/lab_workflow_custom/static/description/video.html#t=5" target="_blank">0:05</a> – Il Commerciale vende un pacchetto di ore</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html#t=59" target="_blank">0:59</a> – Il Project Manager trova la commessa pronta</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html#t=108" target="_blank">1:48</a> – Pianificazione con la regola 80/20</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html#t=183" target="_blank">3:03</a> – L'analista conferma il turno</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html#t=227" target="_blank">3:47</a> – Alert sul monte ore</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html#t=262" target="_blank">4:22</a> – Lavoro in parallelo</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html#t=283" target="_blank">4:43</a> – Costi, ricavi e margine della commessa</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html#t=325" target="_blank">5:25</a> – Costi AI, consulenti e chiusura del mese</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html#t=396" target="_blank">6:36</a> – Riepilogo</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=6" target="_blank">0:06</a> – Il Commerciale vende un pacchetto di ore</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=63" target="_blank">1:03</a> – Il Project Manager trova la commessa pronta</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=110" target="_blank">1:50</a> – Pianificazione con la regola 80/20</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=188" target="_blank">3:08</a> – L'analista conferma il turno</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=234" target="_blank">3:54</a> – Alert sul monte ore</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=270" target="_blank">4:30</a> – Lavoro in parallelo</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=293" target="_blank">4:53</a> – Costi, ricavi e margine della commessa</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=335" target="_blank">5:35</a> – Costi AI, consulenti e chiusura del mese</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=409" target="_blank">6:49</a> – Ticket di assistenza</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=504" target="_blank">8:24</a> – Riepilogo</li>
 </ol>
 <!-- /CAPITOLI_VIDEO -->
 
@@ -96,6 +98,11 @@
 <p><img src="a12_ordine.png" alt="Ordine con ore scalate" style="max-width:100%;border:1px solid #d0d7de;border-radius:6px"/></p>
 <p style="font-size:14px"><i>Figura 12 – Riga d'ordine del pacchetto.</i> 1. Ore scalate e residue. 2. Dettaglio per task. 3. <i>Consegnati</i>: esclude le ore parallele non ancora approvate. 4. Totale ore registrate sull'ordine.</p>
 
+<h3>2.8 Ticket di assistenza (Helpdesk)</h3>
+<p>Il cliente apre una richiesta in tre modi: scrive all'indirizzo dell'assistenza (alias <code>assistenza@</code> del dominio della posta), compila il modulo pubblico <b>Assistenza</b> del sito (<code>/assistenza</code>, senza login) oppure entra nel portale clienti (<i>I miei ticket</i>). Odoo riconosce il contatto dall'email e, se il cliente ha un <b>canone AMS</b>, collega da solo il ticket alla sua commessa: le ore segnate sul ticket scalano il monte ore del mese e fanno scattare gli alert 75%/90% come gli altri fogli ore. Per i clienti con monte ore, T&amp;M o a corpo la commessa la sceglie il Supporto, insieme al task (obbligatorio su quei contratti).</p>
+<p>Ogni ticket ha un <b>tipo</b> (malfunzionamento, domanda, richiesta di modifica), un'<b>area</b>, una <b>priorità</b> e gli <b>SLA</b> del contratto: sui canoni AMS presa in carico entro 4 ore lavorative se urgente, 8 se alta, 2 giorni negli altri casi, e risoluzione entro 5 giorni; senza canone presa in carico entro 3 giorni. Mentre il ticket è <i>In attesa</i> del cliente il tempo si ferma. Il cliente riceve un'email in italiano all'apertura, alla presa in carico, quando serve una sua risposta e alla chiusura; ogni email ha il pulsante <b>Segui il ticket</b>, che apre la pagina del ticket anche senza account. Quando il ticket passa a <i>Fatto</i> parte la richiesta di valutazione (da 1 a 5).</p>
+<p style="font-size:14px"><i>Protezioni del modulo pubblico</i>: campo esca nascosto contro i bot, massimo 5 ticket all'ora per indirizzo (parametro <code>helpdesk_web_max_per_hour</code>); in produzione si aggiungono le chiavi reCAPTCHA da Impostazioni › Sito web.</p>
+
 <!-- ================================================================== -->
 <h2 style="border-bottom:1px solid #d0d7de;padding-bottom:6px;margin-top:36px">3. Guida passo-passo</h2>
 <p>I passaggi seguono il flusso del video. Per ogni passo: chi lo fa, dove si trova in Odoo e cosa succede dopo.</p>
@@ -148,6 +155,18 @@
   <tr><td style="padding:6px;border:1px solid #d0d7de">7</td><td style="padding:6px;border:1px solid #d0d7de">PM, Amministrazione</td><td style="padding:6px;border:1px solid #d0d7de">Progetti › Rendicontazione › Margini per commessa</td><td style="padding:6px;border:1px solid #d0d7de">Confrontare le commesse (lista o pivot).</td><td style="padding:6px;border:1px solid #d0d7de">Margine lordo, margine senza pass-through, ore risparmiate</td></tr>
 </table>
 
+<h3>3.6 Ticket di assistenza</h3>
+<table style="border-collapse:collapse;width:100%;font-size:14px">
+  <tr style="background:#f6f8fa"><th style="text-align:left;padding:6px;border:1px solid #d0d7de">#</th><th style="text-align:left;padding:6px;border:1px solid #d0d7de">Chi</th><th style="text-align:left;padding:6px;border:1px solid #d0d7de">Dove</th><th style="text-align:left;padding:6px;border:1px solid #d0d7de">Cosa fare</th><th style="text-align:left;padding:6px;border:1px solid #d0d7de">Risultato</th></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">1</td><td style="padding:6px;border:1px solid #d0d7de">Amministratore di sistema</td><td style="padding:6px;border:1px solid #d0d7de">Impostazioni › Generali › Dominio alias; Impostazioni › Tecnico › Server di posta in arrivo</td><td style="padding:6px;border:1px solid #d0d7de">Una volta sola, in produzione: dominio della posta e casella da cui Odoo legge le email di <code>assistenza@</code>. Facoltativo: chiavi reCAPTCHA del sito.</td><td style="padding:6px;border:1px solid #d0d7de">Le email al Supporto diventano ticket</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">2</td><td style="padding:6px;border:1px solid #d0d7de">PM</td><td style="padding:6px;border:1px solid #d0d7de">Helpdesk › Configurazione › Team, SLA, Tipi, Categorie</td><td style="padding:6px;border:1px solid #d0d7de">Membri del team <i>Assistenza clienti</i> (persone del Supporto), tempi SLA per contratto e priorità.</td><td style="padding:6px;border:1px solid #d0d7de">Regole di servizio allineate ai contratti venduti</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">3</td><td style="padding:6px;border:1px solid #d0d7de">Cliente</td><td style="padding:6px;border:1px solid #d0d7de">Email all'assistenza, sito › <i>Assistenza</i>, oppure portale › <i>I miei ticket</i></td><td style="padding:6px;border:1px solid #d0d7de">Descrivere la richiesta, con eventuali allegati.</td><td style="padding:6px;border:1px solid #d0d7de">Ticket <i>Nuovo</i>, email di conferma con numero e link <i>Segui il ticket</i></td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">4</td><td style="padding:6px;border:1px solid #d0d7de">Supporto</td><td style="padding:6px;border:1px solid #d0d7de">Helpdesk › Ticket › Tutti i ticket</td><td style="padding:6px;border:1px solid #d0d7de">Controllare cliente e commessa (se manca, sceglierla; su monte ore e T&amp;M anche il task), <i>Assegna a me</i>, portare il ticket a <i>In corso</i>.</td><td style="padding:6px;border:1px solid #d0d7de">Email di presa in carico; SLA di presa in carico rispettato</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">5</td><td style="padding:6px;border:1px solid #d0d7de">Supporto</td><td style="padding:6px;border:1px solid #d0d7de">Ticket › <i>Invia messaggio</i>; scheda <i>Fogli ore</i></td><td style="padding:6px;border:1px solid #d0d7de">Rispondere al cliente (con <i>In attesa</i> se serve una sua risposta) e segnare le ore sul ticket.</td><td style="padding:6px;border:1px solid #d0d7de">Il cliente riceve la risposta per email; le ore scalano il monte ore della commessa</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">6</td><td style="padding:6px;border:1px solid #d0d7de">Supporto</td><td style="padding:6px;border:1px solid #d0d7de">Ticket › stadio <i>Fatto</i></td><td style="padding:6px;border:1px solid #d0d7de">Chiudere il ticket risolto.</td><td style="padding:6px;border:1px solid #d0d7de">Email di chiusura e richiesta di valutazione al cliente</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">7</td><td style="padding:6px;border:1px solid #d0d7de">PM, Commerciale</td><td style="padding:6px;border:1px solid #d0d7de">Helpdesk › Rendicontazione; filtro <i>SLA scaduto</i></td><td style="padding:6px;border:1px solid #d0d7de">Seguire ritardi, valutazioni e consumo del canone (il Commerciale vede in lettura i ticket dei suoi clienti).</td><td style="padding:6px;border:1px solid #d0d7de">Elementi per il rinnovo o l'estensione del contratto</td></tr>
+</table>
+
 <!-- ================================================================== -->
 <h2 style="border-bottom:1px solid #d0d7de;padding-bottom:6px;margin-top:36px">4. Processi (BPMN 2.0)</h2>
 <p>Corsie (lane) per ruolo, eventi di inizio e fine, attività e gateway esclusivi per le decisioni. I diagrammi rappresentano solo ciò che l'app fa oggi.</p>
@@ -160,10 +179,10 @@
 <h2 style="border-bottom:1px solid #d0d7de;padding-bottom:6px;margin-top:36px">5. Ruoli e responsabilità</h2>
 <table style="border-collapse:collapse;width:100%;font-size:14px">
   <tr style="background:#f6f8fa"><th style="text-align:left;padding:6px;border:1px solid #d0d7de">Ruolo (gruppo dell'app)</th><th style="text-align:left;padding:6px;border:1px solid #d0d7de">Cosa fa</th></tr>
-  <tr><td style="padding:6px;border:1px solid #d0d7de">Commerciale</td><td style="padding:6px;border:1px solid #d0d7de">Opportunità, preventivi, ordini, fatture in bozza (non le conferma)</td></tr>
-  <tr><td style="padding:6px;border:1px solid #d0d7de">Project Manager</td><td style="padding:6px;border:1px solid #d0d7de">Progetti, stime dei task, turni, alert, approvazione ore parallele, fattore parallelo, ricarico pass-through, margini</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">Commerciale</td><td style="padding:6px;border:1px solid #d0d7de">Opportunità, preventivi, ordini, fatture in bozza (non le conferma); ticket dei propri clienti in sola lettura</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">Project Manager</td><td style="padding:6px;border:1px solid #d0d7de">Progetti, stime dei task, turni, alert, approvazione ore parallele, fattore parallelo, ricarico pass-through, margini; responsabile Helpdesk (team, SLA, tipi, categorie)</td></tr>
   <tr><td style="padding:6px;border:1px solid #d0d7de">Analista funzionale / Sviluppatore</td><td style="padding:6px;border:1px solid #d0d7de">Conferma dei turni, fogli ore con task, task assegnati</td></tr>
-  <tr><td style="padding:6px;border:1px solid #d0d7de">Supporto</td><td style="padding:6px;border:1px solid #d0d7de">Ticket e fogli ore sulle commesse a canone (AMS)</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">Supporto</td><td style="padding:6px;border:1px solid #d0d7de">Tutti i ticket: presa in carico, risposte al cliente, ore sul ticket; fogli ore sulle commesse a canone (AMS)</td></tr>
   <tr><td style="padding:6px;border:1px solid #d0d7de">Amministrazione</td><td style="padding:6px;border:1px solid #d0d7de">Conferma fatture, fatture dei consulenti, schede persona e tariffe dei consulenti (app Dipendenti), licenze e consumi AI, chiusura del mese</td></tr>
 </table>
 
@@ -174,7 +193,8 @@
   <tr style="background:#f6f8fa"><th style="text-align:left;padding:6px;border:1px solid #d0d7de">Cliente / area</th><th style="text-align:left;padding:6px;border:1px solid #d0d7de">Cosa permette di verificare</th></tr>
   <tr><td style="padding:6px;border:1px solid #d0d7de">Rossi Meccanica – monte ore 50 h</td><td style="padding:6px;border:1px solid #d0d7de">Alert giallo all'80%, ore per task, fattura anticipata, consulente Niccolò fatturato (solo costo, contratto a corpo)</td></tr>
   <tr><td style="padding:6px;border:1px solid #d0d7de">Bianchi Logistica – T&amp;M</td><td style="padding:6px;border:1px solid #d0d7de">Fattura di Carlo ribaltata con ricarico, spese vive AI del mese chiuso, ore parallele approvate e da approvare, fattura al cliente</td></tr>
-  <tr><td style="padding:6px;border:1px solid #d0d7de">Verdi Retail – canone AMS</td><td style="padding:6px;border:1px solid #d0d7de">Ticket del Supporto, consumo sul mese corrente, abbonamento OCA</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">Verdi Retail – canone AMS</td><td style="padding:6px;border:1px solid #d0d7de">Consumo sul mese corrente, abbonamento OCA e 7 ticket collegati da soli alla commessa: tre chiusi il mese scorso e uno questo mese (con valutazione), uno in corso, uno in attesa del cliente, uno urgente con SLA scaduto; le ore di assistenza sono segnate sui ticket</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">Helpdesk</td><td style="padding:6px;border:1px solid #d0d7de">Nicola (Supporto) nel team <i>Assistenza clienti</i>; un ticket di Rossi Meccanica (monte ore) ancora senza commessa, da smistare; Giuseppe vede in lettura i ticket dei suoi clienti</td></tr>
   <tr><td style="padding:6px;border:1px solid #d0d7de">Neri Assicurazioni – sviluppo a corpo 120 h</td><td style="padding:6px;border:1px solid #d0d7de">Task di analisi oltre il 90%, ore del consulente maturate in attesa di fattura, da fatturare</td></tr>
   <tr><td style="padding:6px;border:1px solid #d0d7de">CRM</td><td style="padding:6px;border:1px solid #d0d7de">Tre opportunità in fasi diverse e un preventivo AMS in bozza</td></tr>
   <tr><td style="padding:6px;border:1px solid #d0d7de">Pianificazione</td><td style="padding:6px;border:1px solid #d0d7de">Niccolò a 32 h (limite pieno), Carlo con fattore 1,5, fattore ridotto per la settimana prossima, turni confermati che diventano fogli ore</td></tr>
@@ -184,7 +204,7 @@
 <!-- ================================================================== -->
 <h2 style="border-bottom:1px solid #d0d7de;padding-bottom:6px;margin-top:36px">7. Installazione</h2>
 <ul>
-  <li><b>Dipendenze</b> (si installano da sole): crm, sale_management, sale_timesheet, project, hr_timesheet, account; OCA 18.0 <code>subscription_oca</code> (canoni) e <code>project_timeline</code> (con <code>web_timeline</code>).</li>
+  <li><b>Dipendenze</b> (si installano da sole): crm, sale_management, sale_timesheet, project, hr_timesheet, account; OCA 18.0 <code>subscription_oca</code> (canoni) e <code>project_timeline</code> (con <code>web_timeline</code>); per i ticket i moduli OCA Helpdesk <code>helpdesk_mgmt_timesheet</code> (con <code>helpdesk_mgmt</code>, <code>helpdesk_mgmt_project</code>, <code>project_timesheet_time_control</code>), <code>helpdesk_type</code>, <code>helpdesk_mgmt_sla</code>, <code>helpdesk_mgmt_rating</code> e <code>website_helpdesk_mgmt</code>, che porta il modulo standard Sito web.</li>
   <li><b>Pacchetto per un altro Odoo 18 CE</b>: <code>scripts/package_app.sh</code> crea uno zip con l'app e i moduli OCA; copiare le cartelle nell'addons path e installare <i>Flusso Operativo Software House</i>.</li>
   <li><b>Localizzazione italiana</b> (OCA l10n-italy): è configurazione dell'ambiente, non una dipendenza dell'app.</li>
   <li><b>Connettore Anthropic</b>: facoltativo; si attiva solo con il parametro di sistema <code>lab_workflow_custom.anthropic_admin_key</code>.</li>
@@ -201,7 +221,8 @@
   <tr><td style="padding:6px;border:1px solid #d0d7de">Consulenti e pass-through</td><td style="padding:6px;border:1px solid #d0d7de"><code>account.move.line</code> (<code>lab_consultant_id</code>, <code>_sale_determine_order</code> solo T&amp;M, ricarico)</td></tr>
   <tr><td style="padding:6px;border:1px solid #d0d7de">Costi AI</td><td style="padding:6px;border:1px solid #d0d7de"><code>lab.ai.tool</code>, <code>lab.ai.license</code>, <code>lab.ai.usage</code>, <code>lab.ai.mapping</code>, <code>lab.cost.period</code>, <code>lab.cost.allocation</code></td></tr>
   <tr><td style="padding:6px;border:1px solid #d0d7de">Margini</td><td style="padding:6px;border:1px solid #d0d7de"><code>lab.margin.report</code> (vista SQL, unica fonte dei margini, letta anche dalla scheda del progetto)</td></tr>
-  <tr><td style="padding:6px;border:1px solid #d0d7de">Dati sintetici</td><td style="padding:6px;border:1px solid #d0d7de"><code>lab.demo.data._lab_load_synthetic</code> (idempotente)</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">Ticket</td><td style="padding:6px;border:1px solid #d0d7de"><code>helpdesk.ticket</code> (<code>_lab_find_project</code>, <code>lab_contract_type</code> per gli SLA), ore sul ticket in <code>account.analytic.line.create</code>, anti-spam in <code>controllers/website_form.py</code>, pagina <code>/assistenza</code></td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">Dati sintetici</td><td style="padding:6px;border:1px solid #d0d7de"><code>lab.demo.data._lab_load_synthetic</code> (idempotente; su un database già caricato aggiunge solo i ticket con <code>_lab_load_helpdesk</code>)</td></tr>
 </table>
 <p><b>Prossimo sviluppo proposto (fase 3, non implementato).</b> Ripartire i consumi AI personali anche in base ai commit Git collegati ai task (codice del task nel messaggio di commit), con base di ripartizione scelta dall'Amministrazione.</p>
 <p><b>Analisi funzionale e tecnica completa</b> (requisiti con tracciabilità su codice e test, modello dati, formule di calcolo, punti di estensione, sicurezza, automazioni, integrazione, limiti noti): <a href="/lab_workflow_custom/static/description/analisi_tecnica.html" target="_blank">apri l'analisi funzionale e tecnica</a>.</p>

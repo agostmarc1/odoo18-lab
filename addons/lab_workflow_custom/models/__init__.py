@@ -12,4 +12,5 @@ from . import account_move_line
 from . import lab_planning_slot
 from . import lab_margin_report
 from . import sale_subscription
+from . import helpdesk_ticket
 from . import lab_demo_data

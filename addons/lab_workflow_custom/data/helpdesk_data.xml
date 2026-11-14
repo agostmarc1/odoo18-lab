@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Ticketing: configurazione dell'Helpdesk OCA (team, tipi, categorie, SLA per contratto).
+     Si modifica da Helpdesk > Configurazione; qui ci sono i valori di partenza. -->
+<odoo>
+    <data noupdate="1">
+        <!-- Tipo di richiesta (helpdesk_type) -->
+        <record id="helpdesk_type_bug" model="helpdesk.ticket.type">
+            <field name="name">Malfunzionamento</field>
+        </record>
+        <record id="helpdesk_type_question" model="helpdesk.ticket.type">
+            <field name="name">Domanda / come si fa</field>
+        </record>
+        <record id="helpdesk_type_change" model="helpdesk.ticket.type">
+            <field name="name">Richiesta di modifica</field>
+        </record>
+
+        <!-- Area applicativa (categorie di helpdesk_mgmt) -->
+        <record id="helpdesk_category_access" model="helpdesk.ticket.category">
+            <field name="name">Accessi e utenti</field>
+        </record>
+        <record id="helpdesk_category_sales" model="helpdesk.ticket.category">
+            <field name="name">Vendite e documenti</field>
+        </record>
+        <record id="helpdesk_category_stock" model="helpdesk.ticket.category">
+            <field name="name">Magazzino e spedizioni</field>
+        </record>
+        <record id="helpdesk_category_reports" model="helpdesk.ticket.category">
+            <field name="name">Report e stampe</field>
+        </record>
+
+        <!-- Team: riceve i ticket da email (alias "assistenza@<dominio>"), modulo web e portale -->
+        <record id="helpdesk_team_support" model="helpdesk.ticket.team">
+            <field name="name">Assistenza clienti</field>
+            <field name="alias_name">assistenza</field>
+            <field name="allow_timesheet" eval="True"/>
+            <field name="use_sla" eval="True"/>
+            <field name="show_in_portal" eval="True"/>
+            <field name="type_ids" eval="[Command.set([ref('helpdesk_type_bug'),
+                                                       ref('helpdesk_type_question'),
+                                                       ref('helpdesk_type_change')])]"/>
+            <field name="category_ids" eval="[Command.set([ref('helpdesk_category_access'),
+                                                           ref('helpdesk_category_sales'),
+                                                           ref('helpdesk_category_stock'),
+                                                           ref('helpdesk_category_reports')])]"/>
+        </record>
+
+        <!-- SLA per tipo di contratto della commessa (campo calcolato lab_contract_type).
+             "Presa in carico" = il ticket passa a "In corso"; "risoluzione" = "Fatto".
+             Mentre il ticket è "In attesa" (del cliente) il tempo SLA si ferma. -->
+        <record id="helpdesk_sla_ams_urgent" model="helpdesk.sla">
+            <field name="name">AMS urgente – presa in carico entro 4 ore lavorative</field>
+            <field name="team_ids" eval="[Command.set([ref('helpdesk_team_support')])]"/>
+            <field name="stage_id" ref="helpdesk_mgmt.helpdesk_ticket_stage_in_progress"/>
+            <field name="hours">4</field>
+            <field name="domain">[("lab_contract_type", "=", "canone"), ("priority", "=", "3")]</field>
+            <field name="ignore_stage_ids" eval="[Command.set([ref('helpdesk_mgmt.helpdesk_ticket_stage_awaiting')])]"/>
+        </record>
+        <record id="helpdesk_sla_ams_high" model="helpdesk.sla">
+            <field name="name">AMS alta – presa in carico entro 8 ore lavorative</field>
+            <field name="team_ids" eval="[Command.set([ref('helpdesk_team_support')])]"/>
+            <field name="stage_id" ref="helpdesk_mgmt.helpdesk_ticket_stage_in_progress"/>
+            <field name="hours">8</field>
+            <field name="domain">[("lab_contract_type", "=", "canone"), ("priority", "=", "2")]</field>
+            <field name="ignore_stage_ids" eval="[Command.set([ref('helpdesk_mgmt.helpdesk_ticket_stage_awaiting')])]"/>
+        </record>
+        <record id="helpdesk_sla_ams_normal" model="helpdesk.sla">
+            <field name="name">AMS – presa in carico entro 2 giorni lavorativi</field>
+            <field name="team_ids" eval="[Command.set([ref('helpdesk_team_support')])]"/>
+            <field name="stage_id" ref="helpdesk_mgmt.helpdesk_ticket_stage_in_progress"/>
+            <field name="days">2</field>
+            <field name="domain">[("lab_contract_type", "=", "canone"), ("priority", "in", ["0", "1"])]</field>
+            <field name="ignore_stage_ids" eval="[Command.set([ref('helpdesk_mgmt.helpdesk_ticket_stage_awaiting')])]"/>
+        </record>
+        <record id="helpdesk_sla_ams_resolution" model="helpdesk.sla">
+            <field name="name">AMS – risoluzione entro 5 giorni lavorativi</field>
+            <field name="team_ids" eval="[Command.set([ref('helpdesk_team_support')])]"/>
+            <field name="stage_id" ref="helpdesk_mgmt.helpdesk_ticket_stage_done"/>
+            <field name="days">5</field>
+            <field name="domain">[("lab_contract_type", "=", "canone")]</field>
+            <field name="ignore_stage_ids" eval="[Command.set([ref('helpdesk_mgmt.helpdesk_ticket_stage_awaiting')])]"/>
+        </record>
+        <record id="helpdesk_sla_standard" model="helpdesk.sla">
+            <field name="name">Senza canone – presa in carico entro 3 giorni lavorativi</field>
+            <field name="team_ids" eval="[Command.set([ref('helpdesk_team_support')])]"/>
+            <field name="stage_id" ref="helpdesk_mgmt.helpdesk_ticket_stage_in_progress"/>
+            <field name="days">3</field>
+            <field name="domain">[("lab_contract_type", "!=", "canone")]</field>
+            <field name="ignore_stage_ids" eval="[Command.set([ref('helpdesk_mgmt.helpdesk_ticket_stage_awaiting')])]"/>
+        </record>
+
+        <!-- Limite anti-spam del modulo web: ticket all'ora per indirizzo email -->
+        <record id="param_helpdesk_web_max_per_hour" model="ir.config_parameter">
+            <field name="key">lab_workflow_custom.helpdesk_web_max_per_hour</field>
+            <field name="value">5</field>
+        </record>
+    </data>
+
+    <!-- Il cliente può scegliere tipo e priorità nel modulo web -->
+    <function model="ir.model.fields" name="formbuilder_whitelist">
+        <value>helpdesk.ticket</value>
+        <value eval="['type_id', 'priority']"/>
+    </function>
+</odoo>

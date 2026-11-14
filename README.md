@@ -18,11 +18,12 @@ casa", aziende di Chicago): si vedono solo dati coerenti con il nostro flusso, c
 |---|---|---|
 | Rossi Meccanica | Monte ore 50h | alert giallo all'80%, ore per task, fattura anticipata, consulente fatturato (solo costo) |
 | Bianchi Logistica | T&M 60h | fattura di Carlo ribaltata +15%, spese vive AI, ore parallele approvate e da approvare |
-| Verdi Retail | Canone AMS 20h/mese | ticket del Supporto, consumo del mese |
+| Verdi Retail | Canone AMS 20h/mese | 7 ticket di assistenza collegati alla commessa (chiusi con valutazione, in corso, in attesa del cliente, urgente con SLA scaduto), ore sui ticket, consumo del mese |
 | Neri Assicurazioni | Sviluppo a corpo 120h | task di analisi oltre il 90%, ore del consulente in attesa di fattura |
 
 In più: 3 opportunità e un preventivo AMS in bozza (Commerciale), turni della settimana (Niccolò a
-32h, Carlo con fattore 1,5), mese scorso dei costi AI chiuso dall'Amministrazione.
+32h, Carlo con fattore 1,5), mese scorso dei costi AI chiuso dall'Amministrazione, un ticket di
+Rossi Meccanica ancora da smistare (monte ore: la commessa la sceglie il Supporto).
 
 ## Azienda demo: Italia, euro, localizzazione italiana
 
@@ -54,7 +55,12 @@ L'immagine Docker è quella ufficiale `odoo:18.0` più due librerie Python richi
 **Tutte le personalizzazioni sono in una sola app: "Flusso Operativo Software House"**
 (nome tecnico `lab_workflow_custom`). Si installa solo lei: Odoo attiva da solo i moduli da cui dipende,
 cioè `crm`, `sale_management`, `project`, `hr_timesheet`, `sale_timesheet`, `account`,
-`subscription_oca` (OCA, canoni ricorrenti) e `project_timeline` + `web_timeline` (OCA, timeline dei task).
+`subscription_oca` (OCA, canoni ricorrenti), `project_timeline` + `web_timeline` (OCA, timeline dei task)
+e l'**Helpdesk OCA** per i ticket (`helpdesk_mgmt_timesheet`, `helpdesk_type`, `helpdesk_mgmt_sla`,
+`helpdesk_mgmt_rating`, `website_helpdesk_mgmt`, che porta anche il modulo **Sito web** di Odoo).
+
+> **Helpdesk in Community:** l'app *Helpdesk* di Odoo è solo Enterprise. Si usa quella OCA
+> (`helpdesk_mgmt`, repo `OCA/helpdesk` branch 18.0), personalizzata dalla nostra app.
 
 > **Planning in Community:** i moduli `planning`, `project_forecast` e `industry_fsm` esistono solo in
 > Odoo **Enterprise**. Per questo la Pianificazione (turni, regola 80/20, conferma → foglio ore) è
@@ -353,6 +359,30 @@ ancora fatturata) la spesa torna a zero e si ricalcola alla nuova chiusura, senz
 Nei dati sintetici ci sono tre consumi del mese scorso, uno per caso: diretto (workspace della
 commessa Bianchi Logistica), personale (Claude Code di Carlo) e senza corrispondenza.
 
+### Ticket di assistenza (app "Helpdesk")
+
+- **Come arrivano.** Email all'indirizzo dell'assistenza (alias `assistenza@` + dominio della posta),
+  modulo pubblico **Assistenza** sul sito (http://127.0.0.1:8069/assistenza, senza login) oppure
+  portale clienti (*I miei ticket*). Il contatto si riconosce dall'email.
+- **Commessa.** Se il cliente ha un **canone AMS**, il ticket va da solo sulla sua commessa: le ore
+  segnate sul ticket (scheda *Fogli ore*) scalano le 20h del mese e fanno scattare gli alert 75%/90%.
+  Per monte ore, T&M e a corpo la commessa (e il task) li sceglie il Supporto.
+- **SLA** (Helpdesk → Configurazione → SLA): AMS presa in carico entro 4 ore lavorative se urgente,
+  8 se alta, 2 giorni altrimenti; risoluzione entro 5 giorni; senza canone presa in carico entro
+  3 giorni. In *In attesa* (del cliente) il tempo si ferma. Filtro *SLA scaduto* nella lista.
+- **Email al cliente**, in italiano: ricevuto, preso in carico, in attesa di una tua risposta,
+  risolto (+ richiesta di valutazione da 1 a 5). Ogni email ha il pulsante **Segui il ticket**: apre la
+  pagina del ticket anche senza account. Le risposte del Supporto arrivano per email e il cliente
+  risponde dalla sua casella.
+- **Chi fa cosa.** Supporto (`nicola`): tutti i ticket. PM (`marco`): responsabile Helpdesk, SLA e
+  configurazione. Commerciale (`giuseppe`): vede in sola lettura i ticket dei suoi clienti.
+- **Anti-spam del modulo pubblico**: campo esca nascosto e massimo 5 ticket all'ora per indirizzo
+  (parametro `lab_workflow_custom.helpdesk_web_max_per_hour`). In produzione si aggiungono le chiavi
+  reCAPTCHA (Impostazioni → Sito web).
+- **In questo laboratorio non c'è un server di posta**: le email in uscita restano in coda e quelle
+  in arrivo si provano con i test. In produzione: Impostazioni → Generali → *Dominio alias* e
+  Impostazioni → Tecnico → *Server di posta in arrivo*.
+
 ### Prossima fase (non ancora fatta)
 
 - **Fase 3:** commit Git come base di ripartizione dei costi AI (in alternativa o insieme alle ore).
@@ -415,6 +445,11 @@ Usa una finestra del browser per ogni utente (le finestre anonime vanno bene).
    registra la fattura fornitore (prodotto *Prestazione consulente esterno*, colonna *Consulente*)
    il costo maturato viene sostituito da quello fatturato e compare lo scostamento. Tutti gli importi sono in euro
    e le fatture usano il piano dei conti e l'IVA italiani (22%).
+9. **Ticket – cliente e `nicola`**: in una finestra anonima apri http://127.0.0.1:8069/assistenza e
+   invia una richiesta con l'email `helpdesk@verdiretail.example` (Verdi Retail, canone AMS).
+   `nicola` → Helpdesk → Ticket: il ticket è già sulla commessa AMS con i suoi SLA. *Assegna a me*,
+   portalo a *In corso*, segna 1h nella scheda *Fogli ore* e chiudilo con *Fatto*. Sulla commessa il
+   consumo del mese sale di 1h. `giuseppe` vede il ticket ma non lo può modificare.
 
 ---
 

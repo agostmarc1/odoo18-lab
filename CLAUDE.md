@@ -67,8 +67,12 @@ se è OCA va anche nell'elenco `OCA` di `scripts/package_app.sh`. A ogni modific
 2. **OCA/terze parti: solo branch `18.0`.** Aggiungi il repo in `scripts/get_third_party.sh` e in
    `addons_path` di `config/odoo.conf`. Prima di usarlo verifica che `__manifest__.py` abbia versione
    `18.0.*` e `installable: True`.
-3. Moduli Enterprise (`planning`, `project_forecast`, `industry_fsm`, `sale_subscription`) **non**
-   sono disponibili: si costruisce l'equivalente nel modulo custom o si usa OCA.
+3. Moduli Enterprise (`planning`, `project_forecast`, `industry_fsm`, `sale_subscription`, `helpdesk`)
+   **non** sono disponibili: si costruisce l'equivalente nel modulo custom o si usa OCA
+   (ticketing = `helpdesk_mgmt` e moduli collegati del repo `oca-helpdesk`).
+5. I record OCA con `noupdate="1"` (es. gli stadi dei ticket) **non** si aggiornano con un `<record>`
+   nella nostra app durante `-u`: si impostano con un metodo chiamato da `<function>`
+   (esempio: `helpdesk.ticket._lab_setup_stage_templates`).
 4. Prima di fare un xpath, leggi la vista originale nel container
    (`/usr/lib/python3/dist-packages/odoo/addons/<modulo>/views/`).
 
@@ -81,6 +85,7 @@ se è OCA va anche nell'elenco `OCA` di `scripts/package_app.sh`. A ogni modific
 | `account.analytic.line` | Riga di foglio ore (`unit_amount` = ore, `amount` = costo negativo). L'override di create/write/unlink fa scattare l'alert. |
 | `account.move` | `action_post` è bloccato per il Commerciale senza Amministrazione. |
 | `product.template` | `service_policy` (`ordered_prepaid`, `delivered_timesheet`, ...), `service_tracking` (`task_in_project`, `project_only`, ...), più i campi `lab_hours_per_unit`, `lab_monthly_hours` e `lab_create_default_tasks`. |
+| `helpdesk.ticket` (OCA) | `partner_id`/`partner_email`, `project_id`/`task_id` (helpdesk_mgmt_project), `timesheet_ids` (helpdesk_mgmt_timesheet), `ticket_sla_ids`/`set_sla`/`refresh_sla` (helpdesk_mgmt_sla), `rating_ids`. Qui `lab_contract_type` (usato nei domini degli SLA) e `_lab_find_project` (commessa AMS dal cliente). |
 
 Nelle viste di Odoo 18 si usa `<list>` (non `<tree>`), `invisible="espressione"` (non `attrs`), `<chatter/>`
 e nel kanban `<t t-name="card">`. Il calendario non accetta `all_day="1"` (vuole un nome di campo) e i
@@ -126,6 +131,14 @@ filtri data non accettano `default_period="week"`.
   che legge `lab.margin.report`: un solo calcolo dei margini, mai duplicarlo.
 - Alert monte ore al **75%** (giallo) e al **90%** (rosso): il task si misura sulle ore stimate, il
   progetto sulle ore vendute (per il canone AMS sul mese corrente).
+- **Ticket di assistenza** (Helpdesk OCA): canali email (alias `assistenza`), modulo pubblico
+  `/assistenza` e portale. Contatto dall'email, commessa a canone collegata da sola
+  (`_lab_find_project`); le ore si segnano **sul ticket** (`account.analytic.line.ticket_id`) e
+  valgono come fogli ore della commessa: monte ore, alert e margini restano un solo calcolo.
+  Su corpo/T&M il ticket deve avere il task. SLA per contratto in `data/helpdesk_data.xml`
+  (dominio su `lab_contract_type` e `priority`). Anti-spam del modulo in `controllers/website_form.py`
+  (campo esca + `lab_workflow_custom.helpdesk_web_max_per_hour`). Nessun server di posta nel lab:
+  le email in arrivo si testano con `message_process`, mai con caselle reali.
 
 ## Owner per funzionalità
 | Funzionalità | Owner |
@@ -134,6 +147,9 @@ filtri data non accettano `default_period="week"`.
 | Progetti, stime task, pianificazione turni, alert, margini | Project Manager |
 | Conferma turni, fogli ore, task assegnati | Analista Funzionale / Sviluppatore |
 | Assistenza sulle commesse a canone (AMS): task, fogli ore | Supporto |
+| Ticket: presa in carico, risposte al cliente, ore sul ticket, chiusura | Supporto |
+| Helpdesk: team, SLA, tipi e categorie; controllo ritardi e valutazioni | Project Manager |
+| Ticket dei propri clienti (sola lettura), livelli SLA venduti nei contratti | Commerciale |
 | Conferma fatture, contabilità | Amministrazione |
 | Licenze AI, consumi AI e import, fatture consulenti, chiusura mese costi | Amministrazione |
 | Corrispondenze consumi AI (workspace/chiavi/utenti → commesse/persone) | Project Manager, Amministrazione |
