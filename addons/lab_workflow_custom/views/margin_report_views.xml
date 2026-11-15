@@ -45,6 +45,18 @@
             </list>
         </field>
     </record>
+    <!-- Grafico: ricavi, costi e margine per cliente -->
+    <record id="lab_margin_report_graph" model="ir.ui.view">
+        <field name="name">lab.margin.report.graph</field>
+        <field name="model">lab.margin.report</field>
+        <field name="arch" type="xml">
+            <graph string="Margini per commessa" type="bar">
+                <field name="partner_id"/>
+                <field name="margin" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
     <record id="lab_margin_report_search" model="ir.ui.view">
         <field name="name">lab.margin.report.search</field>
         <field name="model">lab.margin.report</field>
@@ -57,13 +69,20 @@
                 <filter name="negative" string="Margine negativo" domain="[('margin', '&lt;', 0)]"/>
                 <filter name="accrued" string="Fatture consulenti da ricevere"
                         domain="[('external_accrued', '>', 0)]"/>
+                <separator/>
+                <filter name="my_projects" string="I miei progetti"
+                        domain="[('user_id', '=', uid)]"/>
+                <group expand="0" string="Raggruppa per">
+                    <filter name="group_partner" string="Cliente" context="{'group_by': 'partner_id'}"/>
+                    <filter name="group_pm" string="Project Manager" context="{'group_by': 'user_id'}"/>
+                </group>
             </search>
         </field>
     </record>
     <record id="action_margin_report" model="ir.actions.act_window">
         <field name="name">Margini per commessa</field>
         <field name="res_model">lab.margin.report</field>
-        <field name="view_mode">list,pivot</field>
+        <field name="view_mode">list,pivot,graph</field>
         <field name="context">{'search_default_sold': 1}</field>
         <field name="help" type="html">
             <p>Ricavi: venduto (T&amp;M = ore consegnate × prezzo) + ribaltato al cliente.

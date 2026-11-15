@@ -16,7 +16,65 @@
                     🛑 Monte ore oltre il <b>90%</b>: rischio sforamento, serve un'azione commerciale.
                 </div>
             </xpath>
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_lab_timesheets" type="object" class="oe_stat_button"
+                        icon="fa-clock-o" groups="hr_timesheet.group_hr_timesheet_user">
+                    <field name="lab_timesheet_count" widget="statinfo" string="Fogli ore"/>
+                </button>
+                <button name="action_lab_invoices" type="object" class="oe_stat_button"
+                        icon="fa-file-text-o"
+                        groups="account.group_account_invoice,account.group_account_readonly">
+                    <field name="lab_invoice_count" widget="statinfo" string="Fatture"/>
+                </button>
+                <button name="action_lab_costs" type="object" class="oe_stat_button"
+                        icon="fa-microchip" groups="lab_workflow_custom.group_lab_pm,lab_workflow_custom.group_lab_amministrazione,project.group_project_manager"
+                        invisible="not lab_cost_count">
+                    <field name="lab_cost_count" widget="statinfo" string="Costi AI"/>
+                </button>
+                <button name="action_lab_margin" type="object" class="oe_stat_button"
+                        icon="fa-line-chart" groups="lab_workflow_custom.group_lab_pm,lab_workflow_custom.group_lab_amministrazione,project.group_project_manager">
+                    <div class="o_stat_info">
+                        <span class="o_stat_value"><field name="lab_margin_pct" nolabel="1"/> %</span>
+                        <span class="o_stat_text">Margine</span>
+                    </div>
+                </button>
+            </xpath>
             <xpath expr="//notebook" position="before">
+                <!-- Panoramica del PM: i numeri della commessa a colpo d'occhio -->
+                <div class="o_lab_overview d-flex flex-wrap gap-2 my-3" name="lab_overview"
+                     groups="lab_workflow_custom.group_lab_pm,lab_workflow_custom.group_lab_amministrazione,project.group_project_manager">
+                    <field name="currency_id" invisible="1"/>
+                    <div class="card flex-fill text-center p-2">
+                        <div class="text-muted small">Ricavi</div>
+                        <field name="lab_revenue" class="fs-4 fw-bold"/>
+                    </div>
+                    <div class="card flex-fill text-center p-2">
+                        <div class="text-muted small">Costi</div>
+                        <field name="lab_total_cost" class="fs-4 fw-bold"/>
+                    </div>
+                    <div class="card flex-fill text-center p-2">
+                        <div class="text-muted small">Margine</div>
+                        <field name="lab_margin" class="fs-4 fw-bold"
+                               decoration-danger="lab_margin &lt; 0"
+                               decoration-success="lab_margin &gt; 0"/>
+                        <div class="small"><field name="lab_margin_pct" class="d-inline"/> %</div>
+                    </div>
+                    <div class="card flex-fill text-center p-2">
+                        <div class="text-muted small">Già fatturato</div>
+                        <field name="lab_invoiced_amount" class="fs-5"/>
+                    </div>
+                    <div class="card flex-fill text-center p-2">
+                        <div class="text-muted small">Da fatturare</div>
+                        <field name="lab_to_invoice" class="fs-5"/>
+                    </div>
+                    <div class="card flex-fill text-center p-2">
+                        <div class="text-muted small">Ore consuntivate / vendute</div>
+                        <div class="fs-5">
+                            <field name="lab_consumed_hours" widget="float_time" class="d-inline"/> /
+                            <field name="lab_sold_hours" widget="float_time" class="d-inline"/>
+                        </div>
+                    </div>
+                </div>
                 <group string="Monte ore" name="lab_hours">
                     <group>
                         <field name="lab_is_monthly" invisible="not lab_is_monthly"/>
@@ -40,7 +98,6 @@
             <xpath expr="//notebook" position="inside">
                 <page string="Costi, ricavi e margine" name="lab_economics"
                       groups="lab_workflow_custom.group_lab_pm,lab_workflow_custom.group_lab_amministrazione,project.group_project_manager">
-                    <field name="currency_id" invisible="1"/>
                     <group>
                         <group string="Ricavi">
                             <field name="lab_revenue" class="fw-bold"/>
@@ -99,6 +156,28 @@
                       invisible="lab_alert_level != 'warning'">⚠ monte ore &gt; 75%</span>
                 <span class="badge rounded-pill text-bg-danger"
                       invisible="lab_alert_level != 'danger'">🛑 monte ore &gt; 90%</span>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Vista complessiva: elenco dei progetti con i numeri economici e i totali -->
+    <record id="view_project_list_lab" model="ir.ui.view">
+        <field name="name">project.project.list.lab</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.view_project"/>
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="inside">
+                <field name="currency_id" column_invisible="1"/>
+                <field name="lab_contract_type" optional="show"/>
+                <field name="lab_consumption_pct" widget="progressbar" optional="show"
+                       string="% ore"/>
+                <field name="lab_revenue" sum="Totale" optional="show" groups="lab_workflow_custom.group_lab_pm,lab_workflow_custom.group_lab_amministrazione,project.group_project_manager"/>
+                <field name="lab_total_cost" sum="Totale" optional="show" groups="lab_workflow_custom.group_lab_pm,lab_workflow_custom.group_lab_amministrazione,project.group_project_manager"/>
+                <field name="lab_margin" sum="Totale" optional="show" groups="lab_workflow_custom.group_lab_pm,lab_workflow_custom.group_lab_amministrazione,project.group_project_manager"
+                       decoration-danger="lab_margin &lt; 0"/>
+                <field name="lab_margin_pct" optional="show" groups="lab_workflow_custom.group_lab_pm,lab_workflow_custom.group_lab_amministrazione,project.group_project_manager"
+                       decoration-danger="lab_margin_pct &lt; 0"/>
+                <field name="lab_to_invoice" sum="Totale" optional="hide" groups="lab_workflow_custom.group_lab_pm,lab_workflow_custom.group_lab_amministrazione,project.group_project_manager"/>
             </xpath>
         </field>
     </record>
