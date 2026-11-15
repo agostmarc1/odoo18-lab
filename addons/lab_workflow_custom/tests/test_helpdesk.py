@@ -328,3 +328,30 @@ class TestLabPortalKanban(HttpCase):
         fragment = self.url_open("/my/tickets/kanban?fragment=1&scope=mine")
         self.assertIn("lab_kanban_board", fragment.text)
         self.assertNotIn(mine.number, fragment.text, "Solo i miei: il ticket è dell'azienda")
+
+    def test_portal_kanban_customer_columns(self):
+        """Colonne per il cliente: chi deve agire (fornitore / cliente) oppure risolto."""
+        env = self.env(context=dict(self.env.context, tracking_disable=True))
+        company = env["res.partner"].create({"name": "Cliente Colonne Srl", "is_company": True})
+        new_test_user(env, "t_portal_cols", groups="base.group_portal").partner_id.write(
+            {"parent_id": company.id, "email": "colonne@cliente.example"})
+        ref = env.ref
+        self.assertEqual(ref("helpdesk_mgmt.helpdesk_ticket_stage_new").lab_portal_column, "supplier")
+        self.assertEqual(ref("helpdesk_mgmt.helpdesk_ticket_stage_in_progress").lab_portal_column,
+                         "supplier")
+        self.assertEqual(ref("helpdesk_mgmt.helpdesk_ticket_stage_awaiting").lab_portal_column,
+                         "customer")
+        self.assertEqual(ref("helpdesk_mgmt.helpdesk_ticket_stage_done").lab_portal_column, "resolved")
+        waiting = env["helpdesk.ticket"].create({
+            "name": "Ticket in attesa del cliente", "description": "<p>x</p>",
+            "partner_id": company.id,
+            "stage_id": ref("helpdesk_mgmt.helpdesk_ticket_stage_awaiting").id})
+        self.authenticate("t_portal_cols", "t_portal_cols")
+        html = self.url_open("/my/tickets/kanban?fragment=1").text
+        for label in ("Ci stiamo lavorando", "Serve un tuo riscontro", "Risolto"):
+            self.assertIn(label, html)
+        customer_col = html[html.index('data-column="customer"'):html.index('data-column="resolved"')]
+        self.assertIn(waiting.number, customer_col)
+        resolved_tag = html[html.rindex("<div", 0, html.index('data-column="resolved"')):
+                            html.index('data-column="resolved"')]
+        self.assertIn("lab_kanban_folded", resolved_tag, "Risolto parte ridotta")

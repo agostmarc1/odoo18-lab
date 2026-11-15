@@ -9,6 +9,47 @@
         max-width: 22rem;
         min-height: 8rem;
     }
+    .lab_kanban_toggle {
+        background: transparent;
+        cursor: pointer;
+        &:hover {
+            background-color: rgba(0, 0, 0, 0.04);
+        }
+    }
+    .lab_kanban_chevron {
+        transition: transform 0.2s;
+    }
+    .lab_kanban_column_customer {
+        border-top: 3px solid var(--bs-warning, #ffc107);
+    }
+    .lab_kanban_column_supplier {
+        border-top: 3px solid var(--bs-primary, #0d6efd);
+    }
+    .lab_kanban_column_resolved {
+        border-top: 3px solid var(--bs-success, #198754);
+    }
+    // Colonna ridotta: una striscia stretta con il titolo in verticale, come nel Kanban di Odoo
+    .lab_kanban_column.lab_kanban_folded {
+        flex: 0 0 3rem;
+        min-width: 3rem;
+        .lab_kanban_body {
+            display: none !important;
+        }
+        .lab_kanban_toggle {
+            flex-direction: column !important;
+            align-items: center !important;
+            min-height: 12rem;
+            padding: 0.5rem 0;
+        }
+        .lab_kanban_chevron {
+            transform: rotate(-90deg);
+        }
+        .lab_kanban_title {
+            writing-mode: vertical-rl;
+            white-space: nowrap;
+            flex-grow: 0 !important;
+        }
+    }
     .lab_kanban_card {
         transition: box-shadow 0.2s;
         &:hover {

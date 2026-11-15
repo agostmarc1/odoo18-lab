@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Fasi dei ticket: in quale colonna del Kanban del portale le vede il cliente -->
+<odoo>
+    <record id="helpdesk_ticket_stage_form_lab" model="ir.ui.view">
+        <field name="name">helpdesk.ticket.stage.form.lab</field>
+        <field name="model">helpdesk.ticket.stage</field>
+        <field name="inherit_id" ref="helpdesk_mgmt.view_helpdesk_ticket_stage_form"/>
+        <field name="arch" type="xml">
+            <field name="closed" position="after">
+                <field name="lab_portal_column" required="1"/>
+            </field>
+        </field>
+    </record>
+    <record id="helpdesk_ticket_stage_list_lab" model="ir.ui.view">
+        <field name="name">helpdesk.ticket.stage.list.lab</field>
+        <field name="model">helpdesk.ticket.stage</field>
+        <field name="inherit_id" ref="helpdesk_mgmt.view_helpdesk_ticket_stage_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//list" position="inside">
+                <field name="lab_portal_column"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -114,4 +114,9 @@
         <value>helpdesk.ticket</value>
         <value eval="['type_id', 'priority']"/>
     </function>
+
+    <!-- Kanban del portale: alle fasi ancora senza colonna assegna quella di base
+         ("In attesa" = serve un riscontro del cliente, fasi chiuse = risolto, altre = ci lavoriamo).
+         Le scelte fatte a mano nelle fasi non vengono toccate. -->
+    <function model="helpdesk.ticket.stage" name="_lab_init_portal_columns"/>
 </odoo>

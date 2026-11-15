@@ -626,10 +626,14 @@ def copione(r, rpc):
     r.page.locator(".lab_kanban_board").wait_for(timeout=60000)
     r.pausa(1.0)
     r.dici("Il cliente segue i ticket nel <b>Kanban del portale</b>: vede solo quelli della "
-           "sua azienda, divisi per fase.", 5)
+           "sua azienda, in tre colonne: <b>ci stiamo lavorando</b>, <b>serve un tuo riscontro</b>, "
+           "<b>risolto</b>.", 5.5)
     r.evidenzia(r.page.locator(".lab_kanban_card", has_text=TICKET_VIDEO), 2.0)
     r.dici("La bacheca si aggiorna da sola, in tempo reale, quando il Supporto sposta un ticket.",
            4.5)
+    r.dici("Le colonne si riducono con un clic sul titolo, come nel Kanban di Odoo.", 3.5)
+    r.clic(r.page.locator(".lab_kanban_column_resolved .lab_kanban_toggle"))
+    r.pausa(1.0)
     r.foto("ticket_kanban_portale")
 
     # Chiusura

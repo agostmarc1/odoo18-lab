@@ -2,7 +2,7 @@
     "name": "Flusso Operativo Software House",
     "summary": "Flusso operativo software house: CRM > Vendite > Progetto > "
                "Pianificazione > Fogli ore > Alert monte ore > Margini > Ticket di assistenza",
-    "version": "18.0.1.10.0",
+    "version": "18.0.1.11.0",
     "category": "Services/Project",
     "description": """
 Unica app che contiene TUTTE le personalizzazioni rispetto a Odoo 18 CE standard.
@@ -47,6 +47,7 @@ Per installarla in un altro Odoo 18: vedi scripts/package_app.sh nel repository 
         "data/helpdesk_mail_data.xml",
         "data/helpdesk_website_data.xml",
         "views/helpdesk_views.xml",
+        "views/helpdesk_stage_views.xml",
         "views/portal_templates.xml",
         "views/menus.xml",
     ],
