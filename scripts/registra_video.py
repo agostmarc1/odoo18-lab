@@ -411,7 +411,7 @@ def copione(r, rpc):
     r.vai("/odoo/action-lab_workflow_custom.action_all_slots/new")
     r.dici("Ora un turno per Giulia, analista, sul task di Analisi della nuova commessa.", 3)
     r.scegli("employee_id", "Giulia")
-    r.scegli("project_id", order_name, project["display_name"][:20])
+    r.scegli("project_id", "Ferri Automazione", project["display_name"][:20])  # nome breve: Cliente – Prodotto
     r.scegli("task_id", "Analisi")
     hours = r.page.locator("div[name=allocated_hours] input").first
     hours.fill("")
@@ -479,6 +479,17 @@ def copione(r, rpc):
                "Consulenti esterni, pass-through al cliente e pacchetti tracciati per task",
                "Project Manager")
     r.vai(f"/odoo/action-project.open_view_project_all/{bianchi}")
+    # Panoramica del PM: numeri in alto, pulsanti, cronologia nel chatter
+    r.evidenzia(r.page.locator("div[name=lab_overview]"), 0.5)
+    r.dici("In alto la <b>panoramica</b>: ricavi, costi, margine, già fatturato, da fatturare "
+           "e ore.", 5)
+    r.evidenzia(r.page.locator(".o-form-buttonbox:visible"), 0.5)
+    r.dici("I pulsanti aprono fogli ore, ordini di vendita, costi AI e margine della commessa.",
+           4.5)
+    r.evidenzia(r.page.locator(".o-mail-Chatter"), 0.5)
+    r.dici("Il chatter è la <b>cronologia</b> del progetto: ordini, fatture, ticket, SAL, "
+           "call e incontri, in ordine di data.", 5.5)
+    r.foto("panoramica_pm")
     r.scheda("Costi, ricavi e margine")
     r.evidenzia(r.page.locator("div[name=lab_margin]"), 0.5)
     r.dici("Commessa T&amp;M Bianchi: ricavi, costi per natura e margine, dagli stessi numeri "
@@ -494,6 +505,10 @@ def copione(r, rpc):
         r.dici("<b>Ore per task</b>: ogni ora scalata dal pacchetto dice su quale attività è "
                "stata spesa.", 5)
         r.foto("ore_per_task")
+    r.vai("/odoo/action-project.open_view_project_all?view_type=list")
+    r.dici("L'elenco dei progetti mostra per ogni commessa ricavi, costi e margine, con i "
+           "<b>totali</b> in fondo.", 5)
+    r.foto("progetti_elenco")
     r.vai("/odoo/action-lab_workflow_custom.action_margin_report")
     r.dici("Il report <b>Margini per commessa</b> confronta tutte le commesse: venduto, "
            "ribaltato, costi e margine.", 6)
@@ -729,6 +744,8 @@ def main():
     subprocess.run([ffmpeg, "-y", "-loglevel", "error", "-ss", "2", "-i", str(mp4),
                     "-frames:v", "1", str(DESC / "video_copertina.png")], check=True)
     print("Video:", mp4, f"({mp4.stat().st_size / 1e6:.1f} MB)")
+    # il progetto, l'ordine e il ticket di prova del video non restano tra i dati di lavoro
+    pulisci_dati_video(rpc)
 
 
 if __name__ == "__main__":

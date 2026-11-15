@@ -56,6 +56,7 @@ class LabDemoData(models.AbstractModel):
             # scenario caricato con una versione precedente dell'app: aggiunge solo i ticket
             loaded = self._lab_load_helpdesk()
             loaded = self._lab_load_portal_users() or loaded
+            loaded = self._lab_load_project_history() or loaded
             if loaded:
                 return True
             _logger.info("Dati sintetici già presenti: nulla da fare")
@@ -72,6 +73,7 @@ class LabDemoData(models.AbstractModel):
         self._planning(ctx)
         self._lab_load_portal_users()
         self.env["lab.cost.period"]._cron_compute_open_periods()
+        self._lab_load_project_history()
         _logger.info("Dati sintetici caricati")
         return True
 
@@ -91,6 +93,78 @@ class LabDemoData(models.AbstractModel):
         return {"today": today, "month_start": month_start, "prev_start": prev_start,
                 "prev_end": prev_end, "prev_days": prev_days, "cur_days": cur_days,
                 "users": users, "emp": emp}
+
+    def _lab_load_project_history(self):
+        """Cronologia di esempio nel chatter dei progetti demo: ordini, fatture e ticket già
+        presenti (con la loro data), più per la commessa Neri un SAL, una call fatta, un incontro
+        in calendario e il prossimo SAL da fare. Idempotente."""
+        if (self.env.ref(f"{MODULE}.synth_project_update_neri", raise_if_not_found=False)
+                or not self.env.ref(f"{MODULE}.{MARKER}", raise_if_not_found=False)):
+            return False
+        from markupsafe import Markup
+        from .lab_project_history import _link
+        env = self.env(su=True)
+        marco = self._ref("user_marco")
+        author = marco.partner_id
+
+        def note(project, body, when):
+            msg = project.with_context(mail_create_nosubscribe=True).message_post(
+                body=body, message_type="comment", subtype_xmlid="mail.mt_note",
+                author_id=author.id)
+            msg.date = when
+
+        orders = env["sale.order"].search([("state", "=", "sale")])
+        for order in orders:
+            for project in order._lab_projects():
+                note(project, Markup("🧾 <b>Ordine di vendita confermato</b>: %s – %s, "
+                                     "imponibile %s") % (
+                    _link(order, order.name), order.partner_id.display_name,
+                    tools.format_amount(env, order.amount_untaxed, order.currency_id)),
+                    order.date_order)
+        for move in env["account.move"].search([("state", "=", "posted"), (
+                "move_type", "in", ("out_invoice", "in_invoice"))]):
+            label = "📤 <b>Fattura cliente emessa</b>" if move.move_type == "out_invoice" \
+                else "📥 <b>Fattura fornitore registrata</b>"
+            for project, amount in move._lab_project_amounts().items():
+                note(project, Markup(label + ": %s – %s, imponibile su questa commessa %s") % (
+                    _link(move, move.name), move.partner_id.display_name,
+                    tools.format_amount(env, amount, move.currency_id)),
+                    move.invoice_date or move.date)
+        for ticket in env["helpdesk.ticket"].search([("project_id", "!=", False)]):
+            note(ticket.project_id, Markup("🎫 <b>Ticket aperto</b>: %s %s") % (
+                _link(ticket, ticket.number), ticket.name), ticket.create_date)
+
+        neri = self._ref("synth_order_neri")._lab_projects()[:1]
+        if not neri:
+            return True
+        today = fields.Datetime.now().replace(hour=9, minute=0, second=0, microsecond=0)
+        # call fatta (attività Chiamata segnata come fatta: Odoo la scrive nel chatter)
+        call = neri.with_user(marco).activity_schedule(
+            "mail.mail_activity_data_call", date_deadline=today.date() - timedelta(days=6),
+            summary="Call di avvio con il referente IT di Neri", user_id=marco.id)
+        call.with_user(marco).action_feedback(
+            feedback="Confermato il perimetro delle API sinistri; il cliente invia i tracciati "
+                     "entro venerdì.")
+        # SAL (aggiornamento di stato della Dashboard: finisce anche nel chatter)
+        update = env["project.update"].with_user(marco).create({
+            "name": "SAL 1 – analisi conclusa", "project_id": neri.id, "status": "on_track",
+            "progress": 30, "user_id": marco.id,
+            "description": Markup("<ul><li>Analisi funzionale approvata dal cliente</li>"
+                                  "<li>Sviluppo avviato sul modulo denunce</li>"
+                                  "<li>Rischio: tracciati del vecchio gestionale in ritardo"
+                                  "</li></ul>")})
+        self._xmlid("synth_project_update_neri", update)
+        # incontro in calendario e prossimo SAL da fare
+        start = today + timedelta(days=7 - today.weekday() + 1)
+        env["calendar.event"].with_user(marco).with_context(no_mail_to_attendees=True).create({
+            "name": "Incontro di avanzamento con Neri Assicurazioni",
+            "start": start, "stop": start + timedelta(hours=1), "user_id": marco.id,
+            "res_model_id": env["ir.model"]._get_id("project.project"), "res_id": neri.id,
+            "partner_ids": [(6, 0, (author | neri.partner_id).ids)]})
+        neri.with_user(marco).activity_schedule(
+            f"{MODULE}.mail_activity_type_sal", date_deadline=(start + timedelta(days=14)).date(),
+            summary="SAL 2 con il cliente", user_id=marco.id)
+        return True
 
     def _lab_load_portal_users(self):
         """Clienti con accesso al portale (Kanban dei ticket): Mario Verdi per Verdi Retail e

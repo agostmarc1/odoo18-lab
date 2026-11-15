@@ -35,7 +35,7 @@
 <h1>Flusso Operativo Software House</h1>
 <p class="lead">Analisi funzionale e tecnica del modulo <code>lab_workflow_custom</code>, per chi deve installarlo, mantenerlo o estenderlo.</p>
 <div class="meta">
-  <span class="chip">Odoo 18.0 Community</span><span class="chip">Versione modulo 18.0.1.11.0</span>
+  <span class="chip">Odoo 18.0 Community</span><span class="chip">Versione modulo 18.0.1.12.0</span>
   <span class="chip">Licenza LGPL-3</span><span class="chip">Categoria Services/Project</span>
 </div>
 
@@ -102,7 +102,7 @@
 <h3>Struttura del modulo</h3>
 <pre>lab_workflow_custom/
 ├── __manifest__.py          dipendenze, file dati, application=True
-├── models/                  16 file: 10 modelli estesi, 11 modelli nuovi (uno è una vista SQL)
+├── models/                  17 file: 10 modelli estesi, 11 modelli nuovi (uno è una vista SQL)
 ├── controllers/             portal_kanban.py: Kanban dei ticket nel portale (/my/tickets/kanban)
 │                            website_form.py: protezioni anti-spam del modulo "Apri un ticket",
 │                            descrizione HTML dall'editor (flag lab_rich)
@@ -111,7 +111,7 @@
 ├── data/                    parametri, prodotti, task di default, strumenti AI, cron,
 │                            configurazione Helpdesk, email ai clienti, pagine del sito
 ├── demo/                    utenti demo, costi demo, scenario sintetico
-├── tests/                   test_flow, test_costs, test_ai_usage, test_helpdesk (34 test)
+├── tests/                   test_flow, test_costs, test_ai_usage, test_helpdesk, test_pm_overview (39 test)
 ├── static/src/              editor della descrizione del modulo pubblico e Kanban del portale
 │                            con aggiornamento in tempo reale (JS + SCSS, web.assets_frontend)
 └── static/description/      pagina dell'app, video, questa analisi</pre>
@@ -161,6 +161,9 @@
   <tr><td>RF-31</td><td>Nel modulo pubblico la descrizione si scrive come una email: grassetto, corsivo, sottolineato, elenchi, link e immagini (pulsante, Ctrl+V, trascinamento; max 10, ridimensionate a 1600 px). Le immagini diventano allegati del ticket visibili anche dal link <i>Segui il ticket</i></td><td><code>static/src/js/helpdesk_rich_description.js</code>, <code>website_form_input_filter</code>, <code>_lab_store_inline_images</code></td><td>test_helpdesk 10 (+ prova nel browser)</td><td>Cliente, Supporto</td></tr>
   <tr><td>RF-32</td><td>Il ticket dal sito si collega all'azienda solo dopo la conferma via email (link <i>Conferma la richiesta</i>); prima resta senza contatto, commessa e SLA. Nessuna conferma per l'utente collegato con la propria email; conferma manuale del Supporto; archiviazione dopo N giorni</td><td><code>_lab_send_confirmation</code>, <code>_lab_check_confirm_token</code>, <code>_lab_web_confirm</code>, <code>action_lab_web_confirm</code>, <code>_lab_archive_unconfirmed</code>, rotta <code>/assistenza/conferma</code></td><td>test_helpdesk 03, 11 (+ prova nel browser)</td><td>Cliente, Supporto</td></tr>
   <tr><td>RF-33</td><td>Il cliente segue i propri ticket in un Kanban del portale a tre colonne (Ci stiamo lavorando / Serve un tuo riscontro / Risolto, configurabili per fase con <code>lab_portal_column</code>), riducibili come in Odoo, aggiornato in tempo reale; vede solo i ticket della propria azienda (filtro Tutta l'azienda / Solo i miei)</td><td><code>controllers/portal_kanban.py</code>, <code>views/portal_templates.xml</code>, <code>static/src/js/portal_ticket_kanban.js</code>, <code>_lab_notify_portal</code>, <code>rule_helpdesk_ticket_portal_company</code></td><td>test_helpdesk 12, 13, TestLabPortalKanban (+ prova nel browser con due clienti)</td><td>Cliente, Supporto</td></tr>
+  <tr><td>RF-34</td><td>Panoramica del PM sul progetto: ricavi, costi, margine, fatturato e da fatturare, ore; pulsanti per fogli ore, ordini, fatture, costi AI, margine; un solo margine anche nel pannello <i>Redditività</i> di Odoo</td><td><code>project_project.py</code> (<code>_get_profitability_items</code>, <code>action_lab_*</code>), <code>views/project_views.xml</code></td><td>test_pm_overview 02, 03, 05</td><td>PM, Amministrazione</td></tr>
+  <tr><td>RF-35</td><td>Cronologia del progetto nel chatter: ordini, fatture, ticket, SAL, incontri, call e attività fatte, avvisi</td><td><code>models/lab_project_history.py</code>, tipo attività <code>mail_activity_type_sal</code></td><td>test_pm_overview 04, 05</td><td>PM</td></tr>
+  <tr><td>RF-36</td><td>Visione complessiva dei progetti: elenco con ricavi, costi, margine e totali; report raggruppabile per cliente e PM; nomi brevi delle commesse</td><td><code>view_project_list_lab</code>, <code>margin_report_views.xml</code>, <code>_lab_short_names</code></td><td>test_pm_overview 01</td><td>PM, Direzione</td></tr>
 </table></div>
 <h3>Requisiti non funzionali</h3>
 <table>
@@ -322,6 +325,8 @@ limite web = ticket del canale Web con la stessa email nell'ultima ora &lt; help
   <tr><td>account.analytic.line</td><td><code>create</code></td><td>Commessa e task presi dal ticket (anche fuori dal form); messaggio dedicato se manca il task su corpo/T&amp;M</td></tr>
   <tr><td>WebsiteForm (controller)</td><td><code>_handle_website_form</code></td><td>Solo per <code>helpdesk.ticket</code>: campo esca, limite orario per email, contesto <code>lab_from_website</code>, <code>lab_rich_description</code> e <code>lab_web_trusted</code> (utente collegato con la propria email); nuova rotta pubblica <code>/assistenza/conferma/&lt;id&gt;/&lt;codice&gt;</code></td></tr>
   <tr><td>helpdesk.ticket.stage (OCA)</td><td>campo <code>lab_portal_column</code>, <code>_lab_init_portal_columns</code></td><td>In quale colonna del portale il cliente vede la fase; le fasi senza colonna la ricevono da sole (In attesa → cliente, chiuse → risolto, altre → fornitore) a ogni aggiornamento e alla creazione; le scelte fatte a mano restano</td></tr>
+  <tr><td>project.project</td><td><code>_get_profitability_items</code>, <code>_get_profitability_labels</code>, <code>_get_profitability_sequence_per_invoice_type</code></td><td>Il pannello <i>Redditività</i> della Dashboard usa i numeri di <code>lab.margin.report</code> (non somma i propri: niente doppi conteggi)</td></tr>
+  <tr><td>sale.order, account.move, helpdesk.ticket, project.update, calendar.event</td><td><code>action_confirm</code>, <code>action_post</code>, <code>create</code> / <code>write</code></td><td>Note nel chatter della commessa (<code>lab_project_history.py</code>)</td></tr>
   <tr><td>Portale (controller)</td><td><code>CustomerPortal</code> → rotta <code>/my/tickets/kanban</code></td><td>Bacheca per fase letta con l'utente collegato (mai sudo); <code>?fragment=1</code> per l'aggiornamento; filtro <code>scope=company|mine</code>; link dall'elenco OCA (<code>portal_my_tickets</code>)</td></tr>
   <tr><td>helpdesk.ticket (OCA)</td><td><code>create</code> / <code>write</code> → <code>_lab_notify_portal</code></td><td>Se cambiano fase, titolo, urgenza, contatto, assegnatario, tipo o archiviazione: avviso bus <code>lab_ticket_update</code> (solo id) sul canale personale degli utenti portale dell'azienda (prima e dopo il cambio)</td></tr>
   <tr><td>helpdesk.ticket (OCA)</td><td><code>set_sla</code>, <code>_track_template</code></td><td>Ticket da confermare: niente SLA e niente email dello stadio (parte quella di conferma); alla conferma gli SLA partono da quel momento (<code>last_state_date</code>)</td></tr>
@@ -378,6 +383,7 @@ limite web = ticket del canale Web con la stessa email nell'ultima ora &lt; help
   <tr><td>Conferma turno</td><td>Riga di foglio ore, stato confermato, collegamento al turno</td></tr>
   <tr><td>Creazione / modifica / eliminazione foglio ore</td><td>Ricalcolo del giorno (costo, stato parallelo, maturato esterni), consegnato T&amp;M, alert su progetto</td></tr>
   <tr><td>Superamento soglia 75% / 90%</td><td>Messaggio e attività <i>Avviso</i> al PM sul progetto e al venditore sull'ordine</td></tr>
+  <tr><td>Conferma ordine, registrazione fattura (cliente o fornitore), ticket aperto o chiuso, nuovo SAL (<code>project.update</code>), incontro del Calendario sul progetto</td><td>Nota interna nel chatter della commessa (<code>lab_project_history.py</code>), con link al documento; chi la scrive non diventa follower</td></tr>
   <tr><td>Registrazione fattura fornitore</td><td>Collegamento ore del consulente; riga di rifatturazione sull'ordine T&amp;M</td></tr>
   <tr><td>Nuova corrispondenza consumi</td><td>Riattribuzione dei consumi già importati, esclusi i mesi chiusi</td></tr>
   <tr><td>Cron giornaliero <i>Costi commessa: ripartizione costi AI</i></td><td>Ricalcola il mese in corso e il precedente se ancora aperto</td></tr>
@@ -416,7 +422,7 @@ limite web = ticket del canale Web con la stessa email nell'ultima ora &lt; help
 
 <!-- ============================================================== -->
 <h2 id="test">11. Test automatici</h2>
-<p>34 test (<code>TransactionCase</code> e un <code>HttpCase</code>), eseguiti con <code>./scripts/run_tests.sh</code> (Odoo fermo, <code>--test-tags</code> sul modulo).</p>
+<p>39 test (<code>TransactionCase</code> e un <code>HttpCase</code>), eseguiti con <code>./scripts/run_tests.sh</code> (Odoo fermo, <code>--test-tags</code> sul modulo).</p>
 <div class="wrap"><table>
   <tr><th>File</th><th>Test</th><th>Cosa verifica</th></tr>
   <tr><td rowspan="8">test_flow.py</td><td>01 products_configured</td><td>Prodotti di base con le giuste politiche</td></tr>
@@ -453,6 +459,11 @@ limite web = ticket del canale Web con la stessa email nell'ultima ora &lt; help
   <tr><td>13 portal_realtime_notification_only_to_own_company</td><td>Cambio di fase → avviso bus solo agli utenti portale dell'azienda del ticket, con i soli id</td></tr>
   <tr><td>TestLabPortalKanban</td><td>Cliente collegato via HTTP: <code>/my/tickets/kanban</code> mostra i suoi ticket e non quelli del concorrente; frammento e filtro <i>Solo i miei</i></td></tr>
   <tr><td>TestLabPortalKanban customer_columns</td><td>Fasi → colonne del cliente (Nuovo e In corso → <i>Ci stiamo lavorando</i>, In attesa → <i>Serve un tuo riscontro</i>, Fatto → <i>Risolto</i>); il ticket in attesa sta nella colonna del cliente; <i>Risolto</i> parte ridotta</td></tr>
+  <tr><td rowspan="5">test_pm_overview.py</td><td>01 short_names</td><td>Commessa da ordine con nome breve (riferimento o Cliente – Prodotto); vecchi nomi lunghi accorciati, nomi scelti a mano intatti</td></tr>
+  <tr><td>02 one_margin_in_odoo_dashboard</td><td>Pannello <i>Redditività</i> = ricavi e costi del modulo; etichette presenti</td></tr>
+  <tr><td>03 overview_buttons</td><td>Conteggi e azioni dei pulsanti (fogli ore, fatture, margine), da fatturare</td></tr>
+  <tr><td>04 history_in_chatter</td><td>Ordine confermato, ticket aperto/chiuso, SAL con stato e testo, incontro del Calendario nel chatter; tipo attività SAL</td></tr>
+  <tr><td>05 invoice_in_chatter_and_button</td><td>Fattura cliente emessa nel chatter e nel pulsante <i>Fatture</i></td></tr>
 </table></div>
 <p>Il collaudo end-to-end con gli utenti dei ruoli è documentato nel video della pagina dell'app (registrato da <code>scripts/registra_video.sh</code>, rigenerabile dopo ogni modifica).</p>
 

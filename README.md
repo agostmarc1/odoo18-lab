@@ -332,7 +332,19 @@ Costo AI, Costo consulenti esterni (con la quota maturata in attesa di fattura),
 fornitori, Margine,
 Margine % e Margine senza pass-through, più le *ore risparmiate* (stimate − consuntivate) che
 mostrano l'effetto dell'AI sui contratti a corpo. Ci sono anche i report standard di Odoo:
-Fogli ore → Rendicontazione e il pannello *Redditività* nell'aggiornamento di progetto.
+Fogli ore → Rendicontazione e il pannello *Redditività* nella Dashboard del progetto, che
+mostra gli stessi numeri del report (anche AI e consulenti).
+
+### Panoramica del PM sul progetto
+
+- **In alto nel progetto**: ricavi, costi, margine, già fatturato, da fatturare, ore; pulsanti
+  *Fogli ore*, *Ordini di vendita*, *Fatture* (per chi ha la contabilità), *Costi AI*, *Margine*.
+- **Chatter = cronologia**: ordini confermati, fatture, ticket aperti e chiusi, avvisi monte ore,
+  SAL (*Dashboard → Nuovo aggiornamento*), incontri del Calendario, call/incontri/SAL fatti
+  (pulsante *Attività*, tipi *Chiamata*, *Incontro*, *SAL*). Note interne, non vanno al cliente.
+- **Insieme**: elenco progetti in vista lista con ricavi, costi, margine e totali; report *Margini
+  per commessa* raggruppabile per cliente o PM, filtro *I miei progetti*, grafico.
+- Nomi brevi delle commesse (riferimento del cliente oppure *Cliente – Prodotto*).
 
 ### Consumi AI a consumo (API Anthropic, Claude Code)
 

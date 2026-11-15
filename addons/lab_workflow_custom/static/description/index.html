@@ -29,15 +29,15 @@
 <p style="margin-bottom:4px"><b>Capitoli</b> (il minuto apre il video da quel punto)</p>
 <ol style="font-size:14px;columns:2;column-gap:32px">
   <li><a href="/lab_workflow_custom/static/description/video.html#t=6" target="_blank">0:06</a> – Il Commerciale vende un pacchetto di ore</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html#t=81" target="_blank">1:21</a> – Il Project Manager trova la commessa pronta</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html#t=130" target="_blank">2:10</a> – Pianificazione con la regola 80/20</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html#t=205" target="_blank">3:25</a> – L'analista conferma il turno</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html#t=253" target="_blank">4:13</a> – Alert sul monte ore</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html#t=290" target="_blank">4:50</a> – Lavoro in parallelo</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html#t=312" target="_blank">5:12</a> – Costi, ricavi e margine della commessa</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html#t=355" target="_blank">5:55</a> – Costi AI, consulenti e chiusura del mese</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html#t=428" target="_blank">7:08</a> – Ticket di assistenza</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html#t=573" target="_blank">9:33</a> – Riepilogo</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=63" target="_blank">1:03</a> – Il Project Manager trova la commessa pronta</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=110" target="_blank">1:50</a> – Pianificazione con la regola 80/20</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=189" target="_blank">3:09</a> – L'analista conferma il turno</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=234" target="_blank">3:54</a> – Alert sul monte ore</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=271" target="_blank">4:31</a> – Lavoro in parallelo</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=293" target="_blank">4:53</a> – Costi, ricavi e margine della commessa</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=364" target="_blank">6:04</a> – Costi AI, consulenti e chiusura del mese</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=438" target="_blank">7:18</a> – Ticket di assistenza</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=583" target="_blank">9:43</a> – Riepilogo</li>
 </ol>
 <!-- /CAPITOLI_VIDEO -->
 
@@ -98,6 +98,11 @@
 <p><img src="a12_ordine.png" alt="Ordine con ore scalate" style="max-width:100%;border:1px solid #d0d7de;border-radius:6px"/></p>
 <p style="font-size:14px"><i>Figura 12 – Riga d'ordine del pacchetto.</i> 1. Ore scalate e residue. 2. Dettaglio per task. 3. <i>Consegnati</i>: esclude le ore parallele non ancora approvate. 4. Totale ore registrate sull'ordine.</p>
 
+<h3>2.7 bis Panoramica del PM: numeri, collegamenti e cronologia del progetto</h3>
+<p>Aprendo un progetto il PM trova in alto la <b>panoramica</b>: ricavi, costi, margine (in € e %), già fatturato, da fatturare, ore consuntivate su ore vendute. I <b>pulsanti</b> in testa aprono i fogli ore (raggruppati per persona), gli ordini di vendita, le fatture clienti e fornitori della commessa (per chi ha accesso alla contabilità), i costi AI ripartiti e il margine. Il pannello <i>Redditività</i> della <i>Dashboard</i> di Odoo mostra <b>gli stessi numeri</b> della scheda <i>Costi, ricavi e margine</i> (anche AI e consulenti): c'è un solo margine.</p>
+<p>Il <b>chatter</b> del progetto è la sua cronologia, in ordine di data: ordini confermati, fatture emesse e ricevute, ticket aperti e chiusi, avvisi sul monte ore, <b>SAL</b> (<i>Dashboard › Nuovo aggiornamento</i>, con stato e avanzamento), <b>incontri</b> pianificati nel Calendario dal progetto, <b>call e incontri fatti</b> (pulsante <i>Attività</i> › <i>Chiamata</i>, <i>Incontro</i> o <i>SAL</i>, poi <i>Fatto</i> con l'esito), cambi di responsabile, cliente, date e fase. Le note sono interne: non arrivano al cliente.</p>
+<p><b>Visione d'insieme.</b> L'elenco dei progetti (vista lista) mostra per ogni commessa tipo di contratto, % ore, ricavi, costi, margine e margine %, con i totali in fondo. Il report <i>Margini per commessa</i> si raggruppa per cliente o per PM, ha il filtro <i>I miei progetti</i> e un grafico. I nomi delle commesse sono brevi (riferimento del cliente oppure <i>Cliente – Prodotto</i>): l'ordine resta nel suo pulsante.</p>
+
 <h3>2.8 Ticket di assistenza (Helpdesk)</h3>
 <p>Il cliente apre una richiesta in tre modi: scrive all'indirizzo dell'assistenza (alias <code>assistenza@</code> del dominio della posta), compila il modulo pubblico <b>Assistenza</b> del sito (<code>/assistenza</code>, senza login) oppure entra nel portale clienti (<i>I miei ticket</i>). Odoo riconosce il contatto dall'email e, se il cliente ha un <b>canone AMS</b>, collega da solo il ticket alla sua commessa: le ore segnate sul ticket scalano il monte ore del mese e fanno scattare gli alert 75%/90% come gli altri fogli ore. Per i clienti con monte ore, T&amp;M o a corpo la commessa la sceglie il Supporto, insieme al task (obbligatorio su quei contratti).</p>
 <p>Ogni ticket ha un <b>tipo</b> (malfunzionamento, domanda, richiesta di modifica), un'<b>area</b>, una <b>priorità</b> e gli <b>SLA</b> del contratto: sui canoni AMS presa in carico entro 4 ore lavorative se urgente, 8 se alta, 2 giorni negli altri casi, e risoluzione entro 5 giorni; senza canone presa in carico entro 3 giorni. Mentre il ticket è <i>In attesa</i> del cliente il tempo si ferma. Il cliente riceve un'email in italiano all'apertura, alla presa in carico, quando serve una sua risposta e alla chiusura; ogni email ha il pulsante <b>Segui il ticket</b>, che apre la pagina del ticket anche senza account. Quando il ticket passa a <i>Fatto</i> parte la richiesta di valutazione (da 1 a 5).</p>
@@ -144,6 +149,7 @@
   <tr><td style="padding:6px;border:1px solid #d0d7de">1</td><td style="padding:6px;border:1px solid #d0d7de">PM, Commerciale</td><td style="padding:6px;border:1px solid #d0d7de">Attività e messaggi su progetto e ordine</td><td style="padding:6px;border:1px solid #d0d7de">Al primo superamento del 75% o del 90% arriva un'attività di avviso: valutare con il cliente un'estensione.</td><td style="padding:6px;border:1px solid #d0d7de">Etichette gialle o rosse su commessa e task</td></tr>
   <tr><td style="padding:6px;border:1px solid #d0d7de">2</td><td style="padding:6px;border:1px solid #d0d7de">PM</td><td style="padding:6px;border:1px solid #d0d7de">Pianificazione › Ore parallele da approvare</td><td style="padding:6px;border:1px solid #d0d7de">Verificare le giornate oltre il calendario e premere <i>Approva</i>.</td><td style="padding:6px;border:1px solid #d0d7de">Sui T&amp;M le ore entrano nel consegnato e quindi in fattura</td></tr>
   <tr><td style="padding:6px;border:1px solid #d0d7de">3</td><td style="padding:6px;border:1px solid #d0d7de">PM</td><td style="padding:6px;border:1px solid #d0d7de">Commessa › scheda <i>Costi, ricavi e margine</i> › <i>Ore per task</i></td><td style="padding:6px;border:1px solid #d0d7de">Leggere ricavi, costi, margine e ore scalate di ogni pacchetto.</td><td style="padding:6px;border:1px solid #d0d7de">Dettaglio delle ore per attività</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">4</td><td style="padding:6px;border:1px solid #d0d7de">PM</td><td style="padding:6px;border:1px solid #d0d7de">Commessa › Attività › <i>Chiamata</i>, <i>Incontro</i> o <i>SAL</i>; Dashboard › Nuovo aggiornamento</td><td style="padding:6px;border:1px solid #d0d7de">Segnare call, incontri e SAL: con l'esito finiscono nella cronologia (chatter) del progetto, accanto a ordini, fatture e ticket</td></tr>
 </table>
 
 <h3>3.5 Consulenti esterni, costi AI e fatturazione</h3>

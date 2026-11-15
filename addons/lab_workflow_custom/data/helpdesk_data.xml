@@ -3,6 +3,16 @@
      Si modifica da Helpdesk > Configurazione; qui ci sono i valori di partenza. -->
 <odoo>
     <data noupdate="1">
+        <!-- Cronologia del progetto: il SAL si pianifica e si chiude come attivita' (Attivita' > SAL).
+             Fatta, finisce nel chatter del progetto con l'esito scritto dal PM. -->
+        <record id="mail_activity_type_sal" model="mail.activity.type">
+            <field name="name">SAL</field>
+            <field name="summary">Stato avanzamento lavori con il cliente</field>
+            <field name="icon">fa-flag-checkered</field>
+            <field name="res_model">project.project</field>
+            <field name="delay_count">30</field>
+            <field name="sequence">15</field>
+        </record>
         <!-- Tipo di richiesta (helpdesk_type) -->
         <record id="helpdesk_type_bug" model="helpdesk.ticket.type">
             <field name="name">Malfunzionamento</field>
@@ -119,4 +129,7 @@
          ("In attesa" = serve un riscontro del cliente, fasi chiuse = risolto, altre = ci lavoriamo).
          Le scelte fatte a mano nelle fasi non vengono toccate. -->
     <function model="helpdesk.ticket.stage" name="_lab_init_portal_columns"/>
+
+    <!-- Progetti: nome breve per le commesse nate da un ordine (solo se ancora col nome lungo) -->
+    <function model="project.project" name="_lab_short_names"/>
 </odoo>

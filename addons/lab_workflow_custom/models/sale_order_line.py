@@ -73,6 +73,7 @@ class SaleOrderLine(models.Model):
             lambda l: l.is_service
             and l.product_id.service_tracking in ("task_in_project", "project_only")
             and l.product_id.project_template_id == self.product_id.project_template_id)
+        project._lab_set_name(self.order_id._lab_project_name(self))  # l'ordine ha il suo campo
         project.write({
             "allocated_hours": sum(lines.mapped("lab_sold_hours")),
             # solo gli utenti invitati e gli assegnatari dei task vedono la commessa

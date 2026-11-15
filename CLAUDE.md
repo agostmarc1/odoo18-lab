@@ -144,6 +144,10 @@ filtri data non accettano `default_period="week"`.
   Ticket dal sito **da confermare** (`lab_web_confirmed`, codice `lab_confirm_token` solo admin,
   rotta `/assistenza/conferma/<id>/<codice>`): niente contatto/commessa/SLA prima della conferma;
   esenti gli utenti collegati con la propria email (`lab_web_trusted`).
+  Panoramica PM: pannello Redditività = `lab.margin.report` (`_get_profitability_items`), pulsanti
+  `action_lab_*`; cronologia nel chatter da `models/lab_project_history.py` (note con
+  `mail_create_nosubscribe`, per non rendere visibili le commesse riservate); nomi brevi
+  `_lab_set_name` in tutte le lingue.
   Portale: Kanban `/my/tickets/kanban` (`controllers/portal_kanban.py`), mai sudo nelle letture;
   colonne del cliente dal campo fase `lab_portal_column` (supplier/customer/resolved), riducibili (localStorage);
   separazione per azienda con la regola globale `rule_helpdesk_ticket_portal_company`; tempo reale

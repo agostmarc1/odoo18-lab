@@ -48,6 +48,11 @@ class ProjectProject(models.Model):
     lab_total_cost = fields.Monetary("Costi", compute="_compute_lab_economics")
     lab_margin = fields.Monetary("Margine", compute="_compute_lab_economics")
     lab_margin_pct = fields.Float("Margine %", compute="_compute_lab_economics", digits=(5, 1))
+    lab_to_invoice = fields.Monetary("Da fatturare", compute="_compute_lab_economics")
+    # Panoramica: pulsanti in testa al progetto
+    lab_timesheet_count = fields.Integer("Fogli ore", compute="_compute_lab_counts")
+    lab_invoice_count = fields.Integer("Fatture", compute="_compute_lab_counts")
+    lab_cost_count = fields.Integer("Costi AI e ripartiti", compute="_compute_lab_counts")
     lab_package_line_ids = fields.Many2many(
         "sale.order.line", string="Pacchetti e righe vendute", compute="_compute_lab_packages")
 
@@ -62,7 +67,7 @@ class ProjectProject(models.Model):
                     "lab_revenue", "lab_sold_amount", "lab_passthrough_revenue",
                     "lab_invoiced_amount", "lab_cost_labor", "lab_cost_ai", "lab_cost_external",
                     "lab_cost_external_accrued", "lab_cost_other", "lab_total_cost",
-                    "lab_margin", "lab_margin_pct")})
+                    "lab_margin", "lab_margin_pct", "lab_to_invoice")})
                 continue
             project.update({
                 "lab_revenue": r.sold_amount + r.passthrough_revenue,
@@ -77,6 +82,8 @@ class ProjectProject(models.Model):
                 "lab_total_cost": r.total_cost,
                 "lab_margin": r.margin,
                 "lab_margin_pct": r.margin_pct,
+                "lab_to_invoice": max(r.sold_amount + r.passthrough_revenue - r.invoiced_amount,
+                                      0.0),
             })
 
     def _compute_lab_packages(self):
@@ -167,3 +174,138 @@ class ProjectProject(models.Model):
                     order.activity_schedule(
                         "mail.mail_activity_data_warning", summary=summary, note=note,
                         user_id=order.user_id.id)
+
+    # ---- Panoramica del PM: pulsanti in testa al progetto -----------------------------
+    def _lab_invoice_domain(self):
+        """Fatture (clienti e fornitori) che riguardano la commessa: righe legate ai suoi
+        ordini oppure con la commessa nella distribuzione analitica."""
+        self.ensure_one()
+        sale_lines = self.env["sale.order.line"].sudo().search([
+            "|", "|", ("project_id", "=", self.id), ("task_id.project_id", "=", self.id),
+            ("order_id.project_id", "=", self.id)])
+        domain = [("move_type", "in", ("out_invoice", "out_refund", "in_invoice", "in_refund"))]
+        links = [("invoice_line_ids.sale_line_ids", "in", sale_lines.ids)]
+        if self.account_id:
+            links = ["|"] + links + [("invoice_line_ids.analytic_distribution", "in",
+                                      self.account_id.ids)]
+        return domain + links
+
+    def _compute_lab_counts(self):
+        AAL = self.env["account.analytic.line"].sudo()
+        Move = self.env["account.move"].sudo()
+        Alloc = self.env["lab.cost.allocation"].sudo()
+        for project in self:
+            if not isinstance(project.id, int):
+                project.update({"lab_timesheet_count": 0, "lab_invoice_count": 0,
+                                "lab_cost_count": 0})
+                continue
+            project.lab_timesheet_count = AAL.search_count([("project_id", "=", project.id)])
+            project.lab_invoice_count = Move.search_count(project._lab_invoice_domain())
+            project.lab_cost_count = Alloc.search_count([("project_id", "=", project.id)])
+
+    def action_lab_timesheets(self):
+        self.ensure_one()
+        action = self.env["ir.actions.act_window"]._for_xml_id(
+            "hr_timesheet.act_hr_timesheet_line")
+        action.update({
+            "name": _("Fogli ore – %s", self.name),
+            "domain": [("project_id", "=", self.id)],
+            "context": {"default_project_id": self.id, "search_default_groupby_employee": 1},
+        })
+        return action
+
+    def action_lab_invoices(self):
+        self.ensure_one()
+        return {
+            "type": "ir.actions.act_window", "res_model": "account.move",
+            "name": _("Fatture – %s", self.name), "view_mode": "list,form",
+            "views": [(self.env.ref("account.view_invoice_tree").id, "list"), (False, "form")],
+            "domain": self._lab_invoice_domain(),
+            "context": {"create": False},
+        }
+
+    def action_lab_costs(self):
+        self.ensure_one()
+        action = self.env["ir.actions.act_window"]._for_xml_id(
+            "lab_workflow_custom.action_cost_allocations")
+        action.update({"name": _("Costi ripartiti – %s", self.name),
+                       "domain": [("project_id", "=", self.id)], "context": {"create": False}})
+        return action
+
+    def action_lab_margin(self):
+        self.ensure_one()
+        action = self.env["ir.actions.act_window"]._for_xml_id(
+            "lab_workflow_custom.action_margin_report")
+        action.update({"domain": [("project_id", "=", self.id)], "context": {},
+                       "name": _("Margine – %s", self.name)})
+        return action
+
+    # ---- Dashboard di Odoo: pannello "Redditivita'" con i numeri del modulo ------------
+    # Il pannello standard conta solo ore e fatture analitiche; qui mostra gli stessi numeri
+    # della scheda "Costi, ricavi e margine" (anche AI e consulenti): un solo margine.
+    def _get_profitability_labels(self):
+        labels = super()._get_profitability_labels()
+        labels.update({
+            "lab_sold": _("Venduto (ordini)"), "lab_passthrough": _("Ribaltato al cliente"),
+            "lab_labor": _("Lavoro interno (fogli ore)"), "lab_ai": _("AI"),
+            "lab_external": _("Consulenti esterni"), "lab_other": _("Altri costi fornitori"),
+        })
+        return labels
+
+    def _get_profitability_sequence_per_invoice_type(self):
+        seq = super()._get_profitability_sequence_per_invoice_type()
+        seq.update({"lab_sold": 1, "lab_passthrough": 2, "lab_labor": 1, "lab_ai": 2,
+                    "lab_external": 3, "lab_other": 4})
+        return seq
+
+    def _get_profitability_items(self, with_action=True):
+        self.ensure_one()
+        p = self
+        invoiced_sold = min(p.lab_invoiced_amount, p.lab_sold_amount)
+        invoiced_pass = max(p.lab_invoiced_amount - invoiced_sold, 0.0)
+        revenues = [
+            {"id": "lab_sold", "sequence": 1, "invoiced": invoiced_sold,
+             "to_invoice": p.lab_sold_amount - invoiced_sold},
+            {"id": "lab_passthrough", "sequence": 2, "invoiced": invoiced_pass,
+             "to_invoice": max(p.lab_passthrough_revenue - invoiced_pass, 0.0)},
+        ]
+        costs = [
+            {"id": "lab_labor", "sequence": 1, "billed": -p.lab_cost_labor, "to_bill": 0.0},
+            {"id": "lab_ai", "sequence": 2, "billed": -p.lab_cost_ai, "to_bill": 0.0},
+            {"id": "lab_external", "sequence": 3,
+             "billed": -(p.lab_cost_external - p.lab_cost_external_accrued),
+             "to_bill": -p.lab_cost_external_accrued},
+            {"id": "lab_other", "sequence": 4, "billed": -p.lab_cost_other, "to_bill": 0.0},
+        ]
+        revenues = [r for r in revenues if r["invoiced"] or r["to_invoice"]]
+        costs = [c for c in costs if c["billed"] or c["to_bill"]]
+        return {
+            "revenues": {"data": revenues, "total": {
+                "invoiced": sum(r["invoiced"] for r in revenues),
+                "to_invoice": sum(r["to_invoice"] for r in revenues)}},
+            "costs": {"data": costs, "total": {
+                "billed": sum(c["billed"] for c in costs),
+                "to_bill": sum(c["to_bill"] for c in costs)}},
+        }
+
+    # ---- Nomi brevi ---------------------------------------------------------------------
+    @api.model
+    def _lab_short_names(self):
+        """Commesse nate da un ordine: nome breve (riferimento del cliente oppure
+        "Cliente – Prodotto") al posto di "Rif - S00005 - [CODICE] Prodotto".
+        L'ordine resta visibile nel suo campo e nel pulsante "Ordini di vendita"."""
+        for project in self.sudo().with_context(active_test=False).search(
+                [("sale_order_id", "!=", False)]):
+            order = project.sale_order_id
+            names = project.with_context(lang="it_IT").name + project.with_context(
+                lang="en_US").name
+            if order.name not in names:
+                continue  # già breve o rinominata a mano
+            project._lab_set_name(order._lab_project_name(project.sale_line_id))
+
+    def _lab_set_name(self, name):
+        """Stesso nome in tutte le lingue attive (il nome del progetto è traducibile)."""
+        langs = [code for code, _n in self.env["res.lang"].get_installed()]
+        for project in self:
+            project.with_context(mail_notrack=True).name = name
+            project.update_field_translations("name", {lang: name for lang in langs})
