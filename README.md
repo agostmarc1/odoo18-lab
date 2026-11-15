@@ -367,7 +367,8 @@ commessa Bianchi Logistica), personale (Claude Code di Carlo) e senza corrispond
   modulo pubblico **Assistenza** sul sito (http://127.0.0.1:8069/assistenza, senza login) oppure
   portale clienti (*I miei ticket*). Il contatto si riconosce dall'email.
 - **Kanban nel portale.** I clienti seguono i propri ticket in *I miei ticket → Vista Kanban*
-  (http://127.0.0.1:8069/my/tickets/kanban): colonne per fase, aggiornate in tempo reale quando il
+  (http://127.0.0.1:8069/my/tickets/kanban): tre colonne per il cliente (*Ci stiamo lavorando*, *Serve un tuo
+  riscontro*, *Risolto*), riducibili con un clic sul titolo, aggiornate in tempo reale quando il
   Supporto sposta un ticket. Ogni cliente vede solo i ticket della propria azienda (regola di
   sicurezza del database, valida anche se è follower del ticket di un altro cliente).
 - **Conferma via email.** Il ticket dal sito nasce *da confermare*: il cliente riceve un'email con

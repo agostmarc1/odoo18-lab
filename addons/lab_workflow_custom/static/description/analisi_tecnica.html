@@ -35,7 +35,7 @@
 <h1>Flusso Operativo Software House</h1>
 <p class="lead">Analisi funzionale e tecnica del modulo <code>lab_workflow_custom</code>, per chi deve installarlo, mantenerlo o estenderlo.</p>
 <div class="meta">
-  <span class="chip">Odoo 18.0 Community</span><span class="chip">Versione modulo 18.0.1.10.0</span>
+  <span class="chip">Odoo 18.0 Community</span><span class="chip">Versione modulo 18.0.1.11.0</span>
   <span class="chip">Licenza LGPL-3</span><span class="chip">Categoria Services/Project</span>
 </div>
 
@@ -111,7 +111,7 @@
 ├── data/                    parametri, prodotti, task di default, strumenti AI, cron,
 │                            configurazione Helpdesk, email ai clienti, pagine del sito
 ├── demo/                    utenti demo, costi demo, scenario sintetico
-├── tests/                   test_flow, test_costs, test_ai_usage, test_helpdesk (33 test)
+├── tests/                   test_flow, test_costs, test_ai_usage, test_helpdesk (34 test)
 ├── static/src/              editor della descrizione del modulo pubblico e Kanban del portale
 │                            con aggiornamento in tempo reale (JS + SCSS, web.assets_frontend)
 └── static/description/      pagina dell'app, video, questa analisi</pre>
@@ -160,7 +160,7 @@
   <tr><td>RF-30</td><td>Ruoli: il Supporto gestisce tutti i ticket, il PM è responsabile Helpdesk, il Commerciale legge (senza modificare) i ticket dei clienti di cui è il venditore</td><td><code>lab_security.xml</code> (gruppi impliciti), <code>rule_helpdesk_ticket_salesman</code></td><td>test_helpdesk 09</td><td>Supporto, PM, Commerciale</td></tr>
   <tr><td>RF-31</td><td>Nel modulo pubblico la descrizione si scrive come una email: grassetto, corsivo, sottolineato, elenchi, link e immagini (pulsante, Ctrl+V, trascinamento; max 10, ridimensionate a 1600 px). Le immagini diventano allegati del ticket visibili anche dal link <i>Segui il ticket</i></td><td><code>static/src/js/helpdesk_rich_description.js</code>, <code>website_form_input_filter</code>, <code>_lab_store_inline_images</code></td><td>test_helpdesk 10 (+ prova nel browser)</td><td>Cliente, Supporto</td></tr>
   <tr><td>RF-32</td><td>Il ticket dal sito si collega all'azienda solo dopo la conferma via email (link <i>Conferma la richiesta</i>); prima resta senza contatto, commessa e SLA. Nessuna conferma per l'utente collegato con la propria email; conferma manuale del Supporto; archiviazione dopo N giorni</td><td><code>_lab_send_confirmation</code>, <code>_lab_check_confirm_token</code>, <code>_lab_web_confirm</code>, <code>action_lab_web_confirm</code>, <code>_lab_archive_unconfirmed</code>, rotta <code>/assistenza/conferma</code></td><td>test_helpdesk 03, 11 (+ prova nel browser)</td><td>Cliente, Supporto</td></tr>
-  <tr><td>RF-33</td><td>Il cliente segue i propri ticket in un Kanban del portale, per fase, aggiornato in tempo reale; vede solo i ticket della propria azienda (filtro Tutta l'azienda / Solo i miei)</td><td><code>controllers/portal_kanban.py</code>, <code>views/portal_templates.xml</code>, <code>static/src/js/portal_ticket_kanban.js</code>, <code>_lab_notify_portal</code>, <code>rule_helpdesk_ticket_portal_company</code></td><td>test_helpdesk 12, 13, TestLabPortalKanban (+ prova nel browser con due clienti)</td><td>Cliente, Supporto</td></tr>
+  <tr><td>RF-33</td><td>Il cliente segue i propri ticket in un Kanban del portale a tre colonne (Ci stiamo lavorando / Serve un tuo riscontro / Risolto, configurabili per fase con <code>lab_portal_column</code>), riducibili come in Odoo, aggiornato in tempo reale; vede solo i ticket della propria azienda (filtro Tutta l'azienda / Solo i miei)</td><td><code>controllers/portal_kanban.py</code>, <code>views/portal_templates.xml</code>, <code>static/src/js/portal_ticket_kanban.js</code>, <code>_lab_notify_portal</code>, <code>rule_helpdesk_ticket_portal_company</code></td><td>test_helpdesk 12, 13, TestLabPortalKanban (+ prova nel browser con due clienti)</td><td>Cliente, Supporto</td></tr>
 </table></div>
 <h3>Requisiti non funzionali</h3>
 <table>
@@ -321,6 +321,7 @@ limite web = ticket del canale Web con la stessa email nell'ultima ora &lt; help
   <tr><td>helpdesk.ticket (OCA)</td><td><code>_onchange_team_id</code></td><td>Mantiene la commessa scelta quando il team non ne ha una predefinita</td></tr>
   <tr><td>account.analytic.line</td><td><code>create</code></td><td>Commessa e task presi dal ticket (anche fuori dal form); messaggio dedicato se manca il task su corpo/T&amp;M</td></tr>
   <tr><td>WebsiteForm (controller)</td><td><code>_handle_website_form</code></td><td>Solo per <code>helpdesk.ticket</code>: campo esca, limite orario per email, contesto <code>lab_from_website</code>, <code>lab_rich_description</code> e <code>lab_web_trusted</code> (utente collegato con la propria email); nuova rotta pubblica <code>/assistenza/conferma/&lt;id&gt;/&lt;codice&gt;</code></td></tr>
+  <tr><td>helpdesk.ticket.stage (OCA)</td><td>campo <code>lab_portal_column</code>, <code>_lab_init_portal_columns</code></td><td>In quale colonna del portale il cliente vede la fase; le fasi senza colonna la ricevono da sole (In attesa → cliente, chiuse → risolto, altre → fornitore) a ogni aggiornamento e alla creazione; le scelte fatte a mano restano</td></tr>
   <tr><td>Portale (controller)</td><td><code>CustomerPortal</code> → rotta <code>/my/tickets/kanban</code></td><td>Bacheca per fase letta con l'utente collegato (mai sudo); <code>?fragment=1</code> per l'aggiornamento; filtro <code>scope=company|mine</code>; link dall'elenco OCA (<code>portal_my_tickets</code>)</td></tr>
   <tr><td>helpdesk.ticket (OCA)</td><td><code>create</code> / <code>write</code> → <code>_lab_notify_portal</code></td><td>Se cambiano fase, titolo, urgenza, contatto, assegnatario, tipo o archiviazione: avviso bus <code>lab_ticket_update</code> (solo id) sul canale personale degli utenti portale dell'azienda (prima e dopo il cambio)</td></tr>
   <tr><td>helpdesk.ticket (OCA)</td><td><code>set_sla</code>, <code>_track_template</code></td><td>Ticket da confermare: niente SLA e niente email dello stadio (parte quella di conferma); alla conferma gli SLA partono da quel momento (<code>last_state_date</code>)</td></tr>
@@ -415,7 +416,7 @@ limite web = ticket del canale Web con la stessa email nell'ultima ora &lt; help
 
 <!-- ============================================================== -->
 <h2 id="test">11. Test automatici</h2>
-<p>33 test (<code>TransactionCase</code> e un <code>HttpCase</code>), eseguiti con <code>./scripts/run_tests.sh</code> (Odoo fermo, <code>--test-tags</code> sul modulo).</p>
+<p>34 test (<code>TransactionCase</code> e un <code>HttpCase</code>), eseguiti con <code>./scripts/run_tests.sh</code> (Odoo fermo, <code>--test-tags</code> sul modulo).</p>
 <div class="wrap"><table>
   <tr><th>File</th><th>Test</th><th>Cosa verifica</th></tr>
   <tr><td rowspan="8">test_flow.py</td><td>01 products_configured</td><td>Prodotti di base con le giuste politiche</td></tr>
@@ -437,7 +438,7 @@ limite web = ticket del canale Web con la stessa email nell'ultima ora &lt; help
   <tr><td rowspan="3">test_ai_usage.py</td><td>01 parse_anthropic_payload</td><td>Conversione della risposta API</td></tr>
   <tr><td>02 connector_off_in_demo</td><td>Connettore spento senza chiave</td></tr>
   <tr><td>03 mapping_and_allocation</td><td>Corrispondenze, ripartizione, spese vive alla chiusura</td></tr>
-  <tr><td rowspan="14">test_helpdesk.py</td><td>01 configuration</td><td>Team, alias, tipi, email sugli stadi, valutazione, pagina <code>/assistenza</code> pubblicata</td></tr>
+  <tr><td rowspan="15">test_helpdesk.py</td><td>01 configuration</td><td>Team, alias, tipi, email sugli stadi, valutazione, pagina <code>/assistenza</code> pubblicata</td></tr>
   <tr><td>02 email_creates_ticket_on_ams_project</td><td>Email in arrivo → ticket con contatto, commessa AMS, SLA, cliente follower</td></tr>
   <tr><td>03 web_ticket_waits_for_email_confirmation</td><td>Dal sito: ticket da confermare (niente azienda, commessa, SLA; solo email di conferma con il link); codice errato rifiutato; dopo la conferma contatto (anche con maiuscole), commessa AMS, SLA, email "ricevuto"; link usa e getta</td></tr>
   <tr><td>04 unknown_email_stays_unlinked</td><td>Email sconosciuta: niente contatto né commessa, SLA standard</td></tr>
@@ -451,6 +452,7 @@ limite web = ticket del canale Web con la stessa email nell'ultima ora &lt; help
   <tr><td>12 portal_segregation_by_company</td><td>Utente portale: vede i ticket della sua azienda, non quelli di un'altra nemmeno da follower (anche <code>read</code> diretto → AccessError); utenti interni non toccati</td></tr>
   <tr><td>13 portal_realtime_notification_only_to_own_company</td><td>Cambio di fase → avviso bus solo agli utenti portale dell'azienda del ticket, con i soli id</td></tr>
   <tr><td>TestLabPortalKanban</td><td>Cliente collegato via HTTP: <code>/my/tickets/kanban</code> mostra i suoi ticket e non quelli del concorrente; frammento e filtro <i>Solo i miei</i></td></tr>
+  <tr><td>TestLabPortalKanban customer_columns</td><td>Fasi → colonne del cliente (Nuovo e In corso → <i>Ci stiamo lavorando</i>, In attesa → <i>Serve un tuo riscontro</i>, Fatto → <i>Risolto</i>); il ticket in attesa sta nella colonna del cliente; <i>Risolto</i> parte ridotta</td></tr>
 </table></div>
 <p>Il collaudo end-to-end con gli utenti dei ruoli è documentato nel video della pagina dell'app (registrato da <code>scripts/registra_video.sh</code>, rigenerabile dopo ogni modifica).</p>
 

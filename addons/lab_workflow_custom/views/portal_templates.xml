@@ -26,7 +26,7 @@
                 <t t-call="lab_workflow_custom.portal_ticket_kanban_board"/>
             </div>
             <p class="text-muted small mt-2" id="lab_ticket_kanban_status">
-                La bacheca si aggiorna da sola quando un ticket cambia fase.
+                La bacheca si aggiorna da sola quando un ticket cambia fase. Clicca sul titolo di una colonna per ridurla o espanderla.
             </p>
         </t>
     </template>
@@ -35,25 +35,32 @@
         <div class="lab_kanban_board">
             <div t-if="not ticket_count" class="alert alert-info">Nessun ticket da mostrare.</div>
             <div class="lab_kanban_columns d-flex gap-3 pb-2">
-                <div t-foreach="columns" t-as="column" class="lab_kanban_column card bg-light"
-                     t-att-data-stage-id="column[0].id">
-                    <div class="card-header d-flex justify-content-between align-items-center">
-                        <strong t-out="column[0].name"/>
-                        <span class="badge rounded-pill text-bg-secondary" t-out="len(column[1])"/>
-                    </div>
-                    <div class="card-body p-2 d-flex flex-column gap-2">
-                        <a t-foreach="column[1]" t-as="ticket" t-attf-href="/my/ticket/#{ticket.id}"
+                <div t-foreach="columns" t-as="column"
+                     t-attf-class="lab_kanban_column lab_kanban_column_#{column['key']} card bg-light #{'lab_kanban_folded' if column['folded'] else ''}"
+                     t-att-data-column="column['key']">
+                    <button type="button" class="lab_kanban_toggle card-header d-flex align-items-center gap-2 border-0 text-start w-100"
+                            t-att-title="'Riduci o espandi la colonna'" aria-expanded="true">
+                        <i class="fa fa-chevron-down lab_kanban_chevron"/>
+                        <strong class="lab_kanban_title flex-grow-1" t-out="column['name']"/>
+                        <span class="badge rounded-pill text-bg-secondary" t-out="len(column['tickets'])"/>
+                    </button>
+                    <div class="lab_kanban_body card-body p-2 d-flex flex-column gap-2">
+                        <small class="text-muted" t-out="column['hint']"/>
+                        <a t-foreach="column['tickets']" t-as="ticket" t-attf-href="/my/ticket/#{ticket.id}"
                            class="lab_kanban_card card text-reset text-decoration-none shadow-sm"
                            t-att-data-ticket-id="ticket.id">
                             <div class="card-body p-2">
-                                <div class="d-flex justify-content-between">
+                                <div class="d-flex justify-content-between align-items-center">
                                     <small class="text-muted" t-out="ticket.number"/>
                                     <small class="text-warning" t-att-title="'Urgenza %s su 3' % ticket.priority">
                                         <t t-foreach="range(int(ticket.priority or 0))" t-as="i"><i class="fa fa-star"/></t>
                                     </small>
                                 </div>
                                 <div class="fw-semibold" t-out="ticket.name"/>
-                                <div t-if="ticket.type_id" class="small text-muted" t-out="ticket.type_id.name"/>
+                                <div class="mt-1">
+                                    <span class="badge text-bg-light border" t-out="ticket.stage_id.name"/>
+                                    <span t-if="ticket.type_id" class="small text-muted ms-1" t-out="ticket.type_id.name"/>
+                                </div>
                                 <div class="small text-muted mt-1">
                                     <t t-if="ticket.user_id">In carico a <t t-out="ticket.user_id.name"/> · </t>
                                     aggiornato il <t t-out="ticket.last_stage_update" t-options="{'widget': 'date'}"/>

@@ -337,3 +337,34 @@ class HelpdeskTicket(models.Model):
         if recent >= limit:
             raise UserError(_("Hai già aperto molti ticket nell'ultima ora: riprova più tardi "
                               "oppure rispondi via email a un ticket già aperto."))
+
+
+# Colonne del Kanban del portale: il cliente non vede le fasi interne, vede chi deve agire
+PORTAL_COLUMNS = [("supplier", "Ci stiamo lavorando"), ("customer", "Serve un tuo riscontro"),
+                  ("resolved", "Risolto")]
+
+
+class HelpdeskTicketStage(models.Model):
+    _inherit = "helpdesk.ticket.stage"
+
+    lab_portal_column = fields.Selection(
+        PORTAL_COLUMNS, string="Colonna nel portale",
+        help="In quale colonna il cliente vede i ticket in questa fase, nel Kanban del portale: "
+             "il fornitore ci lavora, serve un riscontro del cliente, oppure è risolto.")
+
+    @api.model
+    def _lab_init_portal_columns(self):
+        """Colonna di base per le fasi che non ne hanno ancora una (anche quelle nuove)."""
+        awaiting = self.env.ref("helpdesk_mgmt.helpdesk_ticket_stage_awaiting",
+                                raise_if_not_found=False)
+        for stage in self.with_context(active_test=False).search([("lab_portal_column", "=", False)]):
+            if stage == awaiting:
+                stage.lab_portal_column = "customer"
+            else:
+                stage.lab_portal_column = "resolved" if stage.closed else "supplier"
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        stages = super().create(vals_list)
+        stages.filtered(lambda s: not s.lab_portal_column)._lab_init_portal_columns()
+        return stages
