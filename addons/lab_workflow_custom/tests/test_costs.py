@@ -217,7 +217,7 @@ class TestLabCosts(TransactionCase):
         self.assertAlmostEqual(report.ai_cost, 40)
         # solo l'Amministrazione chiude il mese
         with self.assertRaises(Exception):
-            period.with_user(self.pm).action_close()
+            period.with_user(self.pm).with_context(lab_force_close=True).action_close()
 
     # ---- 4. pianificazione con fattore parallelo -----------------------------------
     def test_07_planning_parallel_factor(self):

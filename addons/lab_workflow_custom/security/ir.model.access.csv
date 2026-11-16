@@ -27,3 +27,7 @@ access_ai_usage_system,ai usage system,model_lab_ai_usage,base.group_system,1,1,
 access_ai_mapping_pm,ai mapping pm,model_lab_ai_mapping,group_lab_pm,1,1,1,0
 access_ai_mapping_admin,ai mapping amministrazione,model_lab_ai_mapping,group_lab_amministrazione,1,1,1,1
 access_ai_mapping_system,ai mapping system,model_lab_ai_mapping,base.group_system,1,1,1,1
+access_timesheet_day_pm,timesheet day pm,model_lab_timesheet_day,group_lab_pm,1,0,0,0
+access_timesheet_day_admin,timesheet day amministrazione,model_lab_timesheet_day,group_lab_amministrazione,1,0,0,0
+access_timesheet_day_manager,timesheet day project manager,model_lab_timesheet_day,project.group_project_manager,1,0,0,0
+access_timesheet_day_system,timesheet day system,model_lab_timesheet_day,base.group_system,1,1,1,1

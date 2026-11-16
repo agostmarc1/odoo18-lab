@@ -4,6 +4,9 @@ from odoo import _, api, fields, models
 from odoo.exceptions import AccessError, ValidationError
 
 DEFAULT_DAY_HOURS = 8.0
+# campi del lavoro svolto: nei mesi chiusi non si toccano (fatturazione e collegamenti sì)
+LOCKED_FIELDS = {"unit_amount", "date", "project_id", "task_id", "employee_id", "name",
+                 "account_id", "user_id"}
 
 PARALLEL_STATES = [
     ("normal", "Giornata normale"),
@@ -26,6 +29,11 @@ class AccountAnalyticLine(models.Model):
         index=True,
         help="Se nel giorno la persona supera le ore del suo calendario, le ore restano "
              "fatturabili ma vanno approvate dal PM prima della fattura (contratti T&M).")
+    lab_remaining_hours = fields.Float(
+        "Ore residue sul task", copy=False,
+        help="Dopo questo lavoro, quante ore mancano per finire il task secondo te? "
+             "Aggiorna la stima a finire del task. Lascia 0 se non cambia; a lavoro finito "
+             "sposta il task in una fase chiusa.")
     lab_resource_type = fields.Selection(related="employee_id.lab_resource_type",
                                          string="Tipo risorsa")
     # ---- Consulenti esterni ------------------------------------------------
@@ -84,13 +92,22 @@ class AccountAnalyticLine(models.Model):
             if (not vals.get("task_id") and ticket.task_id
                     and ticket.task_id.project_id.id == vals.get("project_id")):
                 vals["task_id"] = ticket.task_id.id
+        self._lab_check_closed_month([v.get("date") or fields.Date.context_today(self)
+                                      for v in vals_list if v.get("project_id")])
         lines = super().create(vals_list)
         if not self.env.context.get("lab_skip_parallel"):
             lines._lab_recompute_days(lines._lab_day_keys())
         lines.project_id._lab_check_hours_alert()
+        lines._lab_refresh_timesheet_days(lines._lab_day_keys())
+        lines.browse([line.id for line, vals in zip(lines, vals_list)
+                      if vals.get("lab_remaining_hours")]
+                     )._lab_update_task_remaining()
         return lines
 
     def write(self, vals):
+        if LOCKED_FIELDS & set(vals):
+            self._lab_check_closed_month(self.filtered("project_id").mapped("date")
+                                         + ([vals["date"]] if vals.get("date") else []))
         if self.env.context.get("lab_skip_parallel"):
             return super().write(vals)
         projects = self.project_id
@@ -98,16 +115,57 @@ class AccountAnalyticLine(models.Model):
         res = super().write(vals)
         if {"unit_amount", "employee_id", "date", "project_id", "account_id"} & set(vals):
             self._lab_recompute_days(keys | self._lab_day_keys())
+            self._lab_refresh_timesheet_days(keys | self._lab_day_keys())
         (projects | self.project_id)._lab_check_hours_alert()
+        if vals.get("lab_remaining_hours"):
+            self._lab_update_task_remaining()
         return res
 
+    def _lab_update_task_remaining(self):
+        """La persona ha indicato le ore residue: diventano la stima a finire del task."""
+        for line in self.filtered("task_id").sorted("date"):
+            line.task_id.sudo().write({"lab_remaining_estimate": max(line.lab_remaining_hours, 0.0),
+                                       "lab_remaining_date": line.date})
+
     def unlink(self):
+        self._lab_check_closed_month(self.filtered("project_id").mapped("date"))
         projects = self.project_id
         keys = self._lab_day_keys()
         res = super().unlink()
         self._lab_recompute_days(keys)
         projects.exists()._lab_check_hours_alert()
+        self._lab_refresh_timesheet_days(keys)
         return res
+
+    # ---- Consuntivazione: mesi chiusi e controllo giornaliero ----------------
+    @api.model
+    def _lab_check_closed_month(self, days):
+        """Mese chiuso dall'Amministrazione: le ore non si aggiungono, modificano o cancellano
+        (solo il sistema e l'Amministrazione possono, ad esempio dopo una riapertura)."""
+        user = self.env.user
+        if (self.env.su or not days
+                or user.has_group("lab_workflow_custom.group_lab_amministrazione")
+                or user.has_group("base.group_system")):
+            return
+        days = [fields.Date.to_date(d) for d in days if d]
+        closed = self.env["lab.cost.period"].sudo().search([
+            ("state", "=", "closed"), ("company_id", "in", self.env.companies.ids),
+            ("date_start", "<=", max(days)), ("date_end", ">=", min(days))])
+        for period in closed:
+            if any(period.date_start <= d <= period.date_end for d in days):
+                raise ValidationError(_(
+                    "Il mese %s è chiuso: le ore non si possono più aggiungere, modificare o "
+                    "cancellare. Se serve una correzione chiedi all'Amministrazione di "
+                    "riaprirlo.", period.name))
+
+    @api.model
+    def _lab_refresh_timesheet_days(self, keys):
+        Day = self.env["lab.timesheet.day"].sudo()
+        by_employee = defaultdict(set)
+        for employee_id, day in keys:
+            by_employee[employee_id].add(day)
+        for employee_id, days in by_employee.items():
+            Day._lab_refresh(min(days), max(days), self.env["hr.employee"].browse(employee_id))
 
     # ---- Calcolo per persona e giorno ----------------------------------------
     def _lab_day_keys(self):

@@ -123,7 +123,7 @@ class TestLabAiUsage(TransactionCase):
         # chiusura del mese: i 100 diretti diventano spesa viva sull'ordine T&M (+15%)
         with self.assertRaises(AccessError):
             period.allocation_ids[:1].with_user(self.accountant).write({"amount": 0})
-        period.with_user(self.accountant).action_close()
+        period.with_user(self.accountant).with_context(lab_force_close=True).action_close()
         expense = order_tm.order_line.filtered("is_expense")
         self.assertEqual(len(expense), 1)
         self.assertAlmostEqual(expense.price_unit, 115)
@@ -138,6 +138,6 @@ class TestLabAiUsage(TransactionCase):
         # riapertura (spesa non ancora fatturata): la spesa torna a zero, poi si richiude
         period.with_user(self.accountant).action_reopen()
         self.assertEqual(expense.qty_delivered, 0)
-        period.with_user(self.accountant).action_close()
+        period.with_user(self.accountant).with_context(lab_force_close=True).action_close()
         self.assertEqual(len(order_tm.order_line.filtered("is_expense")), 1, "Nessun doppione")
         self.assertEqual(expense.qty_delivered, 1)

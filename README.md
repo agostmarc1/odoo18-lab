@@ -359,6 +359,23 @@ mostra gli stessi numeri del report (anche AI e consulenti).
 - Ricavi, costi e margini li vedono solo PM, Amministrazione e Responsabili progetti: il blocco è sul
   dato, quindi sviluppatori e Supporto non li leggono nemmeno via API.
 
+### Consuntivazione e avanzamento dei task
+
+- **Ore da fare** nella scheda della persona (*Orario di lavoro*); **assenze** con *Ferie e permessi*
+  (`hr_holidays`, si installa da solo). Ore attese = orario − assenze − festività. Attività interne
+  sul progetto *Interno*. *Deve consuntivare* tolto a chi non registra ore.
+- **Promemoria solo alla persona**: ogni mattina se ieri mancano ore, il lunedì il riepilogo della
+  settimana prima. Report *Pianificazione → Report → Consuntivazione* per PM e Amministrazione.
+- **Fine mese**: *Chiudi mese* non chiude se mancano ore (*Chiudi comunque* le annota); poi le ore del
+  mese sono bloccate, le riapre solo l'Amministrazione.
+- **Task**: tempo stimato, inizio/fine pianificati, primo/ultimo giorno lavorato, tempo effettivo;
+  stato (*da stimare*, *inizio in ritardo*, *oltre la data di fine*…); lista *Task da stimare*.
+- **Avanzamento con le ore residue**: chi registra le ore indica quante ne mancano; stima a finire =
+  registrate + residue, avanzamento = registrate / stima a finire. Se sforerà la stima il PM riceve
+  un'attività. Nel progetto: avanzamento, task in ritardo, che sforeranno, da stimare.
+- **Consulenti**: ore in fattura contro ore registrate, nota sulla fattura se non quadrano;
+  *Costi e AI → Ore consulenti e fatture*.
+
 ### Consumi AI a consumo (API Anthropic, Claude Code)
 
 **Pianificazione → Costi e AI → Consumi AI.** Ogni riga è un consumo (giorno, workspace, chiave API,

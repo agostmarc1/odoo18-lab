@@ -20,6 +20,28 @@ class AccountMoveLine(models.Model):
         help="Importo fatturato dal consulente meno il costo maturato delle ore collegate. "
              "Positivo: ha fatturato più delle ore segnate.")
 
+    lab_consultant_hours = fields.Float(
+        "Ore registrate dal consulente", compute="_compute_lab_consultant_hours",
+        help="Ore dei fogli ore del consulente collegate a questa riga.")
+    lab_billed_hours = fields.Float(
+        "Ore in fattura", compute="_compute_lab_consultant_hours",
+        help="Quantità della riga convertita in ore (se la tariffa è a giornata: giorni × ore "
+             "della sua giornata).")
+    lab_hours_difference = fields.Float(
+        "Differenza ore (fattura - registrate)", compute="_compute_lab_consultant_hours")
+
+    @api.depends("lab_timesheet_ids.unit_amount", "quantity", "lab_consultant_id")
+    def _compute_lab_consultant_hours(self):
+        for line in self:
+            consultant = line.lab_consultant_id.sudo()
+            logged = sum(line.sudo().lab_timesheet_ids.mapped("unit_amount"))
+            billed = line.quantity if consultant else 0.0
+            if consultant and consultant.lab_external_rate_unit == "day":
+                billed *= self.env["account.analytic.line"]._lab_day_hours(consultant)
+            line.lab_consultant_hours = logged
+            line.lab_billed_hours = billed
+            line.lab_hours_difference = (billed - logged) if consultant else 0.0
+
     @api.depends("lab_timesheet_ids.lab_accrued_external_cost", "balance")
     def _compute_lab_consultant_variance(self):
         for line in self:

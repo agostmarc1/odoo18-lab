@@ -31,8 +31,31 @@
                     </group>
                     <group>
                         <field name="lab_consumption_pct" widget="progressbar"/>
+                        <field name="lab_schedule_state" widget="badge"
+                               decoration-success="lab_schedule_state in ('on_time', 'done')"
+                               decoration-warning="lab_schedule_state in ('to_estimate', 'late_start')"
+                               decoration-danger="lab_schedule_state == 'late_end'"/>
+                        <field name="lab_remaining_estimate" widget="float_time"/>
+                        <field name="lab_remaining_date" invisible="not lab_remaining_date"/>
+                        <field name="lab_eac_hours" widget="float_time"
+                               decoration-danger="lab_forecast_over"/>
+                        <field name="lab_progress_pct" widget="progressbar"/>
+                        <field name="lab_forecast_over" invisible="1"/>
+                        <field name="lab_date_first_work"/>
+                        <field name="lab_date_last_work"/>
+                        <field name="lab_over_estimate" invisible="not lab_over_estimate"/>
                     </group>
                 </group>
+                <field name="lab_to_estimate" invisible="1"/>
+                <div class="alert alert-warning" role="alert"
+                     invisible="not lab_forecast_over or lab_over_estimate">
+                    📈 Con le ore residue indicate il task <b>sforerà la stima</b>: stima a finire
+                    <field name="lab_eac_hours" widget="float_time" class="oe_inline"/> ore.
+                </div>
+                <div class="alert alert-info" role="alert" invisible="not lab_to_estimate">
+                    📝 Task da stimare: indica le <b>ore allocate</b> e le date di <b>inizio e
+                    fine pianificate</b>, così ore, avanzamento e ritardi si calcolano da soli.
+                </div>
             </xpath>
         </field>
     </record>
@@ -69,6 +92,18 @@
                        decoration-warning="lab_alert_level == 'warning'"
                        decoration-danger="lab_alert_level == 'danger'"/>
                 <field name="lab_consumption_pct" optional="show" widget="progressbar"/>
+                <field name="planned_date_start" optional="show" string="Inizio pianificato"/>
+                <field name="planned_date_end" optional="show" string="Fine pianificata"/>
+                <field name="lab_date_first_work" optional="hide"/>
+                <field name="lab_date_last_work" optional="show"/>
+                <field name="lab_remaining_estimate" optional="show" widget="float_time"/>
+                <field name="lab_eac_hours" optional="show" widget="float_time"/>
+                <field name="lab_progress_pct" optional="show" widget="progressbar" string="Avanzamento"/>
+                <field name="lab_forecast_over" column_invisible="1"/>
+                <field name="lab_schedule_state" optional="show" widget="badge"
+                               decoration-success="lab_schedule_state in ('on_time', 'done')"
+                               decoration-warning="lab_schedule_state in ('to_estimate', 'late_start')"
+                               decoration-danger="lab_schedule_state == 'late_end'"/>
             </xpath>
         </field>
     </record>
@@ -86,6 +121,55 @@
                         domain="[('lab_alert_level', '=', 'danger')]"/>
                 <filter name="lab_groupby_alert" string="Alert monte ore"
                         context="{'group_by': 'lab_alert_level'}"/>
+                <separator/>
+                <filter name="lab_to_estimate" string="Da stimare"
+                        domain="[('lab_to_estimate', '=', True), ('is_closed', '=', False)]"/>
+                <filter name="lab_late" string="In ritardo"
+                        domain="[('lab_schedule_state', 'in', ('late_start', 'late_end'))]"/>
+                <filter name="lab_over_estimate" string="Oltre la stima"
+                        domain="[('lab_over_estimate', '=', True)]"/>
+                <filter name="lab_forecast_over" string="Sforeranno la stima"
+                        domain="[('lab_forecast_over', '=', True), ('is_closed', '=', False)]"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Lista "Task da stimare" del PM: in cima quelli dove si lavora già -->
+    <record id="action_lab_tasks_to_estimate" model="ir.actions.act_window">
+        <field name="name">Task da stimare</field>
+        <field name="res_model">project.task</field>
+        <field name="view_mode">list,form,kanban</field>
+        <field name="domain">[('lab_to_estimate', '=', True), ('is_closed', '=', False), ('project_id', '!=', False)]</field>
+        <field name="context">{'lab_tasks_to_estimate': 1}</field>
+        <field name="search_view_id" ref="project.view_task_search_form"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Tutti i task aperti hanno stima e date pianificate.</p>
+            <p>Un task va stimato quando mancano le ore allocate o l'inizio/fine pianificati.</p>
+        </field>
+    </record>
+
+    <!-- Foglio ore nel task: colonna "Ore residue" (stima di chi lavora) -->
+    <record id="view_task_form_lab_remaining" model="ir.ui.view">
+        <field name="name">project.task.form.lab.remaining</field>
+        <field name="model">project.task</field>
+        <field name="inherit_id" ref="hr_timesheet.view_task_form2_inherited"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='timesheet_ids']/list/field[@name='unit_amount']" position="after">
+                <field name="lab_remaining_hours" widget="float_time" optional="show"
+                       string="Ore residue" readonly="readonly_timesheet"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Fogli ore (I miei fogli ore e tutti): colonna "Ore residue sul task" -->
+    <record id="view_timesheet_list_lab_remaining" model="ir.ui.view">
+        <field name="name">account.analytic.line.list.lab.remaining</field>
+        <field name="model">account.analytic.line</field>
+        <field name="inherit_id" ref="hr_timesheet.hr_timesheet_line_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='unit_amount']" position="after">
+                <field name="lab_remaining_hours" widget="float_time" optional="show"
+                       string="Ore residue sul task"/>
             </xpath>
         </field>
     </record>

@@ -21,7 +21,7 @@ import subprocess
 import sys
 import time
 import xmlrpc.client
-from datetime import date
+from datetime import date, timedelta
 
 from playwright.sync_api import sync_playwright
 
@@ -60,8 +60,38 @@ class Rpc:
         return self(model, "search", domain, **kw)
 
 
+TURNO_VIDEO = "Video: carico della settimana"
+
+
+def prepara_settimana_niccolo(rpc):
+    """Il capitolo 3 mostra Niccolò al limite di 32 ore nella settimana in corso: i turni di
+    esempio hanno le date del giorno in cui sono stati caricati, quindi qui si completa la
+    settimana corrente (turni marcati TURNO_VIDEO, tolti a fine registrazione)."""
+    emp = rpc.search("hr.employee", [("name", "ilike", "Niccol")], limit=1)
+    proj = rpc.search("project.project", [("name", "ilike", "Gestionale sinistri")], limit=1)
+    if not emp or not proj:
+        return
+    oggi = date.today()
+    lunedi = oggi - timedelta(days=oggi.weekday())
+    slots = rpc("lab.planning.slot", "search_read",
+                [("employee_id", "=", emp[0]), ("week_start", "=", lunedi.isoformat()),
+                 ("state", "!=", "cancel")], ["allocated_hours"])
+    manca = 32 - sum(x["allocated_hours"] for x in slots)
+    giorno = 0
+    while manca > 0 and giorno < 5:
+        ore = min(8, manca)
+        rpc("lab.planning.slot", "create", {
+            "name": TURNO_VIDEO, "employee_id": emp[0], "project_id": proj[0],
+            "date": (lunedi + timedelta(days=giorno)).isoformat(), "allocated_hours": ore})
+        manca -= ore
+        giorno += 1
+
+
 def pulisci_dati_video(rpc):
     """Toglie ordine, progetto, turni, fogli ore e ticket creati da una registrazione precedente."""
+    turni = rpc.search("lab.planning.slot", [("name", "=", TURNO_VIDEO)])
+    if turni:
+        rpc("lab.planning.slot", "unlink", turni)
     tickets = rpc.search("helpdesk.ticket", [("name", "=", TICKET_VIDEO)],
                          context={"active_test": False})
     if tickets:
@@ -651,12 +681,47 @@ def copione(r, rpc):
     r.pausa(1.0)
     r.foto("ticket_kanban_portale")
 
+    # 10. Consuntivazione e avanzamento dei task
+    neri = rpc.search("project.project", [("partner_id.name", "ilike", "Neri")], limit=1)[0]
+    task_dev = rpc.search("project.task", [("project_id", "=", neri),
+                                           ("name", "ilike", "Sviluppo - Sviluppo Software")],
+                          limit=1)[0]
+    r.capitolo(10, "Consuntivazione e avanzamento dei task",
+               "Ore attese da orario e assenze, promemoria alla persona, ore residue e chiusura "
+               "del mese", "")
+    r.login("marco", "Project Manager")
+    r.vai("/odoo/action-lab_workflow_custom.action_timesheet_day")
+    r.dici("Il report <b>Consuntivazione</b>: per ogni persona le ore attese (orario di lavoro "
+           "meno ferie e permessi), quelle registrate e quelle che mancano.", 6)
+    r.dici("Ogni mattina chi ha ore mancanti riceve un promemoria; il lunedì il riepilogo della "
+           "settimana. Le email vanno solo alla persona.", 6)
+    r.foto("consuntivazione")
+    r.vai("/odoo/action-lab_workflow_custom.action_lab_tasks_to_estimate")
+    r.dici("<b>Task da stimare</b>: quelli senza tempo stimato o senza date di inizio e fine "
+           "pianificate.", 4.5)
+    r.foto("task_da_stimare")
+    r.vai(f"/odoo/action-project.open_view_project_all/{neri}")
+    r.evidenzia(r.page.locator("div[name=lab_progress]"), 0.5)
+    r.dici("Nel progetto: <b>avanzamento</b> sulla stima a finire, task in ritardo, task che "
+           "sforeranno e task da stimare.", 5.5)
+    r.foto("avanzamento_progetto")
+    r.vai(f"/odoo/project/{neri}/tasks/{task_dev}")
+    r.evidenzia(r.page.locator(".alert-warning:visible").first, 0.5)
+    r.dici("Chi registra le ore indica anche le <b>ore residue</b>: qui la stima a finire supera "
+           "quella iniziale, e il PM lo sa <b>prima</b> di sforare.", 6)
+    r.foto("task_sforera")
+    r.vai("/odoo/action-lab_workflow_custom.action_cost_periods")
+    r.dici("A fine mese l'Amministrazione chiude il mese solo con le ore complete: dopo, le ore "
+           "non si possono più modificare.", 5.5)
+    r.foto("chiusura_mese_ore")
+
     # Chiusura
     r.ruolo("")
     r.page.evaluate("() => window.__labCaption('')")
-    r.capitolo(10, "Riepilogo",
+    r.capitolo(11, "Riepilogo",
                "Vendita → commessa → pianificazione 80/20 → foglio ore → alert → costi e "
-               "margini → ticket di assistenza.<br>Documentazione completa nella scheda dell'app.")
+               "margini → ticket di assistenza → consuntivazione.<br>Documentazione completa "
+               "nella scheda dell'app.")
     r.pausa(1.5)
 
 
@@ -694,6 +759,7 @@ def main():
     FRAMES.mkdir(parents=True, exist_ok=True)
     rpc = Rpc()
     pulisci_dati_video(rpc)
+    prepara_settimana_niccolo(rpc)
     with sync_playwright() as p:
         browser = p.chromium.launch(channel="chrome")
         opts = {"viewport": {"width": W, "height": H}, "locale": "it-IT",

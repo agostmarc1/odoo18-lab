@@ -11,6 +11,11 @@ COST_GROUPS = ("hr.group_hr_user,lab_workflow_custom.group_lab_amministrazione,"
 class HrEmployee(models.Model):
     _inherit = "hr.employee"
 
+    lab_timesheet_required = fields.Boolean(
+        "Deve consuntivare", default=True,
+        help="Controllo della consuntivazione: ore attese dal suo Orario di lavoro, promemoria "
+             "giornaliero e riepilogo del lunedì. Togli la spunta per chi non registra ore "
+             "(es. amministratore di sistema).")
     lab_resource_type = fields.Selection(
         [("internal", "Dipendente interno"), ("external", "Consulente esterno")],
         "Tipo risorsa", default="internal", required=True, groups=COST_GROUPS,
