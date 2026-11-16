@@ -418,9 +418,10 @@ commessa Bianchi Logistica), personale (Claude Code di Carlo) e senza corrispond
   risponde dalla sua casella.
 - **Chi fa cosa.** Supporto (`nicola`): tutti i ticket. PM (`marco`): responsabile Helpdesk, SLA e
   configurazione. Commerciale (`giuseppe`): vede in sola lettura i ticket dei suoi clienti.
-- **Anti-spam del modulo pubblico**: campo esca nascosto e massimo 5 ticket all'ora per indirizzo
-  (parametro `lab_workflow_custom.helpdesk_web_max_per_hour`). In produzione si aggiungono le chiavi
-  reCAPTCHA (Impostazioni → Sito web).
+- **Anti-spam del modulo pubblico**: nessun limite ai ticket del cliente. Campo esca nascosto;
+  una sola email di conferma in attesa per indirizzo (il suo link conferma tutte le richieste), così
+  il modulo non serve a inondare di email un indirizzo altrui. In produzione: Cloudflare Turnstile
+  o reCAPTCHA (moduli standard, chiavi in Impostazioni → Sito web), invisibili per le persone.
 - **In questo laboratorio non c'è un server di posta**: le email in uscita restano in coda e quelle
   in arrivo si provano con i test. In produzione: Impostazioni → Generali → *Dominio alias* e
   Impostazioni → Tecnico → *Server di posta in arrivo*.

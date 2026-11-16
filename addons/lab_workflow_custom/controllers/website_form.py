@@ -1,9 +1,11 @@
 """Modulo web pubblico "Apri un ticket": protezioni contro lo spam.
 
 - campo esca nascosto (``lab_hp``): le persone non lo vedono e lo lasciano vuoto, i bot lo riempiono;
-- massimo N ticket all'ora dallo stesso indirizzo email
-  (parametro ``lab_workflow_custom.helpdesk_web_max_per_hour``, default 5);
-- se in Impostazioni > Sito web si inseriscono le chiavi reCAPTCHA, Odoo verifica anche quelle
+- nessun limite al numero di ticket; una sola email di conferma in attesa per indirizzo
+  (gli altri ticket si confermano con lo stesso link), così il modulo non serve a inondare
+  di email un indirizzo altrui;
+- se si attiva Cloudflare Turnstile o reCAPTCHA (moduli standard Odoo, chiavi in Impostazioni >
+  Sito web), Odoo ferma i programmi automatici in modo invisibile per le persone
   (controllo standard di ``/website/form``, nessun codice qui).
 
 La descrizione scritta con l'editor arriva come HTML (campo ``lab_rich=1``): la ripulisce
@@ -33,7 +35,7 @@ class LabWebsiteForm(WebsiteForm):
             # Risposta neutra: al bot non diciamo che è stato riconosciuto
             return json.dumps({"id": False})
         try:
-            request.env["helpdesk.ticket"]._lab_check_website_rate(kwargs.get("partner_email"))
+            request.env["helpdesk.ticket"]._lab_check_website_email(kwargs.get("partner_email"))
         except UserError as error:
             return json.dumps({"error": error.args[0]})
         # Descrizione scritta con l'editor (static/src/js/helpdesk_rich_description.js): è HTML,

@@ -144,7 +144,8 @@ filtri data non accettano `default_period="week"`.
   valgono come fogli ore della commessa: monte ore, alert e margini restano un solo calcolo.
   Su corpo/T&M il ticket deve avere il task. SLA per contratto in `data/helpdesk_data.xml`
   (dominio su `lab_contract_type` e `priority`). Anti-spam del modulo in `controllers/website_form.py`
-  (campo esca + `lab_workflow_custom.helpdesk_web_max_per_hour`). La descrizione del modulo pubblico
+  (campo esca; nessun limite ai ticket del cliente, per scelta di Marco: una sola email di conferma
+  in attesa per indirizzo, `_lab_pending_same_email`). La descrizione del modulo pubblico
   è un editor (`static/src/js/helpdesk_rich_description.js`, flag `lab_rich`): l'HTML passa da
   `website_form_input_filter` (sanitize) e le immagini incollate diventano allegati
   (`_lab_store_inline_images`). Dopo modifiche agli asset serve il riavvio di Odoo.

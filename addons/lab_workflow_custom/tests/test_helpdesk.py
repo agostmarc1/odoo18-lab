@@ -166,20 +166,32 @@ class TestLabHelpdesk(TransactionCase):
         self.assertIn(urgent, ticket.sla_ids, "Diventato urgente: SLA 4 ore")
         self.assertNotIn(normal, ticket.sla_ids)
 
-    def test_08_website_rate_limit(self):
+    def test_08_no_limit_one_confirmation_email(self):
+        """Nessun limite ai ticket; una sola email di conferma per indirizzo, che li conferma tutti."""
         Ticket = self.env["helpdesk.ticket"]
         with self.assertRaises(UserError):
-            Ticket._lab_check_website_rate("non-una-email")
-        self.env["ir.config_parameter"].sudo().set_param(
-            "lab_workflow_custom.helpdesk_web_max_per_hour", 2)
-        for i in range(2):
-            Ticket._lab_check_website_rate("spam@bot.example")
-            Ticket.with_context(lab_from_website=True).create({
-                "name": f"Spam {i}", "description": "<p>x</p>",
-                "partner_email": "spam@bot.example"})
-        with self.assertRaises(UserError):
-            Ticket._lab_check_website_rate("spam@bot.example")
-        Ticket._lab_check_website_rate("altro@cliente.example")  # gli altri non sono bloccati
+            Ticket._lab_check_website_email("non-una-email")
+        Web = Ticket.with_user(self.env.ref("base.user_root")).sudo().with_context(
+            lab_from_website=True)
+        tickets = Ticket
+        for i in range(8):  # nessun limite: tutti creati
+            Ticket._lab_check_website_email("Cliente@Nuovo.example")
+            tickets |= Web.create({"name": f"Richiesta {i}", "description": "<p>x</p>",
+                                   "partner_email": "Cliente@Nuovo.example"})
+        mails = self.env["mail.mail"].search([("model", "=", "helpdesk.ticket"),
+                                              ("res_id", "in", tickets.ids),
+                                              ("subject", "ilike", "Conferma")])
+        self.assertEqual(len(mails), 1, "una sola email di conferma all'indirizzo")
+        first = tickets[0]
+        self.assertTrue(Ticket._lab_check_confirm_token(first.id, first.lab_confirm_token))
+        first._lab_web_confirm()
+        self.assertTrue(all(tickets.mapped("lab_web_confirmed")), "un clic le conferma tutte")
+        # dopo la conferma, una nuova richiesta riceve di nuovo la sua email
+        new = Web.create({"name": "Dopo", "description": "<p>x</p>",
+                          "partner_email": "cliente@nuovo.example"})
+        self.assertTrue(self.env["mail.mail"].search_count([
+            ("model", "=", "helpdesk.ticket"), ("res_id", "=", new.id),
+            ("subject", "ilike", "Conferma")]))
 
     def test_09_roles(self):
         ticket = self._ticket(partner_id=self.contact.id)

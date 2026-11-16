@@ -35,7 +35,7 @@
 <h1>Flusso Operativo Software House</h1>
 <p class="lead">Analisi funzionale e tecnica del modulo <code>lab_workflow_custom</code>, per chi deve installarlo, mantenerlo o estenderlo.</p>
 <div class="meta">
-  <span class="chip">Odoo 18.0 Community</span><span class="chip">Versione modulo 18.0.1.13.0</span>
+  <span class="chip">Odoo 18.0 Community</span><span class="chip">Versione modulo 18.0.1.14.0</span>
   <span class="chip">Licenza LGPL-3</span><span class="chip">Categoria Services/Project</span>
 </div>
 
@@ -156,7 +156,7 @@
   <tr><td>RF-26</td><td>Le ore segnate sul ticket vanno sulla commessa (e sul task) del ticket, scalano il monte ore e fanno scattare gli alert; su corpo e T&amp;M serve il task</td><td><code>account.analytic.line.create</code>, <code>_check_lab_task_required</code>, <code>lab_hours_alert</code></td><td>test_helpdesk 05, 06</td><td>Supporto, PM</td></tr>
   <tr><td>RF-27</td><td>SLA per contratto e priorità (AMS: presa in carico 4 h urgente / 8 h alta / 2 g, risoluzione 5 g; senza canone 3 g), pausa in <i>In attesa</i>, riallineati se cambiano cliente, commessa, priorità, tipo o area</td><td><code>helpdesk_sla_*</code> (dominio su <code>lab_contract_type</code>), <code>helpdesk.ticket.write</code> → <code>refresh_sla</code></td><td>test_helpdesk 02, 04, 07</td><td>PM, Commerciale</td></tr>
   <tr><td>RF-28</td><td>Email al cliente in italiano su apertura, presa in carico, attesa e chiusura, con link al ticket valido anche senza account; il cliente segue il ticket e riceve le risposte; alla chiusura parte la richiesta di valutazione</td><td><code>mail_template_ticket_*</code> sugli stadi, <code>_lab_subscribe_customer</code>, <code>rating_mail_template_id</code></td><td>test_helpdesk 01, 02</td><td>Supporto</td></tr>
-  <tr><td>RF-29</td><td>Modulo pubblico protetto: campo esca, massimo N ticket all'ora per email, email obbligatoria e valida; reCAPTCHA standard se configurato</td><td><code>LabWebsiteForm._handle_website_form</code>, <code>_lab_check_website_rate</code></td><td>test_helpdesk 08 (+ prova manuale del campo esca)</td><td>Amministratore di sistema</td></tr>
+  <tr><td>RF-29</td><td>Modulo pubblico protetto: campo esca, email obbligatoria e valida, <b>nessun limite</b> ai ticket del cliente; una sola email di conferma in attesa per indirizzo (un link conferma tutte le richieste); Turnstile/reCAPTCHA standard se configurati</td><td><code>LabWebsiteForm._handle_website_form</code>, <code>_lab_check_website_email</code>, <code>_lab_pending_same_email</code></td><td>test_helpdesk 08 (+ prova manuale del campo esca)</td><td>Amministratore di sistema</td></tr>
   <tr><td>RF-30</td><td>Ruoli: il Supporto gestisce tutti i ticket, il PM è responsabile Helpdesk, il Commerciale legge (senza modificare) i ticket dei clienti di cui è il venditore</td><td><code>lab_security.xml</code> (gruppi impliciti), <code>rule_helpdesk_ticket_salesman</code></td><td>test_helpdesk 09</td><td>Supporto, PM, Commerciale</td></tr>
   <tr><td>RF-31</td><td>Nel modulo pubblico la descrizione si scrive come una email: grassetto, corsivo, sottolineato, elenchi, link e immagini (pulsante, Ctrl+V, trascinamento; max 10, ridimensionate a 1600 px). Le immagini diventano allegati del ticket visibili anche dal link <i>Segui il ticket</i></td><td><code>static/src/js/helpdesk_rich_description.js</code>, <code>website_form_input_filter</code>, <code>_lab_store_inline_images</code></td><td>test_helpdesk 10 (+ prova nel browser)</td><td>Cliente, Supporto</td></tr>
   <tr><td>RF-32</td><td>Il ticket dal sito si collega all'azienda solo dopo la conferma via email (link <i>Conferma la richiesta</i>); prima resta senza contatto, commessa e SLA. Nessuna conferma per l'utente collegato con la propria email; conferma manuale del Supporto; archiviazione dopo N giorni</td><td><code>_lab_send_confirmation</code>, <code>_lab_check_confirm_token</code>, <code>_lab_web_confirm</code>, <code>action_lab_web_confirm</code>, <code>_lab_archive_unconfirmed</code>, rotta <code>/assistenza/conferma</code></td><td>test_helpdesk 03, 11 (+ prova nel browser)</td><td>Cliente, Supporto</td></tr>
@@ -302,7 +302,7 @@ ore sul ticket → riga di foglio ore con project_id del ticket (e task_id se è
 SLA       = helpdesk.sla del team il cui dominio vale sul ticket (lab_contract_type, priority)
             scadenza = apertura + ore (giorni × ore/giorno del calendario del team), solo in orario di lavoro
             stadio "In attesa" = pausa; stadio raggiunto prima della scadenza = rispettato
-limite web = ticket del canale Web con la stessa email nell'ultima ora &lt; helpdesk_web_max_per_hour (5)</pre>
+email di conferma = solo se nessun altro ticket da confermare ha la stessa email (nessun limite ai ticket)</pre>
 
 <!-- ============================================================== -->
 <h2 id="estensioni">6. Punti di estensione di Odoo</h2>
@@ -404,7 +404,6 @@ limite web = ticket del canale Web con la stessa email nell'ultima ora &lt; help
   <tr><td><code>lab_workflow_custom.max_weekly_hours</code></td><td>32</td><td>Ore pianificabili a settimana con fattore 1 (regola 80/20); base delle ore standard del mese</td></tr>
   <tr><td><code>lab_workflow_custom.passthrough_markup_pct</code></td><td>15</td><td>Ricarico proposto sulle nuove commesse</td></tr>
   <tr><td><code>lab_workflow_custom.anthropic_admin_key</code></td><td>assente</td><td>Attiva il connettore Anthropic (chiave Admin)</td></tr>
-  <tr><td><code>lab_workflow_custom.helpdesk_web_max_per_hour</code></td><td>5</td><td>Ticket all'ora per indirizzo email dal modulo pubblico</td></tr>
   <tr><td><code>lab_workflow_custom.helpdesk_web_confirm_days</code></td><td>7</td><td>Giorni dopo i quali le richieste dal sito mai confermate si archiviano (cron giornaliero <i>Ticket: archivia le richieste dal sito mai confermate</i>)</td></tr>
 </table>
 <p><b>Prodotti di base</b> (<code>noupdate</code>): <i>Sviluppo Software a Corpo</i> (SVIL-CORPO, 120 h, task di default), <i>Pacchetto Monte Ore (50h)</i> (MONTE-50H, 50 h, task di default), <i>Canone Assistenza Mensile AMS</i> (AMS-MESE, 20 h/mese, abbonamento mensile), <i>Consulenza a consuntivo (T&amp;M)</i> (TM-ORA, a ore da fogli ore), <i>Prestazione consulente esterno</i> (CONS-EXT) e <i>Spese vive ribaltate</i> (SPESE-VIVE), entrambi con rifatturazione al costo. <b>Strumenti AI</b>: Claude Team (30 €/mese), Claude Max / Claude Code (100 €/mese), API Anthropic (a consumo).</p>
@@ -454,7 +453,7 @@ limite web = ticket del canale Web con la stessa email nell'ultima ora &lt; help
   <tr><td>05 hours_on_ticket_consume_ams_hours_and_alert</td><td>Ore sul ticket → commessa, consumo del mese, alert 80%</td></tr>
   <tr><td>06 hours_package_ticket_needs_task</td><td>Monte ore: senza task le ore non si salvano; il task arriva dal ticket</td></tr>
   <tr><td>07 urgent_sla_and_priority_change</td><td>Cambio di priorità → SLA urgente al posto di quello normale</td></tr>
-  <tr><td>08 website_rate_limit</td><td>Email non valida rifiutata, limite orario per indirizzo</td></tr>
+  <tr><td>08 no_limit_one_confirmation_email</td><td>Email non valida rifiutata; 8 ticket dallo stesso indirizzo tutti creati, una sola email di conferma, un clic li conferma tutti</td></tr>
   <tr><td>09 roles</td><td>Supporto gestisce e prende in carico; Commerciale legge solo i ticket dei suoi clienti e non li modifica</td></tr>
   <tr><td>10 web_description_rich_text_and_images</td><td>Descrizione dall'editor: grassetto, elenchi e link restano, script e link <code>javascript:</code> no; l'immagine PNG diventa allegato con codice di accesso, SVG e file falsi scartati; senza editor resta il testo semplice</td></tr>
   <tr><td>11 confirmation_trusted_manual_and_cleanup</td><td>Utente collegato con la propria email: nessuna conferma; conferma a mano solo per il Supporto; richieste mai confermate archiviate dopo 7 giorni e link non più valido</td></tr>
