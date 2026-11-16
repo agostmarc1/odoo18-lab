@@ -35,7 +35,7 @@
 <h1>Flusso Operativo Software House</h1>
 <p class="lead">Analisi funzionale e tecnica del modulo <code>lab_workflow_custom</code>, per chi deve installarlo, mantenerlo o estenderlo.</p>
 <div class="meta">
-  <span class="chip">Odoo 18.0 Community</span><span class="chip">Versione modulo 18.0.1.12.0</span>
+  <span class="chip">Odoo 18.0 Community</span><span class="chip">Versione modulo 18.0.1.14.0</span>
   <span class="chip">Licenza LGPL-3</span><span class="chip">Categoria Services/Project</span>
 </div>
 
@@ -111,7 +111,7 @@
 ├── data/                    parametri, prodotti, task di default, strumenti AI, cron,
 │                            configurazione Helpdesk, email ai clienti, pagine del sito
 ├── demo/                    utenti demo, costi demo, scenario sintetico
-├── tests/                   test_flow, test_costs, test_ai_usage, test_helpdesk, test_pm_overview (39 test)
+├── tests/                   test_flow, test_costs, test_ai_usage, test_helpdesk, test_pm_overview (40 test)
 ├── static/src/              editor della descrizione del modulo pubblico e Kanban del portale
 │                            con aggiornamento in tempo reale (JS + SCSS, web.assets_frontend)
 └── static/description/      pagina dell'app, video, questa analisi</pre>
@@ -156,7 +156,7 @@
   <tr><td>RF-26</td><td>Le ore segnate sul ticket vanno sulla commessa (e sul task) del ticket, scalano il monte ore e fanno scattare gli alert; su corpo e T&amp;M serve il task</td><td><code>account.analytic.line.create</code>, <code>_check_lab_task_required</code>, <code>lab_hours_alert</code></td><td>test_helpdesk 05, 06</td><td>Supporto, PM</td></tr>
   <tr><td>RF-27</td><td>SLA per contratto e priorità (AMS: presa in carico 4 h urgente / 8 h alta / 2 g, risoluzione 5 g; senza canone 3 g), pausa in <i>In attesa</i>, riallineati se cambiano cliente, commessa, priorità, tipo o area</td><td><code>helpdesk_sla_*</code> (dominio su <code>lab_contract_type</code>), <code>helpdesk.ticket.write</code> → <code>refresh_sla</code></td><td>test_helpdesk 02, 04, 07</td><td>PM, Commerciale</td></tr>
   <tr><td>RF-28</td><td>Email al cliente in italiano su apertura, presa in carico, attesa e chiusura, con link al ticket valido anche senza account; il cliente segue il ticket e riceve le risposte; alla chiusura parte la richiesta di valutazione</td><td><code>mail_template_ticket_*</code> sugli stadi, <code>_lab_subscribe_customer</code>, <code>rating_mail_template_id</code></td><td>test_helpdesk 01, 02</td><td>Supporto</td></tr>
-  <tr><td>RF-29</td><td>Modulo pubblico protetto: campo esca, massimo N ticket all'ora per email, email obbligatoria e valida; reCAPTCHA standard se configurato</td><td><code>LabWebsiteForm._handle_website_form</code>, <code>_lab_check_website_rate</code></td><td>test_helpdesk 08 (+ prova manuale del campo esca)</td><td>Amministratore di sistema</td></tr>
+  <tr><td>RF-29</td><td>Modulo pubblico protetto: campo esca, email obbligatoria e valida, <b>nessun limite</b> ai ticket del cliente; una sola email di conferma in attesa per indirizzo (un link conferma tutte le richieste); Turnstile/reCAPTCHA standard se configurati</td><td><code>LabWebsiteForm._handle_website_form</code>, <code>_lab_check_website_email</code>, <code>_lab_pending_same_email</code></td><td>test_helpdesk 08 (+ prova manuale del campo esca)</td><td>Amministratore di sistema</td></tr>
   <tr><td>RF-30</td><td>Ruoli: il Supporto gestisce tutti i ticket, il PM è responsabile Helpdesk, il Commerciale legge (senza modificare) i ticket dei clienti di cui è il venditore</td><td><code>lab_security.xml</code> (gruppi impliciti), <code>rule_helpdesk_ticket_salesman</code></td><td>test_helpdesk 09</td><td>Supporto, PM, Commerciale</td></tr>
   <tr><td>RF-31</td><td>Nel modulo pubblico la descrizione si scrive come una email: grassetto, corsivo, sottolineato, elenchi, link e immagini (pulsante, Ctrl+V, trascinamento; max 10, ridimensionate a 1600 px). Le immagini diventano allegati del ticket visibili anche dal link <i>Segui il ticket</i></td><td><code>static/src/js/helpdesk_rich_description.js</code>, <code>website_form_input_filter</code>, <code>_lab_store_inline_images</code></td><td>test_helpdesk 10 (+ prova nel browser)</td><td>Cliente, Supporto</td></tr>
   <tr><td>RF-32</td><td>Il ticket dal sito si collega all'azienda solo dopo la conferma via email (link <i>Conferma la richiesta</i>); prima resta senza contatto, commessa e SLA. Nessuna conferma per l'utente collegato con la propria email; conferma manuale del Supporto; archiviazione dopo N giorni</td><td><code>_lab_send_confirmation</code>, <code>_lab_check_confirm_token</code>, <code>_lab_web_confirm</code>, <code>action_lab_web_confirm</code>, <code>_lab_archive_unconfirmed</code>, rotta <code>/assistenza/conferma</code></td><td>test_helpdesk 03, 11 (+ prova nel browser)</td><td>Cliente, Supporto</td></tr>
@@ -168,13 +168,14 @@
 <h3>Requisiti non funzionali</h3>
 <table>
   <tr><th>ID</th><th>Requisito</th><th>Come è soddisfatto</th></tr>
-  <tr><td>RNF-01</td><td>Installabile in un altro Odoo 18 CE senza passaggi manuali</td><td>Unica app con <code>depends</code> completo; <code>scripts/package_app.sh</code> impacchetta app e moduli OCA</td></tr>
+  <tr><td>RNF-01</td><td>Installabile in un altro Odoo 18 CE senza passaggi manuali</td><td>Unica app con <code>depends</code> completo; <code>scripts/package_app.sh</code> impacchetta app e moduli OCA; <code>scripts/prova_installazione_pulita.sh</code> lo installa su Odoo 18 CE ufficiale con database vuoto (solo inglese, con e senza dati di esempio) ed esegue i test</td></tr>
   <tr><td>RNF-02</td><td>Nessuna modifica a core e OCA</td><td>Solo ereditarietà; il bug OCA sul listino è aggirato in <code>models/sale_subscription.py</code></td></tr>
   <tr><td>RNF-03</td><td>Nessuna credenziale versionata</td><td>Password in <code>.env</code> (gitignored); chiave Anthropic solo come parametro di sistema</td></tr>
   <tr><td>RNF-04</td><td>Nessun lavoro in più per chi segna le ore</td><td>Il task è l'unico dato richiesto in più (e solo su corpo/T&amp;M); tutto il resto è calcolato</td></tr>
   <tr><td>RNF-05</td><td>Ambiente demo autonomo</td><td>Scenario sintetico idempotente con date relative a oggi; connettore esterno spento senza chiave; email in arrivo simulate nei test, nessun server di posta richiesto</td></tr>
   <tr><td>RNF-06</td><td>Il modulo pubblico non apre la porta allo spam né ai dati altrui</td><td>Il form crea solo ticket (campi in whitelist); il cliente vede solo i propri ticket (regole OCA) o quello del link con codice di accesso; la descrizione HTML è ripulita lato server (niente script, eventi, link <code>javascript:</code>, SVG) e le immagini accettate sono solo PNG/JPEG/GIF/WebP vere, max 10 da 5 MB; regola globale <code>rule_helpdesk_ticket_portal_company</code>: per gli utenti portale solo i ticket con <code>commercial_partner_id</code> uguale alla propria azienda (in AND alle regole OCA, che da sole ammettono anche i ticket di cui si è follower); gli avvisi in tempo reale vanno solo agli utenti dell'azienda e contengono solo id; chi scrive l'email di un altro cliente non ottiene un ticket a suo nome finché il titolare non conferma (codice casuale da 256 bit, confronto a tempo costante, usa e getta, campo leggibile solo dagli amministratori)</td></tr>
   <tr><td>RNF-07</td><td>Il Kanban del cliente si aggiorna in tempo reale senza esporre dati</td><td>Bus di Odoo (websocket) sul canale personale; i dati si rileggono con i permessi del cliente; ripiego: ricarica ogni 60 secondi</td></tr>
+  <tr><td>RNF-08</td><td>Installazioni riproducibili e sicure</td><td>Moduli OCA a commit fissati (<code>scripts/oca_versions.txt</code>, <code>get_third_party.sh --aggiorna</code> per cambiarli); <code>LEGGIMI.txt</code> del pacchetto con le impostazioni per la produzione: <code>admin_passwd</code>, <code>list_db = False</code>, <code>dbfilter</code>, niente <code>--dev</code>, HTTPS con <code>proxy_mode</code></td></tr>
 </table>
 
 <!-- ============================================================== -->
@@ -301,7 +302,7 @@ ore sul ticket → riga di foglio ore con project_id del ticket (e task_id se è
 SLA       = helpdesk.sla del team il cui dominio vale sul ticket (lab_contract_type, priority)
             scadenza = apertura + ore (giorni × ore/giorno del calendario del team), solo in orario di lavoro
             stadio "In attesa" = pausa; stadio raggiunto prima della scadenza = rispettato
-limite web = ticket del canale Web con la stessa email nell'ultima ora &lt; helpdesk_web_max_per_hour (5)</pre>
+email di conferma = solo se nessun altro ticket da confermare ha la stessa email (nessun limite ai ticket)</pre>
 
 <!-- ============================================================== -->
 <h2 id="estensioni">6. Punti di estensione di Odoo</h2>
@@ -349,6 +350,8 @@ limite web = ticket del canale Web con la stessa email nell'ultima ora &lt; help
   <tr><td>Ruoli / Supporto (AMS)</td><td>Analista / Sviluppatore, helpdesk_mgmt.group_helpdesk_user</td><td>In più segue in automatico le commesse a canone e gestisce tutti i ticket</td></tr>
   <tr><td>Ruoli / Amministrazione</td><td>account.group_account_manager, sales_team.group_sale_manager, hr.group_hr_user</td><td>Contabilità, costi AI, chiusura mese, schede persona e tariffe dei consulenti</td></tr>
 </table></div>
+<h3>Numeri economici della commessa</h3>
+<p>Ricavi, costi, margini, fatturato e da fatturare del progetto (<code>lab_revenue</code>, <code>lab_total_cost</code>, <code>lab_margin</code>…) sono limitati <b>sul campo</b> (<code>groups=ECONOMICS_GROUPS</code>: PM, Amministrazione, Responsabile progetti), non solo nella vista: chi non ha questi gruppi riceve un errore di accesso anche leggendo via API. Il pannello <i>Redditività</i> della Dashboard compare solo agli stessi gruppi (<code>_show_profitability</code>).</p>
 <h3>Accessi ai nuovi modelli (L = lettura, S = scrittura, C = creazione, E = eliminazione)</h3>
 <div class="wrap"><table>
   <tr><th>Modello</th><th>Team / Utente turni</th><th>PM</th><th>Amministrazione</th><th>Sistema</th></tr>
@@ -401,7 +404,6 @@ limite web = ticket del canale Web con la stessa email nell'ultima ora &lt; help
   <tr><td><code>lab_workflow_custom.max_weekly_hours</code></td><td>32</td><td>Ore pianificabili a settimana con fattore 1 (regola 80/20); base delle ore standard del mese</td></tr>
   <tr><td><code>lab_workflow_custom.passthrough_markup_pct</code></td><td>15</td><td>Ricarico proposto sulle nuove commesse</td></tr>
   <tr><td><code>lab_workflow_custom.anthropic_admin_key</code></td><td>assente</td><td>Attiva il connettore Anthropic (chiave Admin)</td></tr>
-  <tr><td><code>lab_workflow_custom.helpdesk_web_max_per_hour</code></td><td>5</td><td>Ticket all'ora per indirizzo email dal modulo pubblico</td></tr>
   <tr><td><code>lab_workflow_custom.helpdesk_web_confirm_days</code></td><td>7</td><td>Giorni dopo i quali le richieste dal sito mai confermate si archiviano (cron giornaliero <i>Ticket: archivia le richieste dal sito mai confermate</i>)</td></tr>
 </table>
 <p><b>Prodotti di base</b> (<code>noupdate</code>): <i>Sviluppo Software a Corpo</i> (SVIL-CORPO, 120 h, task di default), <i>Pacchetto Monte Ore (50h)</i> (MONTE-50H, 50 h, task di default), <i>Canone Assistenza Mensile AMS</i> (AMS-MESE, 20 h/mese, abbonamento mensile), <i>Consulenza a consuntivo (T&amp;M)</i> (TM-ORA, a ore da fogli ore), <i>Prestazione consulente esterno</i> (CONS-EXT) e <i>Spese vive ribaltate</i> (SPESE-VIVE), entrambi con rifatturazione al costo. <b>Strumenti AI</b>: Claude Team (30 €/mese), Claude Max / Claude Code (100 €/mese), API Anthropic (a consumo).</p>
@@ -422,7 +424,7 @@ limite web = ticket del canale Web con la stessa email nell'ultima ora &lt; help
 
 <!-- ============================================================== -->
 <h2 id="test">11. Test automatici</h2>
-<p>39 test (<code>TransactionCase</code> e un <code>HttpCase</code>), eseguiti con <code>./scripts/run_tests.sh</code> (Odoo fermo, <code>--test-tags</code> sul modulo).</p>
+<p>40 test (<code>TransactionCase</code> e un <code>HttpCase</code>), eseguiti con <code>./scripts/run_tests.sh</code> (Odoo fermo, <code>--test-tags</code> sul modulo).</p>
 <div class="wrap"><table>
   <tr><th>File</th><th>Test</th><th>Cosa verifica</th></tr>
   <tr><td rowspan="8">test_flow.py</td><td>01 products_configured</td><td>Prodotti di base con le giuste politiche</td></tr>
@@ -451,7 +453,7 @@ limite web = ticket del canale Web con la stessa email nell'ultima ora &lt; help
   <tr><td>05 hours_on_ticket_consume_ams_hours_and_alert</td><td>Ore sul ticket → commessa, consumo del mese, alert 80%</td></tr>
   <tr><td>06 hours_package_ticket_needs_task</td><td>Monte ore: senza task le ore non si salvano; il task arriva dal ticket</td></tr>
   <tr><td>07 urgent_sla_and_priority_change</td><td>Cambio di priorità → SLA urgente al posto di quello normale</td></tr>
-  <tr><td>08 website_rate_limit</td><td>Email non valida rifiutata, limite orario per indirizzo</td></tr>
+  <tr><td>08 no_limit_one_confirmation_email</td><td>Email non valida rifiutata; 8 ticket dallo stesso indirizzo tutti creati, una sola email di conferma, un clic li conferma tutti</td></tr>
   <tr><td>09 roles</td><td>Supporto gestisce e prende in carico; Commerciale legge solo i ticket dei suoi clienti e non li modifica</td></tr>
   <tr><td>10 web_description_rich_text_and_images</td><td>Descrizione dall'editor: grassetto, elenchi e link restano, script e link <code>javascript:</code> no; l'immagine PNG diventa allegato con codice di accesso, SVG e file falsi scartati; senza editor resta il testo semplice</td></tr>
   <tr><td>11 confirmation_trusted_manual_and_cleanup</td><td>Utente collegato con la propria email: nessuna conferma; conferma a mano solo per il Supporto; richieste mai confermate archiviate dopo 7 giorni e link non più valido</td></tr>
@@ -459,11 +461,12 @@ limite web = ticket del canale Web con la stessa email nell'ultima ora &lt; help
   <tr><td>13 portal_realtime_notification_only_to_own_company</td><td>Cambio di fase → avviso bus solo agli utenti portale dell'azienda del ticket, con i soli id</td></tr>
   <tr><td>TestLabPortalKanban</td><td>Cliente collegato via HTTP: <code>/my/tickets/kanban</code> mostra i suoi ticket e non quelli del concorrente; frammento e filtro <i>Solo i miei</i></td></tr>
   <tr><td>TestLabPortalKanban customer_columns</td><td>Fasi → colonne del cliente (Nuovo e In corso → <i>Ci stiamo lavorando</i>, In attesa → <i>Serve un tuo riscontro</i>, Fatto → <i>Risolto</i>); il ticket in attesa sta nella colonna del cliente; <i>Risolto</i> parte ridotta</td></tr>
-  <tr><td rowspan="5">test_pm_overview.py</td><td>01 short_names</td><td>Commessa da ordine con nome breve (riferimento o Cliente – Prodotto); vecchi nomi lunghi accorciati, nomi scelti a mano intatti</td></tr>
+  <tr><td rowspan="6">test_pm_overview.py</td><td>01 short_names</td><td>Commessa da ordine con nome breve (riferimento o Cliente – Prodotto); vecchi nomi lunghi accorciati, nomi scelti a mano intatti</td></tr>
   <tr><td>02 one_margin_in_odoo_dashboard</td><td>Pannello <i>Redditività</i> = ricavi e costi del modulo; etichette presenti</td></tr>
   <tr><td>03 overview_buttons</td><td>Conteggi e azioni dei pulsanti (fogli ore, fatture, margine), da fatturare</td></tr>
   <tr><td>04 history_in_chatter</td><td>Ordine confermato, ticket aperto/chiuso, SAL con stato e testo, incontro del Calendario nel chatter; tipo attività SAL</td></tr>
   <tr><td>05 invoice_in_chatter_and_button</td><td>Fattura cliente emessa nel chatter e nel pulsante <i>Fatture</i></td></tr>
+  <tr><td>06 economics_hidden_from_team</td><td>Sviluppatori e Supporto non leggono ricavi, costi e margini nemmeno via API (AccessError) e non vedono il pannello <i>Redditività</i>; il PM sì</td></tr>
 </table></div>
 <p>Il collaudo end-to-end con gli utenti dei ruoli è documentato nel video della pagina dell'app (registrato da <code>scripts/registra_video.sh</code>, rigenerabile dopo ogni modifica).</p>
 
@@ -471,7 +474,7 @@ limite web = ticket del canale Web con la stessa email nell'ultima ora &lt; help
 <h2 id="rilascio">12. Installazione e rilascio</h2>
 <ul>
   <li><b>Laboratorio</b>: <code>./scripts/setup_pc.sh</code> (Docker, OCA, database <code>lab18</code> senza demo standard, scenario sintetico, test).</li>
-  <li><b>Altro Odoo 18 CE</b>: <code>./scripts/package_app.sh</code> crea <code>dist/flusso_operativo_18.0.zip</code> con l'app e i moduli OCA richiesti; copiare le cartelle nell'addons path e installare <i>Flusso Operativo Software House</i>.</li>
+  <li><b>Altro Odoo 18 CE</b>: <code>./scripts/package_app.sh</code> crea <code>dist/flusso_operativo_18.0.zip</code> con l'app e i moduli OCA richiesti; copiare le cartelle nell'addons path e installare <i>Flusso Operativo Software House</i>: i moduli standard e OCA necessari si installano da soli. Prova automatica: <code>./scripts/prova_installazione_pulita.sh</code>.</li>
   <li><b>Aggiornamento</b>: <code>./scripts/update_module.sh</code> (<code>-u</code> con Odoo fermo). A ogni modifica si alza la versione <code>18.0.x.y.z</code> nel manifest.</li>
   <li><b>File del sito (JS/SCSS in <code>static/src</code>)</b>: dopo l'aggiornamento serve un riavvio di Odoo, perché il processo in esecuzione tiene in memoria l'elenco dei file del sito (dalla 18.0.1.8.1: editor della descrizione del modulo pubblico).</li>
   <li><b>Dati</b>: i file in <code>data/</code> con <code>noupdate="1"</code> (parametri, prodotti, task di default, strumenti AI) non vengono sovrascritti negli aggiornamenti; cron e gruppi sì. Anche team, SLA, tipi, categorie ed email dei ticket sono <code>noupdate</code>. Le email sugli stadi OCA le imposta <code>_lab_setup_stage_templates</code> a ogni aggiornamento, solo dove c'è ancora l'email OCA o nessuna.</li>

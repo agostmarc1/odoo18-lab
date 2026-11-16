@@ -37,7 +37,7 @@ Marco non è uno sviluppatore e lavora solo parlando con Claude, senza editor.
 docker-compose.yml   config/odoo.conf   .env(.example)
 addons/lab_workflow_custom/   <- moduli custom (mount /mnt/extra-addons)
 third-party/oca-*            <- repo OCA branch 18.0 (mount /mnt/third-party, gitignored)
-scripts/                     <- setup_pc, init_db, reset_db, update_module, run_tests, get_third_party, package_app
+scripts/                     <- setup_pc, init_db, reset_db, update_module, run_tests, get_third_party, package_app, prova_installazione_pulita
 dist/                        <- pacchetto dell'app per altri Odoo (gitignored)
 ```
 **Una sola app**: tutte le personalizzazioni rispetto a Odoo 18 CE stanno in `lab_workflow_custom`
@@ -50,6 +50,13 @@ se è OCA va anche nell'elenco `OCA` di `scripts/package_app.sh`. A ogni modific
 ## Comandi
 - Installazione completa su un PC nuovo: `./scripts/setup_pc.sh` (idempotente: genera `.env`, OCA, db, test)
 - Pacchetto per un altro Odoo 18: `./scripts/package_app.sh` (crea `dist/flusso_operativo_18.0.zip` con app + moduli OCA)
+- **Requisito chiave**: l'app deve installarsi da sola su qualsiasi Odoo 18 CE. Prima di ogni commit lancia
+  `./scripts/prova_installazione_pulita.sh` (immagine ufficiale, db vuoto solo inglese, con e senza demo, test).
+  Non dare per scontati lingua italiana, dati del laboratorio o librerie Python extra.
+- Moduli OCA a versioni fissate in `scripts/oca_versions.txt`: aggiornarli solo con
+  `./scripts/get_third_party.sh --aggiorna` seguito da test e prova di installazione pulita.
+- Sicurezza: i numeri economici dei progetti sono limitati sul campo (`ECONOMICS_GROUPS`); i nuovi
+  campi riservati vanno protetti con `groups=` nel modello, non solo nella vista.
 - Video dell'app: `./scripts/registra_video.sh` (Odoo avviato; `--prova` = solo schermate). Rigeneralo quando
   cambia un flusso mostrato; se cambia una vista, aggiorna prima il copione in `scripts/registra_video.py`.
   Documentazione per i tecnici: `static/description/analisi_tecnica.html` (aggiornala insieme a `index.html`).
@@ -64,7 +71,7 @@ se è OCA va anche nell'elenco `OCA` di `scripts/package_app.sh`. A ogni modific
 1. **Mai modificare il core di Odoo né il codice OCA.** Ogni modifica va in un modulo custom con
    `_inherit` (modelli) e `inherit_id` + xpath (viste). Se un modulo OCA ha un bug, lo si aggira nel
    modulo custom (esempio: `models/sale_subscription.py`, che aggiunge il listino mancante).
-2. **OCA/terze parti: solo branch `18.0`.** Aggiungi il repo in `scripts/get_third_party.sh` e in
+2. **OCA/terze parti: solo branch `18.0`.** Aggiungi il repo in `scripts/oca_versions.txt` (riga: cartella, indirizzo, commit) e in
    `addons_path` di `config/odoo.conf`. Prima di usarlo verifica che `__manifest__.py` abbia versione
    `18.0.*` e `installable: True`.
 3. Moduli Enterprise (`planning`, `project_forecast`, `industry_fsm`, `sale_subscription`, `helpdesk`)
@@ -137,7 +144,8 @@ filtri data non accettano `default_period="week"`.
   valgono come fogli ore della commessa: monte ore, alert e margini restano un solo calcolo.
   Su corpo/T&M il ticket deve avere il task. SLA per contratto in `data/helpdesk_data.xml`
   (dominio su `lab_contract_type` e `priority`). Anti-spam del modulo in `controllers/website_form.py`
-  (campo esca + `lab_workflow_custom.helpdesk_web_max_per_hour`). La descrizione del modulo pubblico
+  (campo esca; nessun limite ai ticket del cliente, per scelta di Marco: una sola email di conferma
+  in attesa per indirizzo, `_lab_pending_same_email`). La descrizione del modulo pubblico
   è un editor (`static/src/js/helpdesk_rich_description.js`, flag `lab_rich`): l'HTML passa da
   `website_form_input_filter` (sanitize) e le immagini incollate diventano allegati
   (`_lab_store_inline_images`). Dopo modifiche agli asset serve il riavvio di Odoo.

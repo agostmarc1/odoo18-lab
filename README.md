@@ -35,7 +35,7 @@ dopo le prime registrazioni contabili Odoo non permette più di cambiarla.
 
 La localizzazione è **configurazione dell'ambiente**, non una personalizzazione: per questo non è
 una dipendenza della nostra app (che resta installabile anche in un Odoo non italiano). L'elenco dei
-moduli è in `scripts/_lib.sh` (`ITALY_MODULES`); i repository OCA in `scripts/get_third_party.sh`.
+moduli è in `scripts/_lib.sh` (`ITALY_MODULES`); i repository OCA e le versioni fissate in `scripts/oca_versions.txt`.
 
 L'immagine Docker è quella ufficiale `odoo:18.0` più due librerie Python richieste da `l10n-italy`
 (`Dockerfile`, `requirements.txt` con versioni fissate).
@@ -230,6 +230,17 @@ Crea `dist/flusso_operativo_18.0.zip`: dentro ci sono l'app e i moduli OCA 18.0 
 più un file `LEGGIMI.txt` con le istruzioni. Nell'altro Odoo 18.0 Community si copiano tutte le
 cartelle nella cartella dei moduli, si riavvia Odoo e poi si va in **Applicazioni → Aggiorna elenco
 applicazioni → "Flusso Operativo Software House" → Installa**.
+Tutti i moduli standard e OCA necessari si installano da soli. Per provarlo su un Odoo 18 CE
+nuovo (immagine ufficiale, database vuoto, solo inglese, con e senza dati demo, più i test):
+`./scripts/prova_installazione_pulita.sh`.
+
+In **produzione** il file `LEGGIMI.txt` del pacchetto elenca le impostazioni di sicurezza: password
+principale (`admin_passwd`), `list_db = False`, `dbfilter`, niente modalità sviluppatore, HTTPS dietro
+proxy con `proxy_mode = True`.
+
+I moduli OCA sono a **versioni fissate** in `scripts/oca_versions.txt` (le scarica
+`./scripts/get_third_party.sh`); per passare alle ultime: `./scripts/get_third_party.sh --aggiorna`,
+poi test e prova di installazione pulita.
 Gli utenti di prova e lo scenario sintetico si creano solo nei database con dati demo; altrimenti i
 ruoli si assegnano da Impostazioni → Utenti (sezione "Ruoli Flusso Operativo"). La descrizione
 dell'app (Applicazioni → Flusso Operativo Software House) contiene la documentazione funzionale con
@@ -345,6 +356,8 @@ mostra gli stessi numeri del report (anche AI e consulenti).
 - **Insieme**: elenco progetti in vista lista con ricavi, costi, margine e totali; report *Margini
   per commessa* raggruppabile per cliente o PM, filtro *I miei progetti*, grafico.
 - Nomi brevi delle commesse (riferimento del cliente oppure *Cliente – Prodotto*).
+- Ricavi, costi e margini li vedono solo PM, Amministrazione e Responsabili progetti: il blocco è sul
+  dato, quindi sviluppatori e Supporto non li leggono nemmeno via API.
 
 ### Consumi AI a consumo (API Anthropic, Claude Code)
 
@@ -405,9 +418,10 @@ commessa Bianchi Logistica), personale (Claude Code di Carlo) e senza corrispond
   risponde dalla sua casella.
 - **Chi fa cosa.** Supporto (`nicola`): tutti i ticket. PM (`marco`): responsabile Helpdesk, SLA e
   configurazione. Commerciale (`giuseppe`): vede in sola lettura i ticket dei suoi clienti.
-- **Anti-spam del modulo pubblico**: campo esca nascosto e massimo 5 ticket all'ora per indirizzo
-  (parametro `lab_workflow_custom.helpdesk_web_max_per_hour`). In produzione si aggiungono le chiavi
-  reCAPTCHA (Impostazioni → Sito web).
+- **Anti-spam del modulo pubblico**: nessun limite ai ticket del cliente. Campo esca nascosto;
+  una sola email di conferma in attesa per indirizzo (il suo link conferma tutte le richieste), così
+  il modulo non serve a inondare di email un indirizzo altrui. In produzione: Cloudflare Turnstile
+  o reCAPTCHA (moduli standard, chiavi in Impostazioni → Sito web), invisibili per le persone.
 - **In questo laboratorio non c'è un server di posta**: le email in uscita restano in coda e quelle
   in arrivo si provano con i test. In produzione: Impostazioni → Generali → *Dominio alias* e
   Impostazioni → Tecnico → *Server di posta in arrivo*.

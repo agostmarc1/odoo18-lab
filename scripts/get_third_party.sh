@@ -1,36 +1,38 @@
 #!/usr/bin/env bash
-# Scarica/aggiorna i repository OCA, SOLO branch 18.0.
+# Scarica i repository OCA (branch 18.0) alle versioni FISSATE in scripts/oca_versions.txt:
+# ogni installazione usa esattamente lo stesso codice, già provato con i test.
+#   ./scripts/get_third_party.sh            -> scarica le versioni fissate
+#   ./scripts/get_third_party.sh --aggiorna -> passa alle ultime del branch 18.0 e riscrive il file
+#                                              (poi: test, prova_installazione_pulita.sh, commit)
 set -euo pipefail
-cd "$(dirname "$0")/../third-party"
+cd "$(dirname "$0")/.."
+LIST=scripts/oca_versions.txt
 BRANCH=18.0
-declare -A REPOS=(
-  [oca-contract]=https://github.com/OCA/contract
-  [oca-project]=https://github.com/OCA/project
-  [oca-web]=https://github.com/OCA/web
-  # ticketing (helpdesk_mgmt e moduli collegati)
-  [oca-helpdesk]=https://github.com/OCA/helpdesk
-  # localizzazione italiana (l10n-italy) e repo OCA da cui dipende
-  [oca-l10n-italy]=https://github.com/OCA/l10n-italy
-  [oca-account-closing]=https://github.com/OCA/account-closing
-  [oca-account-financial-reporting]=https://github.com/OCA/account-financial-reporting
-  [oca-account-financial-tools]=https://github.com/OCA/account-financial-tools
-  [oca-account-payment]=https://github.com/OCA/account-payment
-  [oca-currency]=https://github.com/OCA/currency
-  [oca-delivery-carrier]=https://github.com/OCA/delivery-carrier
-  [oca-partner-contact]=https://github.com/OCA/partner-contact
-  [oca-product-attribute]=https://github.com/OCA/product-attribute
-  [oca-reporting-engine]=https://github.com/OCA/reporting-engine
-  [oca-server-ux]=https://github.com/OCA/server-ux
-  [oca-stock-logistics-workflow]=https://github.com/OCA/stock-logistics-workflow
-)
-for dir in "${!REPOS[@]}"; do
-  url=${REPOS[$dir]}
-  if [ -d "$dir/.git" ]; then
-    echo "Aggiorno $dir ($BRANCH)"
-    git -C "$dir" fetch --depth 1 origin "$BRANCH" && git -C "$dir" checkout -q FETCH_HEAD
+MODE=${1:-}
+[ -z "$MODE" ] || [ "$MODE" = --aggiorna ] || { echo "Uso: $0 [--aggiorna]"; exit 1; }
+
+NEW=$(mktemp)
+grep '^#' "$LIST" > "$NEW"
+while read -r dir url commit; do
+  case "$dir" in ''|'#'*) continue ;; esac
+  path=third-party/$dir
+  [ -d "$path/.git" ] || { git init -q "$path"; git -C "$path" remote add origin "$url"; }
+  if [ "$MODE" = --aggiorna ]; then
+    git -C "$path" fetch -q --depth 1 origin "$BRANCH"
   else
-    echo "Scarico $dir ($BRANCH)"
-    git clone -q --depth 1 -b "$BRANCH" "$url" "$dir"
+    git -C "$path" fetch -q --depth 1 origin "$commit"
   fi
-  echo "  -> $dir pronto (branch $BRANCH, commit $(git -C "$dir" rev-parse --short HEAD))"
-done
+  git -C "$path" checkout -q FETCH_HEAD
+  got=$(git -C "$path" rev-parse HEAD)
+  if [ "$MODE" != --aggiorna ] && [ "$got" != "$commit" ]; then
+    echo "ERRORE: $dir è al commit $got invece di $commit"; exit 1
+  fi
+  echo "  $dir pronto (commit ${got:0:10})"
+  echo "$dir $url $got" >> "$NEW"
+done < "$LIST"
+
+if [ "$MODE" = --aggiorna ]; then
+  mv "$NEW" "$LIST"; echo "Versioni aggiornate in $LIST: ora test e prova_installazione_pulita.sh."
+else
+  rm -f "$NEW"
+fi

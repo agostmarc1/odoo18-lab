@@ -146,6 +146,14 @@ class HelpdeskTicket(models.Model):
         template = self.env.ref("lab_workflow_custom.mail_template_ticket_confirm",
                                 raise_if_not_found=False)
         for ticket in self:
+            # Una sola email di conferma per indirizzo: se ce n'è già una in attesa non se ne
+            # mandano altre (il suo link conferma tutte le richieste). Così nessuno può usare il
+            # modulo per inondare di email l'indirizzo di un altro, e il cliente non ha limiti.
+            if ticket._lab_pending_same_email():
+                ticket.message_post(body=_("Email di conferma non rinviata: per %s ce n'è già una "
+                                           "in attesa, che conferma anche questa richiesta.",
+                                           ticket.partner_email), subtype_xmlid="mail.mt_note")
+                continue
             if template and ticket.partner_email:
                 # il link con il codice passa dal contesto: il codice non è leggibile dai template
                 template.sudo().with_context(lab_confirm_url=ticket._lab_confirm_url()).send_mail(
@@ -177,6 +185,8 @@ class HelpdeskTicket(models.Model):
             ticket.message_post(body=_("Richiesta confermata dal cliente tramite il link "
                                        "ricevuto all'indirizzo %s.", ticket.partner_email),
                                 subtype_xmlid="mail.mt_note")
+            # lo stesso link conferma anche le altre richieste in attesa dallo stesso indirizzo
+            ticket._lab_pending_same_email()._lab_web_confirm()
         return True
 
     def action_lab_web_confirm(self):
@@ -323,20 +333,19 @@ class HelpdeskTicket(models.Model):
 
     # ---- Protezione del modulo web pubblico -------------------------------------
     @api.model
-    def _lab_check_website_rate(self, email):
-        """Massimo N ticket all'ora dallo stesso indirizzo (parametro di sistema)."""
-        limit = int(self.env["ir.config_parameter"].sudo().get_param(
-            "lab_workflow_custom.helpdesk_web_max_per_hour", 5))
-        normalized = tools.email_normalize(email or "")
-        if not normalized:
+    def _lab_check_website_email(self, email):
+        """Email obbligatoria e valida. Nessun limite al numero di ticket: il cliente ne apre
+        quanti vuole (la protezione è sulle email di conferma, vedi _lab_send_confirmation)."""
+        if not tools.email_normalize(email or ""):
             raise UserError(_("Indica un indirizzo email valido: ti serve per seguire il ticket."))
-        since = fields.Datetime.now() - timedelta(hours=1)
-        recent = self.sudo().search_count([
-            ("partner_email", "ilike", normalized), ("create_date", ">=", since),
-            ("channel_id", "=", self.env.ref("helpdesk_mgmt.helpdesk_ticket_channel_web").id)])
-        if recent >= limit:
-            raise UserError(_("Hai già aperto molti ticket nell'ultima ora: riprova più tardi "
-                              "oppure rispondi via email a un ticket già aperto."))
+
+    def _lab_pending_same_email(self):
+        """Altri ticket dal sito ancora da confermare con lo stesso indirizzo."""
+        self.ensure_one()
+        email = tools.email_normalize(self.partner_email or "")
+        return self.sudo().search([
+            ("id", "!=", self.id), ("lab_web_confirmed", "=", False),
+            ("partner_email", "=ilike", email)]) if email else self.browse()
 
 
 # Colonne del Kanban del portale: il cliente non vede le fasi interne, vede chi deve agire
