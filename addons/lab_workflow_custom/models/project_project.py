@@ -5,6 +5,11 @@ from odoo import _, api, fields, models
 from .project_task import ALERT_LEVELS, _alert_level
 
 
+# Chi vede i numeri economici della commessa (ricavi, costi, margini). Il limite è sul campo,
+# non solo sulla vista: senza questi gruppi Odoo nega la lettura anche via API.
+ECONOMICS_GROUPS = ("lab_workflow_custom.group_lab_pm,lab_workflow_custom.group_lab_amministrazione,"
+                    "project.group_project_manager")
+
 class ProjectProject(models.Model):
     _inherit = "project.project"
 
@@ -33,26 +38,26 @@ class ProjectProject(models.Model):
         ALERT_LEVELS, "Ultimo alert notificato", default="none", copy=False)
 
     # ---- Economia della commessa (dal report margini) ---------------------------
-    lab_revenue = fields.Monetary("Ricavi", compute="_compute_lab_economics",
+    lab_revenue = fields.Monetary("Ricavi", groups=ECONOMICS_GROUPS, compute="_compute_lab_economics",
                                   help="Venduto (T&M: ore consegnate × prezzo) + ribaltato al cliente.")
-    lab_sold_amount = fields.Monetary("Venduto", compute="_compute_lab_economics")
-    lab_passthrough_revenue = fields.Monetary("Ribaltato al cliente",
+    lab_sold_amount = fields.Monetary("Venduto", groups=ECONOMICS_GROUPS, compute="_compute_lab_economics")
+    lab_passthrough_revenue = fields.Monetary("Ribaltato al cliente", groups=ECONOMICS_GROUPS,
                                               compute="_compute_lab_economics")
-    lab_invoiced_amount = fields.Monetary("Già fatturato", compute="_compute_lab_economics")
-    lab_cost_labor = fields.Monetary("Lavoro interno", compute="_compute_lab_economics")
-    lab_cost_ai = fields.Monetary("AI", compute="_compute_lab_economics")
-    lab_cost_external = fields.Monetary("Consulenti esterni", compute="_compute_lab_economics")
-    lab_cost_external_accrued = fields.Monetary("di cui maturato (fattura da ricevere)",
+    lab_invoiced_amount = fields.Monetary("Già fatturato", groups=ECONOMICS_GROUPS, compute="_compute_lab_economics")
+    lab_cost_labor = fields.Monetary("Lavoro interno", groups=ECONOMICS_GROUPS, compute="_compute_lab_economics")
+    lab_cost_ai = fields.Monetary("AI", groups=ECONOMICS_GROUPS, compute="_compute_lab_economics")
+    lab_cost_external = fields.Monetary("Consulenti esterni", groups=ECONOMICS_GROUPS, compute="_compute_lab_economics")
+    lab_cost_external_accrued = fields.Monetary("di cui maturato (fattura da ricevere)", groups=ECONOMICS_GROUPS,
                                                 compute="_compute_lab_economics")
-    lab_cost_other = fields.Monetary("Altri costi fornitori", compute="_compute_lab_economics")
-    lab_total_cost = fields.Monetary("Costi", compute="_compute_lab_economics")
-    lab_margin = fields.Monetary("Margine", compute="_compute_lab_economics")
-    lab_margin_pct = fields.Float("Margine %", compute="_compute_lab_economics", digits=(5, 1))
-    lab_to_invoice = fields.Monetary("Da fatturare", compute="_compute_lab_economics")
+    lab_cost_other = fields.Monetary("Altri costi fornitori", groups=ECONOMICS_GROUPS, compute="_compute_lab_economics")
+    lab_total_cost = fields.Monetary("Costi", groups=ECONOMICS_GROUPS, compute="_compute_lab_economics")
+    lab_margin = fields.Monetary("Margine", groups=ECONOMICS_GROUPS, compute="_compute_lab_economics")
+    lab_margin_pct = fields.Float("Margine %", groups=ECONOMICS_GROUPS, compute="_compute_lab_economics", digits=(5, 1))
+    lab_to_invoice = fields.Monetary("Da fatturare", groups=ECONOMICS_GROUPS, compute="_compute_lab_economics")
     # Panoramica: pulsanti in testa al progetto
     lab_timesheet_count = fields.Integer("Fogli ore", compute="_compute_lab_counts")
-    lab_invoice_count = fields.Integer("Fatture", compute="_compute_lab_counts")
-    lab_cost_count = fields.Integer("Costi AI e ripartiti", compute="_compute_lab_counts")
+    lab_invoice_count = fields.Integer("Fatture", groups=ECONOMICS_GROUPS + ",account.group_account_invoice,account.group_account_readonly", compute="_compute_lab_counts")
+    lab_cost_count = fields.Integer("Costi AI e ripartiti", groups=ECONOMICS_GROUPS, compute="_compute_lab_counts")
     lab_package_line_ids = fields.Many2many(
         "sale.order.line", string="Pacchetti e righe vendute", compute="_compute_lab_packages")
 
@@ -258,6 +263,13 @@ class ProjectProject(models.Model):
                     "lab_external": 3, "lab_other": 4})
         return seq
 
+    def _lab_can_see_economics(self):
+        return any(self.env.user.has_group(g) for g in ECONOMICS_GROUPS.split(","))
+
+    def _show_profitability(self):
+        # pannello Redditività della Dashboard: solo per chi può vedere i numeri economici
+        return super()._show_profitability() and self._lab_can_see_economics()
+
     def _get_profitability_items(self, with_action=True):
         self.ensure_one()
         p = self
@@ -294,11 +306,13 @@ class ProjectProject(models.Model):
         """Commesse nate da un ordine: nome breve (riferimento del cliente oppure
         "Cliente – Prodotto") al posto di "Rif - S00005 - [CODICE] Prodotto".
         L'ordine resta visibile nel suo campo e nel pulsante "Ordini di vendita"."""
+        # lingue installate più l'inglese (testo di base dei campi traducibili, sempre presente);
+        # su un Odoo nuovo l'italiano può mancare
+        langs = {"en_US"} | {code for code, _n in self.env["res.lang"].get_installed()}
         for project in self.sudo().with_context(active_test=False).search(
                 [("sale_order_id", "!=", False)]):
             order = project.sale_order_id
-            names = project.with_context(lang="it_IT").name + project.with_context(
-                lang="en_US").name
+            names = " ".join(project.with_context(lang=lang).name for lang in langs)
             if order.name not in names:
                 continue  # già breve o rinominata a mano
             project._lab_set_name(order._lab_project_name(project.sale_line_id))

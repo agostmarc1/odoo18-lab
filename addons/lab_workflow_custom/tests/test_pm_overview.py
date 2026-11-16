@@ -116,3 +116,17 @@ class TestLabPmOverview(TransactionCase):
         self.assertIn("Fattura cliente emessa", self._notes(project))
         project.invalidate_recordset()
         self.assertEqual(project.lab_invoice_count, 1)
+
+    def test_06_economics_hidden_from_team(self):
+        """Sviluppatori e Supporto non leggono ricavi, costi e margini, nemmeno via API."""
+        from odoo.exceptions import AccessError
+        _order, project = self._order()
+        project.message_subscribe(partner_ids=self.dev.partner_id.ids)  # lo vede
+        as_dev = project.with_user(self.dev)
+        self.assertTrue(as_dev.name)
+        for field in ("lab_margin", "lab_revenue", "lab_total_cost", "lab_cost_labor"):
+            with self.assertRaises(AccessError):
+                as_dev.read([field])
+        self.assertFalse(as_dev._show_profitability(), "niente pannello Redditività")
+        pm = new_test_user(self.env, "t_ov_pm", groups="lab_workflow_custom.group_lab_pm")
+        self.assertIsInstance(project.with_user(pm).read(["lab_margin"])[0]["lab_margin"], float)

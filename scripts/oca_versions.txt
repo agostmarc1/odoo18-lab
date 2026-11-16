@@ -1,0 +1,18 @@
+# Versioni OCA usate (branch 18.0), una riga per repository: cartella  indirizzo  commit.
+# Le scarica scripts/get_third_party.sh. Per passare alle ultime: ./scripts/get_third_party.sh --aggiorna
+# (poi test, prova_installazione_pulita.sh e commit di questo file).
+oca-contract https://github.com/OCA/contract 8d4551e2238e663b30e2bac11f31761586de82c1
+oca-project https://github.com/OCA/project 2a70c5c25cce07bd0043708078fd82bdf62d15ab
+oca-web https://github.com/OCA/web b83bd7ba08e267bb3e8d7b0b3a00d05b354dc020
+oca-helpdesk https://github.com/OCA/helpdesk eaa6b227e1d6121454b85e1b7cdaf48981d5cba6
+oca-account-closing https://github.com/OCA/account-closing 5c2a50b679704b3ac80806cbfafd819f0d22bf8a
+oca-account-financial-reporting https://github.com/OCA/account-financial-reporting dbfd1f44cb0c69826cb4e5143f76d45f1e3f5098
+oca-account-financial-tools https://github.com/OCA/account-financial-tools 090f19aa38c90bc211ef41e7e54613b7daa900f7
+oca-account-payment https://github.com/OCA/account-payment 9e57370e262ca41f0183b49bcbeaa1744941e8cf
+oca-currency https://github.com/OCA/currency 0571dfa590f5c6cd0b37c224843974652a4ba826
+oca-delivery-carrier https://github.com/OCA/delivery-carrier 7110f5f38136328233d17a28417a086726cf7cde
+oca-partner-contact https://github.com/OCA/partner-contact de05f6d0b3b012cf61cb0868da4e21f67f93cff2
+oca-product-attribute https://github.com/OCA/product-attribute 95c3fc717c1d20987c18af4c1616e2631f2a253c
+oca-reporting-engine https://github.com/OCA/reporting-engine 0a6082674b55053b18dd04e300f9abadfeee239a
+oca-server-ux https://github.com/OCA/server-ux 7f9bbfaa1b1e6b758a993bf5e0819eb90e042b89
+oca-stock-logistics-workflow https://github.com/OCA/stock-logistics-workflow 28f8032476acfcd3940f9025de868fb775ad6173

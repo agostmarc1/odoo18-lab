@@ -180,7 +180,7 @@ class LabDemoData(models.AbstractModel):
                 ("rossi", "synth_partner_rossi", "Luca Rossi", "luca.rossi@rossimeccanica.example")):
             company = self._ref(company_xmlid)
             contact = self.env["res.partner"].create({
-                "name": name, "parent_id": company.id, "email": login, "lang": "it_IT"})
+                "name": name, "parent_id": company.id, "email": login, "lang": self._lang()})
             user = self.env["res.users"].with_context(no_reset_password=True).create({
                 "name": name, "login": login, "email": login, "partner_id": contact.id,
                 "groups_id": [(6, 0, [portal.id])]})
@@ -188,10 +188,15 @@ class LabDemoData(models.AbstractModel):
         _logger.info("Utenti portale dei clienti creati")
         return True
 
+    def _lang(self):
+        """Italiano se installato, altrimenti la lingua attiva (su un Odoo nuovo: inglese)."""
+        installed = [code for code, _n in self.env["res.lang"].get_installed()]
+        return "it_IT" if "it_IT" in installed else (self.env.lang or installed[0])
+
     def _partner(self, xmlid, name, city, email):
         partner = self.env["res.partner"].create({
             "name": name, "is_company": True, "country_id": self.env.ref("base.it").id,
-            "city": city, "email": email, "lang": "it_IT"})
+            "city": city, "email": email, "lang": self._lang()})
         return self._xmlid(xmlid, partner)
 
     # ---- CRM: opportunità aperte del Commerciale ------------------------------------

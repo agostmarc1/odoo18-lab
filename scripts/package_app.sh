@@ -75,6 +75,19 @@ Note:
     ha i dati demo. In un database "vero" assegna i ruoli agli utenti da
     Impostazioni > Utenti (sezione "Ruoli Flusso Operativo").
   - I moduli OCA sono distribuiti con licenza AGPL-3, la nostra app con LGPL-3.
+
+Sicurezza, se l'Odoo è in produzione (raggiungibile da internet o dai clienti):
+  - Nel file di configurazione di Odoo imposta una password principale lunga e casuale:
+        admin_passwd = <password lunga, da tenere solo nel gestore password>
+    Senza, chiunque raggiunga il server potrebbe creare, copiare o cancellare database.
+  - Disattiva il gestore database dal web e limita i database visibili:
+        list_db = False
+        dbfilter = ^<nome del database>$
+  - Avvia Odoo SENZA la modalità sviluppatore (niente --dev=... nel comando di avvio):
+    serve solo in laboratorio e rallenta Odoo e mostra dettagli tecnici negli errori.
+  - Metti Odoo dietro un proxy con HTTPS (es. nginx) e imposta proxy_mode = True;
+    non esporre direttamente la porta 8069 né il database PostgreSQL.
+  - Non usare l'utente "admin" con la password di installazione: cambiala subito.
 TXT
 } > "$OUT/LEGGIMI.txt"
 
