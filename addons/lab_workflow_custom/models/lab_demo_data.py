@@ -9,7 +9,7 @@ Non parte mai da solo in un database di produzione: si carica
 (mese scorso / mese in corso), così i dati restano sempre "freschi".
 """
 import logging
-from datetime import date, timedelta
+from datetime import date, datetime, time, timedelta
 
 from odoo import api, fields, models, tools
 
@@ -57,6 +57,7 @@ class LabDemoData(models.AbstractModel):
             loaded = self._lab_load_helpdesk()
             loaded = self._lab_load_portal_users() or loaded
             loaded = self._lab_load_project_history() or loaded
+            loaded = self._lab_load_timesheet_check() or loaded
             if loaded:
                 return True
             _logger.info("Dati sintetici già presenti: nulla da fare")
@@ -74,6 +75,7 @@ class LabDemoData(models.AbstractModel):
         self._lab_load_portal_users()
         self.env["lab.cost.period"]._cron_compute_open_periods()
         self._lab_load_project_history()
+        self._lab_load_timesheet_check()
         _logger.info("Dati sintetici caricati")
         return True
 
@@ -93,6 +95,103 @@ class LabDemoData(models.AbstractModel):
         return {"today": today, "month_start": month_start, "prev_start": prev_start,
                 "prev_end": prev_end, "prev_days": prev_days, "cur_days": cur_days,
                 "users": users, "emp": emp}
+
+    def _lab_load_timesheet_check(self):
+        """Consuntivazione di esempio: orario part-time per Giulia, due giorni di ferie per
+        Gianluca, giornate completate con attività interne e alcune ore mancanti volute
+        (Carlo ieri, Giulia un giorno della settimana scorsa, Niccolò due settimane fa).
+        Sui task: stime e date pianificate, un task in ritardo e alcuni da stimare. Idempotente."""
+        if (self.env.ref(f"{MODULE}.synth_calendar_part_time", raise_if_not_found=False)
+                or not self.env.ref(f"{MODULE}.{MARKER}", raise_if_not_found=False)):
+            return False
+        env = self.env(su=True, context=dict(self.env.context, tracking_disable=True,
+                                             mail_notrack=True, mail_create_nolog=True,
+                                             leave_skip_state_check=True))
+        today = fields.Date.context_today(self)
+        admin = env.ref("base.user_admin").employee_id
+        admin.lab_timesheet_required = False
+        people = {key: self._ref(f"user_{key}").employee_id
+                  for key in ("carlo", "gianluca", "giulia", "marco", "niccolo", "nicola")}
+        # Giulia part-time: 4 ore al mattino, dal lunedì al venerdì
+        calendar = env["resource.calendar"].create({
+            "name": "Part-time 20 ore (mattino)", "hours_per_day": 4.0,
+            "attendance_ids": [(0, 0, {"name": f"Mattino {d}", "dayofweek": str(d),
+                                       "hour_from": 9.0, "hour_to": 13.0,
+                                       "day_period": "morning"}) for d in range(5)]})
+        self._xmlid("synth_calendar_part_time", calendar)
+        people["giulia"].resource_calendar_id = calendar
+        # Gianluca in ferie giovedì e venerdì della settimana scorsa (richiesta approvata)
+        last_monday = today - timedelta(days=today.weekday() + 7)
+        leave_type = env.ref("hr_holidays.holiday_status_cl")
+        allocation = env["hr.leave.allocation"].create({
+            "name": "Ferie dell'anno", "holiday_status_id": leave_type.id,
+            "employee_id": people["gianluca"].id, "number_of_days": 20,
+            "date_from": today.replace(month=1, day=1)})
+        allocation.action_validate()
+        leave = env["hr.leave"].create({
+            "name": "Ferie", "holiday_status_id": leave_type.id,
+            "employee_id": people["gianluca"].id,
+            "request_date_from": last_monday + timedelta(days=3),
+            "request_date_to": last_monday + timedelta(days=4)})
+        leave.action_validate()
+        # giornate completate con attività interne, tranne le ore mancanti volute
+        internal = env.company.internal_project_id
+        internal_task = internal.task_ids.filtered(lambda t: t.name == "Formazione")[:1] \
+            or internal.task_ids[:1]
+        Day = env["lab.timesheet.day"]
+        start = today - timedelta(days=62)
+        Day._lab_refresh(start, today, admin.browse([e.id for e in people.values()]))
+        carlo_day = Day._lab_previous_workday(people["carlo"], today)
+        gaps = {(people["carlo"].id, carlo_day): 3.0,
+                (people["giulia"].id, last_monday + timedelta(days=2)): None,  # tutto il giorno
+                (people["niccolo"].id, last_monday - timedelta(days=6)): 2.0}
+        lines = []
+        for row in Day.search([("employee_id", "in", [e.id for e in people.values()]),
+                               ("date", ">=", start)]):
+            missing = row.missing_hours
+            gap = gaps.get((row.employee_id.id, row.date), 0.0)
+            hours = 0.0 if gap is None else max(missing - gap, 0.0)
+            if hours > 0.01:
+                lines.append({"name": "Attività interne (riunioni, formazione)",
+                              "project_id": internal.id, "task_id": internal_task.id,
+                              "employee_id": row.employee_id.id, "date": row.date,
+                              "unit_amount": hours})
+        env["account.analytic.line"].with_context(lab_skip_parallel=True).create(lines)
+        Day._lab_refresh(start, today)
+        # task: stime e date pianificate (un task in ritardo, alcuni da stimare)
+        def plan(task, begin, end):
+            task.write({"planned_date_start": datetime.combine(begin, time(8, 0)),
+                        "planned_date_end": datetime.combine(end, time(17, 0))})
+        for task in env["project.task"].search([("project_id", "not in", internal.ids),
+                                               ("project_id", "!=", False),
+                                               ("allocated_hours", ">", 0)]):
+            if task.name.startswith("Test") and "Portale" in task.project_id.name:
+                continue  # da stimare: mancano le date
+            if task.name.startswith("Project Management") and "sinistri" in task.project_id.name:
+                continue  # da stimare: mancano le date
+            begin = task.lab_date_first_work or today - timedelta(days=10)
+            end = max(begin + timedelta(days=max(int(task.allocated_hours // 6), 3)),
+                      today + timedelta(days=7))
+            if task.name.startswith("Sviluppo integrazione corrieri"):
+                end = today - timedelta(days=3)  # oltre la data di fine
+            if task.name.startswith("Test") and "sinistri" in task.project_id.name:
+                begin, end = today - timedelta(days=2), today + timedelta(days=10)  # in ritardo
+            plan(task, begin, end)
+        self._lab_demo_remaining(env)
+        return True
+
+    def _lab_demo_remaining(self, env):
+        """Ore residue indicate da chi lavora: un task sforerà la stima, gli altri sono in linea."""
+        today = fields.Date.context_today(self)
+        for task in env["project.task"].search([("allocated_hours", ">", 0),
+                                               ("project_id", "!=", False)]):
+            if task.name.startswith("Sviluppo - Sviluppo Software"):
+                remaining = task.allocated_hours - task.effective_hours + 12  # sforerà di 12 ore
+            elif task.effective_hours:
+                remaining = max(task.allocated_hours - task.effective_hours, 2.0)
+            else:
+                continue
+            task.write({"lab_remaining_estimate": remaining, "lab_remaining_date": today})
 
     def _lab_load_project_history(self):
         """Cronologia di esempio nel chatter dei progetti demo: ordini, fatture e ticket già
@@ -471,7 +570,8 @@ class LabDemoData(models.AbstractModel):
 
         # Chiusura del mese (Amministrazione): ripartizione esatta e spese vive AI sul T&M
         period = self.env["lab.cost.period"]._get_or_create(ctx["prev_start"])
-        period.with_user(ctx["users"]["luana"]).action_close()
+        # le giornate di esempio si completano dopo (_lab_load_timesheet_check): chiusura forzata
+        period.with_user(ctx["users"]["luana"]).with_context(lab_force_close=True).action_close()
 
         # Fatture clienti: monte ore anticipato e T&M del mese scorso
         for order in (rossi, bianchi):

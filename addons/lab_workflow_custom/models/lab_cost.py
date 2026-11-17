@@ -86,6 +86,7 @@ class LabAiLicense(models.Model):
 class LabCostPeriod(models.Model):
     """Mese di ripartizione dei costi accessori (AI) sulle commesse."""
     _name = "lab.cost.period"
+    _inherit = ["mail.thread"]
     _description = "Mese di ripartizione costi"
     _order = "date_start desc"
 
@@ -102,6 +103,12 @@ class LabCostPeriod(models.Model):
                                          currency_field="currency_id")
     company_id = fields.Many2one("res.company", default=lambda s: s.env.company, required=True)
     currency_id = fields.Many2one(related="company_id.currency_id")
+    # consuntivazione del mese (dal report Consuntivazione)
+    lab_due_hours = fields.Float("Ore attese", compute="_compute_lab_timesheet")
+    lab_logged_hours = fields.Float("Ore registrate", compute="_compute_lab_timesheet")
+    lab_missing_hours = fields.Float("Ore mancanti", compute="_compute_lab_timesheet")
+    lab_people_missing = fields.Integer("Persone con ore mancanti",
+                                        compute="_compute_lab_timesheet")
 
     _sql_constraints = [("month_unique", "unique(date_start, company_id)",
                          "Esiste già questo mese.")]
@@ -156,10 +163,53 @@ class LabCostPeriod(models.Model):
         for period in self:
             if period.date_end >= date.today():
                 raise UserError(_("Il mese %s non è ancora finito.", period.name))
+            missing = period._lab_timesheet_missing()
+            if missing and not self.env.context.get("lab_force_close"):
+                raise UserError(_(
+                    "Il mese %(month)s non si chiude: mancano ore registrate.\n%(rows)s\n\n"
+                    "Chiedi alle persone di completare i fogli ore (report Consuntivazione). "
+                    "Se le ore mancanti sono giustificate usa \"Chiudi comunque\".",
+                    month=period.name, rows="\n".join(
+                        "- %s: %s ore" % (e.name, round(h, 2)) for e, h in
+                        sorted(missing.items(), key=lambda x: -x[1]))))
+            if missing:
+                period.sudo().message_post(body=_(
+                    "Mese chiuso con ore mancanti: %s",
+                    ", ".join("%s %s ore" % (e.name, round(h, 2)) for e, h in missing.items())))
             period.action_compute()
             period.sudo()._create_ai_passthrough()
             period.state = "closed"
         return True
+
+    def action_close_force(self):
+        """Chiude anche se mancano ore (dopo aver verificato che sono giustificate)."""
+        return self.with_context(lab_force_close=True).action_close()
+
+    def _lab_timesheet_missing(self):
+        self.ensure_one()
+        return self.env["lab.timesheet.day"].sudo()._lab_missing_by_employee(
+            self.date_start, self.date_end)
+
+    def _compute_lab_timesheet(self):
+        for period in self:
+            rows = self.env["lab.timesheet.day"].sudo().search([
+                ("date", ">=", period.date_start), ("date", "<=", period.date_end)])                 if period.date_start else self.env["lab.timesheet.day"]
+            period.lab_due_hours = sum(rows.mapped("due_hours"))
+            period.lab_logged_hours = sum(rows.mapped("logged_hours"))
+            period.lab_missing_hours = sum(rows.mapped("missing_hours"))
+            period.lab_people_missing = len(rows.filtered(
+                lambda d: d.state == "missing").employee_id)
+
+    def action_lab_timesheet_report(self):
+        self.ensure_one()
+        Day = self.env["lab.timesheet.day"]
+        Day._lab_refresh(self.date_start, self.date_end)
+        action = self.env["ir.actions.act_window"]._for_xml_id(
+            "lab_workflow_custom.action_timesheet_day")
+        action.update({"name": _("Consuntivazione %s", self.name),
+                       "domain": [("date", ">=", self.date_start), ("date", "<=", self.date_end)],
+                       "context": {"search_default_group_employee": 1}})
+        return action
 
     def action_reopen(self):
         if not (self.env.user.has_group("lab_workflow_custom.group_lab_amministrazione")

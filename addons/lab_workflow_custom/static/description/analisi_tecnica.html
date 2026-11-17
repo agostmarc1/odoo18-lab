@@ -35,7 +35,7 @@
 <h1>Flusso Operativo Software House</h1>
 <p class="lead">Analisi funzionale e tecnica del modulo <code>lab_workflow_custom</code>, per chi deve installarlo, mantenerlo o estenderlo.</p>
 <div class="meta">
-  <span class="chip">Odoo 18.0 Community</span><span class="chip">Versione modulo 18.0.1.14.0</span>
+  <span class="chip">Odoo 18.0 Community</span><span class="chip">Versione modulo 18.0.1.15.0</span>
   <span class="chip">Licenza LGPL-3</span><span class="chip">Categoria Services/Project</span>
 </div>
 
@@ -92,6 +92,7 @@
   <tr><td><code>crm</code>, <code>sale_management</code></td><td>Odoo CE</td><td>Opportunità, preventivi, ordini</td></tr>
   <tr><td><code>sale_timesheet</code>, <code>project</code>, <code>hr_timesheet</code></td><td>Odoo CE</td><td>Generazione progetto/task da ordine, fogli ore, consegnato a consuntivo</td></tr>
   <tr><td><code>account</code></td><td>Odoo CE</td><td>Fatture cliente e fornitore, distribuzione analitica</td></tr>
+  <tr><td><code>hr_holidays</code></td><td>Odoo CE</td><td>Ferie e permessi: le assenze approvate riducono le ore attese della consuntivazione</td></tr>
   <tr><td><code>subscription_oca</code></td><td>OCA <code>contract</code> 18.0</td><td>Canoni ricorrenti AMS (sostituisce <code>sale_subscription</code> Enterprise)</td></tr>
   <tr><td><code>project_timeline</code> (+ <code>web_timeline</code>)</td><td>OCA <code>project</code> / <code>web</code> 18.0</td><td>Vista timeline dei task</td></tr>
   <tr><td><code>helpdesk_mgmt_timesheet</code> (+ <code>helpdesk_mgmt</code>, <code>helpdesk_mgmt_project</code>, <code>project_timesheet_time_control</code>)</td><td>OCA <code>helpdesk</code> / <code>project</code> 18.0</td><td>Ticket, team, stadi, portale, alias email; ticket collegato a commessa e task; ore sul ticket</td></tr>
@@ -102,7 +103,7 @@
 <h3>Struttura del modulo</h3>
 <pre>lab_workflow_custom/
 ├── __manifest__.py          dipendenze, file dati, application=True
-├── models/                  17 file: 10 modelli estesi, 11 modelli nuovi (uno è una vista SQL)
+├── models/                  18 file: 10 modelli estesi, 11 modelli nuovi (uno è una vista SQL)
 ├── controllers/             portal_kanban.py: Kanban dei ticket nel portale (/my/tickets/kanban)
 │                            website_form.py: protezioni anti-spam del modulo "Apri un ticket",
 │                            descrizione HTML dall'editor (flag lab_rich)
@@ -111,7 +112,7 @@
 ├── data/                    parametri, prodotti, task di default, strumenti AI, cron,
 │                            configurazione Helpdesk, email ai clienti, pagine del sito
 ├── demo/                    utenti demo, costi demo, scenario sintetico
-├── tests/                   test_flow, test_costs, test_ai_usage, test_helpdesk, test_pm_overview (40 test)
+├── tests/                   test_flow, test_costs, test_ai_usage, test_helpdesk, test_pm_overview, test_timesheet_check (46 test)
 ├── static/src/              editor della descrizione del modulo pubblico e Kanban del portale
 │                            con aggiornamento in tempo reale (JS + SCSS, web.assets_frontend)
 └── static/description/      pagina dell'app, video, questa analisi</pre>
@@ -164,6 +165,11 @@
   <tr><td>RF-34</td><td>Panoramica del PM sul progetto: ricavi, costi, margine, fatturato e da fatturare, ore; pulsanti per fogli ore, ordini, fatture, costi AI, margine; un solo margine anche nel pannello <i>Redditività</i> di Odoo</td><td><code>project_project.py</code> (<code>_get_profitability_items</code>, <code>action_lab_*</code>), <code>views/project_views.xml</code></td><td>test_pm_overview 02, 03, 05</td><td>PM, Amministrazione</td></tr>
   <tr><td>RF-35</td><td>Cronologia del progetto nel chatter: ordini, fatture, ticket, SAL, incontri, call e attività fatte, avvisi</td><td><code>models/lab_project_history.py</code>, tipo attività <code>mail_activity_type_sal</code></td><td>test_pm_overview 04, 05</td><td>PM</td></tr>
   <tr><td>RF-36</td><td>Visione complessiva dei progetti: elenco con ricavi, costi, margine e totali; report raggruppabile per cliente e PM; nomi brevi delle commesse</td><td><code>view_project_list_lab</code>, <code>margin_report_views.xml</code>, <code>_lab_short_names</code></td><td>test_pm_overview 01</td><td>PM, Direzione</td></tr>
+  <tr><td>RF-37</td><td>Consuntivazione giornaliera: ore attese (orario di lavoro − assenze approvate − festività) contro ore registrate, per persona e giorno</td><td><code>lab.timesheet.day</code> (<code>_lab_refresh</code>), <code>hr.employee.lab_timesheet_required</code>, <code>hr.leave.write</code></td><td>test_timesheet_check 01, 02</td><td>PM, Amministrazione</td></tr>
+  <tr><td>RF-38</td><td>Promemoria solo alla persona: giornaliero (ore mancanti del giorno lavorativo precedente) e riepilogo del lunedì</td><td><code>_cron_daily_reminder</code>, <code>_cron_weekly_summary</code>, template <code>mail_template_timesheet_*</code></td><td>test_timesheet_check 03</td><td>Team, consulenti</td></tr>
+  <tr><td>RF-39</td><td>Chiusura del mese solo con ore complete (o <i>Chiudi comunque</i>, annotato); ore del mese chiuso bloccate</td><td><code>lab.cost.period.action_close</code>, <code>account.analytic.line._lab_check_closed_month</code></td><td>test_timesheet_check 04</td><td>Amministrazione</td></tr>
+  <tr><td>RF-40</td><td>Task: tempo stimato, inizio/fine pianificati, date di esecuzione, tempo effettivo, stato rispetto alle date, lista <i>Task da stimare</i>; ore residue, stima a finire, avanzamento, avviso di sforamento previsto al PM; avanzamento del progetto</td><td><code>project.task</code> (<code>lab_schedule_state</code>, <code>lab_eac_hours</code>), <code>account.analytic.line.lab_remaining_hours</code>, <code>project.project._compute_lab_progress</code></td><td>test_timesheet_check 05</td><td>PM, team</td></tr>
+  <tr><td>RF-41</td><td>Consulenti: ore in fattura contro ore registrate, nota sulla fattura se non quadrano, riepilogo per consulente</td><td><code>account.move.line.lab_hours_difference</code>, <code>account.move._lab_check_consultant_hours</code></td><td>test_timesheet_check 06</td><td>Amministrazione</td></tr>
 </table></div>
 <h3>Requisiti non funzionali</h3>
 <table>
@@ -193,6 +199,7 @@
   <tr><td><code>lab.cost.period</code></td><td>Mese di ripartizione</td><td>date_start (normalizzato al giorno 1, unico per azienda), date_end, state (open / closed), allocation_ids, total_amount, unallocated_amount</td></tr>
   <tr><td><code>lab.cost.allocation</code></td><td>Registro delle ripartizioni (letto dal report margini)</td><td>period_id, project_id (vuoto = costi generali), employee_id, license_id, cost_type (ai_fixed / ai_variable), passthrough, sale_line_id, amount, basis, basis_qty, basis_pct</td></tr>
   <tr><td><code>lab.margin.report</code></td><td>Vista SQL di sola lettura (<code>_auto = False</code>), una riga per progetto attivo</td><td>sold_amount, passthrough_revenue, invoiced_amount, timesheet_cost, ai_cost, external_cost, external_accrued, other_vendor_cost, passthrough_cost, total_cost, margin, margin_pct, margin_excl_passthrough, hours_consumed, hours_estimated, hours_saved</td></tr>
+  <tr><td><code>lab.timesheet.day</code></td><td>Registro calcolato della consuntivazione, una riga per persona e giorno lavorativo (scritto solo dal sistema)</td><td>employee_id, date (unici insieme), week_start, month_start, expected_hours, leave_hours, due_hours, logged_hours, missing_hours, extra_hours, state (ok / missing / absent), is_external</td></tr>
   <tr><td><code>lab.demo.data</code></td><td>Caricatore dello scenario sintetico (modello astratto di servizio)</td><td><code>_lab_load_synthetic()</code> idempotente</td></tr>
 </table></div>
 <h3>Modelli estesi</h3>
@@ -210,6 +217,12 @@
   <tr><td></td><td>lab_accrued_amount, lab_variance</td><td>No (calcolati)</td></tr>
   <tr><td><code>hr.employee</code></td><td>lab_resource_type, lab_vendor_id, lab_external_rate, lab_external_rate_unit, lab_parallel_factor, lab_ai_license_ids</td><td>Sì (visibili solo a HR, Amministrazione, PM)</td></tr>
   <tr><td></td><td>lab_ai_monthly_cost, lab_ai_hourly_uplift, lab_fully_loaded_cost</td><td>No (calcolati)</td></tr>
+  <tr><td><code>project.task</code> (consuntivazione)</td><td>lab_date_first_work, lab_date_last_work, lab_to_estimate, lab_over_estimate, lab_eac_hours, lab_progress_pct, lab_forecast_over</td><td>Sì (calcolati)</td></tr>
+  <tr><td></td><td>lab_remaining_estimate (tracciato), lab_remaining_date; lab_schedule_state (calcolato, ricercabile)</td><td>Sì / No</td></tr>
+  <tr><td><code>account.analytic.line</code> (consuntivazione)</td><td>lab_remaining_hours (aggiorna le ore residue del task)</td><td>Sì</td></tr>
+  <tr><td><code>hr.employee</code> (consuntivazione)</td><td>lab_timesheet_required</td><td>Sì</td></tr>
+  <tr><td><code>lab.cost.period</code></td><td>lab_due_hours, lab_logged_hours, lab_missing_hours, lab_people_missing; ora con chatter</td><td>No (calcolati)</td></tr>
+  <tr><td><code>account.move.line</code> (consuntivazione)</td><td>lab_consultant_hours, lab_billed_hours, lab_hours_difference</td><td>No (calcolati)</td></tr>
   <tr><td><code>helpdesk.ticket</code></td><td>lab_contract_type (usato dai domini degli SLA), lab_hours_alert, lab_consumption_pct (dalla commessa); create/write: contatto da email, commessa AMS, team predefinito, canale web, cliente follower, riallineamento SLA</td><td>No (calcolati)</td></tr>
 </table></div>
 <h3>Relazioni principali</h3>
@@ -305,6 +318,27 @@ SLA       = helpdesk.sla del team il cui dominio vale sul ticket (lab_contract_t
 email di conferma = solo se nessun altro ticket da confermare ha la stessa email (nessun limite ai ticket)</pre>
 
 <!-- ============================================================== -->
+<h3>5.12 Consuntivazione e avanzamento dei task</h3>
+<pre>ore da orario   = resource.calendar della persona nel giorno (_list_work_time_per_day, compute_leaves=False)
+ore attese      = stesso calcolo con le assenze (hr.leave approvate, festività): orario - assenze
+ore registrate  = fogli ore della persona nel giorno con progetto, esclusi quelli creati per ferie
+                  e festività (holiday_id / global_leave_id)
+mancanti        = max(attese - registrate, 0); stato: assente (orario ma 0 attese e 0 registrate),
+                  mancanti (> 0,01), completo; righe solo fino a ieri (oggi è in corso)
+promemoria      = ogni mattina per l'ultimo giorno lavorativo prima di oggi, se mancanti > 0
+mese chiuso     = create / write di unit_amount, date, project_id, task_id, employee_id, name,
+                  account_id, user_id / unlink vietati, salvo sudo, Amministrazione, sistema
+task da stimare = non del progetto interno e (ore allocate = 0 o manca inizio o fine pianificati)
+stato task      = chiuso → concluso; da stimare; oggi > fine o lavoro dopo la fine → oltre la fine;
+                  primo giorno lavorato > inizio → inizio in ritardo, altrimenti in linea;
+                  nessuna ora: oggi > inizio → inizio in ritardo, altrimenti da iniziare
+stima a finire  = chiuso → ore registrate; ore residue indicate → registrate + residue;
+                  altrimenti max(tempo stimato, registrate)
+avanzamento     = registrate / stima a finire; sforerà = stima a finire > tempo stimato
+                  (attività "Il task sforerà la stima" al PM del progetto, una volta)
+progetto        = somma delle ore registrate / somma delle stime a finire dei task stimati
+consulente      = ore in fattura = quantità (× ore/giorno se tariffa a giornata) contro ore collegate</pre>
+
 <h2 id="estensioni">6. Punti di estensione di Odoo</h2>
 <p>Tutti gli override chiamano <code>super()</code>; nessun metodo standard è sostituito per intero.</p>
 <div class="wrap"><table>
@@ -374,6 +408,8 @@ email di conferma = solo se nessun altro ticket da confermare ha la stessa email
   <li>Ticket: <code>rule_helpdesk_ticket_salesman</code> (solo lettura) dà al Commerciale i ticket dei clienti di cui è il venditore (<code>commercial_partner_id.user_id</code>); in scrittura valgono solo le regole OCA (ticket assegnati a lui). Il cliente nel portale vede i ticket della propria azienda (regola OCA); chi ha il link dell'email vede solo quel ticket (codice di accesso di <code>portal.mixin</code>).</li>
   <li>Modulo pubblico: Odoo crea il ticket come superutente con i soli campi in whitelist (<code>name</code>, <code>description</code>, <code>partner_name</code>, <code>partner_email</code>, <code>category_id</code>, <code>team_id</code>, più <code>type_id</code> e <code>priority</code> aggiunti dall'app); gli allegati diventano allegati del ticket.</li>
 </ul>
+<h3>Consuntivazione</h3>
+<p>Il report <code>lab.timesheet.day</code> è in sola lettura per PM, Amministrazione e Responsabili progetti; lo scrive solo il sistema. Le email di promemoria vanno solo alla persona interessata (<code>work_email</code>). Le ore dei mesi chiusi sono bloccate nel modello (<code>_lab_check_closed_month</code>), non solo nelle viste.</p>
 <h3>Uso di <code>sudo</code></h3>
 <p>È usato dove il risultato è un dato di sistema e non deve dipendere da chi preme il pulsante: ricalcolo dei giorni paralleli, ripartizioni del mese, ricerca dell'ordine da rifatturare (la commessa è riservata agli invitati e l'Amministrazione spesso non la vede), creazione del foglio ore dalla conferma del turno, lettura del report margini nella scheda progetto (protetta dal gruppo della scheda), ricerca di contatto e commessa AMS di un ticket (chi scrive dal sito o via email non vede i progetti) e lettura del ticket nella creazione delle ore. La riga creata sull'ordine nel pass-through resta con i permessi dell'utente.</p>
 
@@ -387,7 +423,14 @@ email di conferma = solo se nessun altro ticket da confermare ha la stessa email
   <tr><td>Creazione / modifica / eliminazione foglio ore</td><td>Ricalcolo del giorno (costo, stato parallelo, maturato esterni), consegnato T&amp;M, alert su progetto</td></tr>
   <tr><td>Superamento soglia 75% / 90%</td><td>Messaggio e attività <i>Avviso</i> al PM sul progetto e al venditore sull'ordine</td></tr>
   <tr><td>Conferma ordine, registrazione fattura (cliente o fornitore), ticket aperto o chiuso, nuovo SAL (<code>project.update</code>), incontro del Calendario sul progetto</td><td>Nota interna nel chatter della commessa (<code>lab_project_history.py</code>), con link al documento; chi la scrive non diventa follower</td></tr>
-  <tr><td>Registrazione fattura fornitore</td><td>Collegamento ore del consulente; riga di rifatturazione sull'ordine T&amp;M</td></tr>
+  <tr><td>Creazione / modifica / eliminazione foglio ore</td><td>Ricalcolo della consuntivazione del giorno; con <i>Ore residue</i> aggiorna la stima a finire del task; nei mesi chiusi è bloccato</td></tr>
+  <tr><td>Assenza approvata, rifiutata o annullata</td><td>Ricalcolo delle ore attese dei giorni interessati</td></tr>
+  <tr><td>Stima a finire oltre il tempo stimato</td><td>Attività <i>Il task sforerà la stima</i> al PM del progetto</td></tr>
+  <tr><td>Cron giornaliero <i>Consuntivazione: promemoria giornaliero</i> (9:00)</td><td>Email alla persona se ha ore mancanti nel giorno lavorativo precedente</td></tr>
+  <tr><td>Cron settimanale <i>Consuntivazione: riepilogo del lunedì</i></td><td>Email a ogni persona con la settimana prima, giorno per giorno</td></tr>
+  <tr><td>Cron notturno <i>Consuntivazione: aggiorna il report</i></td><td>Ricalcola gli ultimi due mesi</td></tr>
+  <tr><td>Chiusura del mese</td><td>Bloccata se mancano ore (elenco delle persone); <i>Chiudi comunque</i> la esegue e annota le ore mancanti nel chatter del mese</td></tr>
+  <tr><td>Registrazione fattura fornitore</td><td>Collegamento ore del consulente; nota se le ore in fattura non quadrano con quelle registrate; riga di rifatturazione sull'ordine T&amp;M</td></tr>
   <tr><td>Nuova corrispondenza consumi</td><td>Riattribuzione dei consumi già importati, esclusi i mesi chiusi</td></tr>
   <tr><td>Cron giornaliero <i>Costi commessa: ripartizione costi AI</i></td><td>Ricalcola il mese in corso e il precedente se ancora aperto</td></tr>
   <tr><td>Cron giornaliero <i>Consumi AI: import da Anthropic</i></td><td>Importa gli ultimi 3 giorni se la chiave è configurata; altrimenti non fa nulla</td></tr>
@@ -424,7 +467,7 @@ email di conferma = solo se nessun altro ticket da confermare ha la stessa email
 
 <!-- ============================================================== -->
 <h2 id="test">11. Test automatici</h2>
-<p>40 test (<code>TransactionCase</code> e un <code>HttpCase</code>), eseguiti con <code>./scripts/run_tests.sh</code> (Odoo fermo, <code>--test-tags</code> sul modulo).</p>
+<p>46 test (<code>TransactionCase</code> e un <code>HttpCase</code>), eseguiti con <code>./scripts/run_tests.sh</code> (Odoo fermo, <code>--test-tags</code> sul modulo).</p>
 <div class="wrap"><table>
   <tr><th>File</th><th>Test</th><th>Cosa verifica</th></tr>
   <tr><td rowspan="8">test_flow.py</td><td>01 products_configured</td><td>Prodotti di base con le giuste politiche</td></tr>
@@ -467,6 +510,12 @@ email di conferma = solo se nessun altro ticket da confermare ha la stessa email
   <tr><td>04 history_in_chatter</td><td>Ordine confermato, ticket aperto/chiuso, SAL con stato e testo, incontro del Calendario nel chatter; tipo attività SAL</td></tr>
   <tr><td>05 invoice_in_chatter_and_button</td><td>Fattura cliente emessa nel chatter e nel pulsante <i>Fatture</i></td></tr>
   <tr><td>06 economics_hidden_from_team</td><td>Sviluppatori e Supporto non leggono ricavi, costi e margini nemmeno via API (AccessError) e non vedono il pannello <i>Redditività</i>; il PM sì</td></tr>
+  <tr><td rowspan="6">test_timesheet_check.py</td><td>01 expected_logged_missing</td><td>Ore attese da orario, registrate, mancanti; sabato senza riga; aggiornamento automatico</td></tr>
+  <tr><td>02 leave_and_part_time_and_excluded</td><td>Assenza → 0 attese (assente); part-time 4 ore; chi non deve consuntivare non compare</td></tr>
+  <tr><td>03 reminders_only_to_the_person</td><td>Promemoria giornaliero e riepilogo del lunedì alla sola persona</td></tr>
+  <tr><td>04 month_close_checks_and_locks_hours</td><td>Chiusura bloccata con ore mancanti, <i>Chiudi comunque</i>; ore del mese chiuso non modificabili dalla persona</td></tr>
+  <tr><td>05 task_estimate_dates_and_remaining</td><td>Da stimare, inizio in ritardo, in linea; ore residue dal foglio ore, stima a finire, avanzamento, attività al PM; avanzamento del progetto; task interni esclusi</td></tr>
+  <tr><td>06 consultant_hours_vs_bill</td><td>Ore in fattura contro ore registrate e nota sulla fattura</td></tr>
 </table></div>
 <p>Il collaudo end-to-end con gli utenti dei ruoli è documentato nel video della pagina dell'app (registrato da <code>scripts/registra_video.sh</code>, rigenerabile dopo ogni modifica).</p>
 

@@ -15,3 +15,4 @@ from . import sale_subscription
 from . import helpdesk_ticket
 from . import lab_project_history
 from . import lab_demo_data
+from . import lab_timesheet_day

@@ -156,6 +156,9 @@ filtri data non accettano `default_period="week"`.
   `action_lab_*`; cronologia nel chatter da `models/lab_project_history.py` (note con
   `mail_create_nosubscribe`, per non rendere visibili le commesse riservate); nomi brevi
   `_lab_set_name` in tutte le lingue.
+  Consuntivazione: `models/lab_timesheet_day.py` (registro persona×giorno ricalcolato dal sistema,
+  promemoria via cron), blocco ore dei mesi chiusi in `account_analytic_line._lab_check_closed_month`,
+  ore residue/stima a finire in `project_task.py`; dati demo `_lab_load_timesheet_check`.
   Portale: Kanban `/my/tickets/kanban` (`controllers/portal_kanban.py`), mai sudo nelle letture;
   colonne del cliente dal campo fase `lab_portal_column` (supplier/customer/resolved), riducibili (localStorage);
   separazione per azienda con la regola globale `rule_helpdesk_ticket_portal_company`; tempo reale

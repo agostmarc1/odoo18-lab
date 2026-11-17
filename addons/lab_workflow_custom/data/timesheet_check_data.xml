@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Consuntivazione: promemoria solo alla persona (giornaliero e settimanale) e aggiornamento
+     notturno del report. -->
+<odoo>
+    <data noupdate="1">
+        <record id="mail_template_timesheet_daily" model="mail.template">
+            <field name="name">Consuntivazione: promemoria giornaliero (alla persona)</field>
+            <field name="model_id" ref="model_lab_timesheet_day"/>
+            <field name="email_from">{{ object.company_id.partner_id.email_formatted }}</field>
+            <field name="email_to">{{ object.employee_id.work_email }}</field>
+            <field name="subject">Fogli ore del {{ format_date(object.date, date_format='dd/MM/yyyy') }}: mancano {{ object._lab_format_hours(object.missing_hours) }} ore</field>
+            <field name="lang">{{ object.user_id.lang }}</field>
+            <field name="auto_delete" eval="True"/>
+            <field name="body_html" type="html">
+<div>
+    <p>Ciao <t t-out="object.employee_id.name"/>,</p>
+    <p>per <strong t-out="format_date(object.date, date_format='EEEE dd/MM/yyyy')"/> risultano
+        <strong t-out="object._lab_format_hours(object.logged_hours)"/> ore registrate su
+        <strong t-out="object._lab_format_hours(object.due_hours)"/> previste dal tuo orario:
+        mancano <strong t-out="object._lab_format_hours(object.missing_hours)"/> ore.</p>
+    <p>Registrale nei <i>Fogli ore</i> sul task su cui hai lavorato (attività interne sul progetto
+        interno). Se eri assente, chiedi l'assenza in <i>Ferie e permessi</i>.</p>
+    <p style="margin: 16px 0;">
+        <a t-att-href="object.get_base_url() + '/odoo/action-hr_timesheet.act_hr_timesheet_line'"
+           style="background-color: #875A7B; padding: 8px 16px; color: #fff; text-decoration: none; border-radius: 4px;">
+            Apri i miei fogli ore</a>
+    </p>
+    <p><t t-out="object.company_id.name"/></p>
+</div>
+            </field>
+        </record>
+
+        <record id="mail_template_timesheet_weekly" model="mail.template">
+            <field name="name">Consuntivazione: riepilogo della settimana (alla persona)</field>
+            <field name="model_id" ref="model_lab_timesheet_day"/>
+            <field name="email_from">{{ object.company_id.partner_id.email_formatted }}</field>
+            <field name="email_to">{{ object.employee_id.work_email }}</field>
+            <field name="subject">Le tue ore della settimana dal {{ format_date(object.week_start, date_format='dd/MM/yyyy') }}</field>
+            <field name="lang">{{ object.user_id.lang }}</field>
+            <field name="auto_delete" eval="True"/>
+            <field name="body_html" type="html">
+<div>
+    <t t-set="rows" t-value="object._lab_week_rows().sorted('date')"/>
+    <t t-set="missing" t-value="sum(rows.mapped('missing_hours'))"/>
+    <p>Ciao <t t-out="object.employee_id.name"/>,</p>
+    <p>ecco le tue ore della settimana dal
+        <strong t-out="format_date(object.week_start, date_format='dd/MM/yyyy')"/>:</p>
+    <table style="border-collapse: collapse;">
+        <tr>
+            <th style="text-align:left; padding:4px 8px; border-bottom:1px solid #ccc;">Giorno</th>
+            <th style="text-align:right; padding:4px 8px; border-bottom:1px solid #ccc;">Attese</th>
+            <th style="text-align:right; padding:4px 8px; border-bottom:1px solid #ccc;">Registrate</th>
+            <th style="text-align:right; padding:4px 8px; border-bottom:1px solid #ccc;">Mancanti</th>
+        </tr>
+        <tr t-foreach="rows" t-as="row">
+            <td style="padding:4px 8px;"><t t-out="format_date(row.date, date_format='EEE dd/MM')"/>
+                <t t-if="row.state == 'absent'"> (assente)</t></td>
+            <td style="text-align:right; padding:4px 8px;" t-out="row._lab_format_hours(row.due_hours)"/>
+            <td style="text-align:right; padding:4px 8px;" t-out="row._lab_format_hours(row.logged_hours)"/>
+            <td t-attf-style="text-align:right; padding:4px 8px; {{ 'color:#c00; font-weight:bold;' if row.missing_hours else '' }}"
+                t-out="row._lab_format_hours(row.missing_hours)"/>
+        </tr>
+    </table>
+    <p t-if="missing">Mancano in tutto <strong t-out="object._lab_format_hours(missing)"/> ore:
+        completale entro fine mese, poi il mese si chiude e le ore non si possono più modificare.</p>
+    <p t-else="">Settimana completa, grazie!</p>
+    <p><t t-out="object.company_id.name"/></p>
+</div>
+            </field>
+        </record>
+
+        <record id="cron_timesheet_daily_reminder" model="ir.cron">
+            <field name="name">Consuntivazione: promemoria giornaliero alla persona</field>
+            <field name="model_id" ref="model_lab_timesheet_day"/>
+            <field name="state">code</field>
+            <field name="code">model._cron_daily_reminder()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="nextcall" eval="(DateTime.now() + timedelta(days=1)).strftime('%Y-%m-%d 08:00:00')"/>
+            <field name="active" eval="True"/>
+        </record>
+
+        <record id="cron_timesheet_weekly_summary" model="ir.cron">
+            <field name="name">Consuntivazione: riepilogo del lunedì alla persona</field>
+            <field name="model_id" ref="model_lab_timesheet_day"/>
+            <field name="state">code</field>
+            <field name="code">model._cron_weekly_summary()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">weeks</field>
+            <field name="nextcall" eval="(DateTime.now() + timedelta(days=7 - DateTime.now().weekday())).strftime('%Y-%m-%d 08:05:00')"/>
+            <field name="active" eval="True"/>
+        </record>
+
+        <record id="cron_timesheet_refresh" model="ir.cron">
+            <field name="name">Consuntivazione: aggiorna il report (ultimi due mesi)</field>
+            <field name="model_id" ref="model_lab_timesheet_day"/>
+            <field name="state">code</field>
+            <field name="code">model._lab_refresh_recent()</field>
+            <field name="interval_number">1</field>
+            <field name="interval_type">days</field>
+            <field name="nextcall" eval="(DateTime.now() + timedelta(days=1)).strftime('%Y-%m-%d 01:00:00')"/>
+            <field name="active" eval="True"/>
+        </record>
+    </data>
+
+    <!-- a ogni installazione / aggiornamento: campi salvati della consuntivazione allineati -->
+    <function model="project.task" name="_lab_recompute_execution"/>
+</odoo>

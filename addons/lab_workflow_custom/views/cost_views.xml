@@ -111,7 +111,12 @@
                     <button name="action_close" type="object" string="Chiudi mese"
                             invisible="state != 'open'"
                             groups="lab_workflow_custom.group_lab_amministrazione,base.group_system"
-                            confirm="Il mese viene ricalcolato con il conguaglio finale e bloccato. Procedere?"/>
+                            confirm="Il mese viene ricalcolato con il conguaglio finale e bloccato: anche le ore non si potranno più modificare. Procedere?"/>
+                    <button name="action_close_force" type="object" string="Chiudi comunque"
+                            invisible="state != 'open' or lab_missing_hours &lt; 0.01"
+                            groups="lab_workflow_custom.group_lab_amministrazione,base.group_system"
+                            confirm="Mancano ore registrate. Chiudere comunque il mese? Le ore mancanti restano annotate."/>
+                    <button name="action_lab_timesheet_report" type="object" string="Consuntivazione del mese"/>
                     <button name="action_reopen" type="object" string="Riapri"
                             invisible="state != 'closed'"
                             groups="lab_workflow_custom.group_lab_amministrazione,base.group_system"/>
@@ -128,6 +133,17 @@
                             <field name="total_amount"/>
                             <field name="unallocated_amount"/>
                             <field name="currency_id" invisible="1"/>
+                        </group>
+                    </group>
+                    <group string="Consuntivazione del mese" name="lab_timesheet">
+                        <group>
+                            <field name="lab_due_hours" widget="float_time"/>
+                            <field name="lab_logged_hours" widget="float_time"/>
+                        </group>
+                        <group>
+                            <field name="lab_missing_hours" widget="float_time"
+                                   decoration-danger="lab_missing_hours &gt; 0"/>
+                            <field name="lab_people_missing"/>
                         </group>
                     </group>
                     <div class="text-muted">
@@ -154,6 +170,7 @@
                         </list>
                     </field>
                 </sheet>
+                <chatter/>
             </form>
         </field>
     </record>
@@ -275,6 +292,9 @@
                        column_invisible="parent.move_type not in ('in_invoice', 'in_refund')"/>
                 <field name="lab_variance" optional="hide"
                        column_invisible="parent.move_type not in ('in_invoice', 'in_refund')"/>
+                <field name="lab_billed_hours" optional="show" widget="float_time" column_invisible="parent.move_type not in ('in_invoice', 'in_refund')"/>
+                <field name="lab_consultant_hours" optional="show" widget="float_time" column_invisible="parent.move_type not in ('in_invoice', 'in_refund')"/>
+                <field name="lab_hours_difference" optional="show" column_invisible="parent.move_type not in ('in_invoice', 'in_refund')"/>
             </xpath>
         </field>
     </record>

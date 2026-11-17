@@ -208,6 +208,58 @@ class ProjectProject(models.Model):
             project.lab_invoice_count = Move.search_count(project._lab_invoice_domain())
             project.lab_cost_count = Alloc.search_count([("project_id", "=", project.id)])
 
+    # ---- Avanzamento del progetto (dai task) --------------------------------
+    lab_progress_pct = fields.Float(
+        "Avanzamento %", compute="_compute_lab_progress", digits=(5, 1),
+        help="Ore registrate sui task stimati / stima a finire di quei task "
+             "(ore registrate + ore residue).")
+    lab_estimated_task_hours = fields.Float("Tempo stimato task", compute="_compute_lab_progress")
+    lab_eac_task_hours = fields.Float("Stima a finire task", compute="_compute_lab_progress")
+    lab_forecast_over_count = fields.Integer("Task che sforeranno", compute="_compute_lab_progress")
+    lab_effective_task_hours = fields.Float("Tempo effettivo task", compute="_compute_lab_progress")
+    lab_late_task_count = fields.Integer("Task in ritardo", compute="_compute_lab_progress")
+    lab_to_estimate_count = fields.Integer("Task da stimare", compute="_compute_lab_progress")
+
+    def _compute_lab_progress(self):
+        today = fields.Date.context_today(self)
+        for project in self:
+            tasks = project.sudo().task_ids.filtered(lambda t: t.active)                 if isinstance(project.id, int) else self.env["project.task"]
+            estimated = tasks.filtered("allocated_hours")
+            project.lab_estimated_task_hours = sum(estimated.mapped("allocated_hours"))
+            project.lab_effective_task_hours = sum(estimated.mapped("effective_hours"))
+            project.lab_eac_task_hours = sum(estimated.mapped("lab_eac_hours"))
+            project.lab_progress_pct = (project.lab_effective_task_hours
+                                        / project.lab_eac_task_hours * 100.0
+                                        if project.lab_eac_task_hours else 0.0)
+            project.lab_forecast_over_count = len(tasks.filtered(
+                lambda t: t.lab_forecast_over and not t.is_closed))
+            states = [t._lab_schedule_state_on(today) for t in tasks]
+            project.lab_late_task_count = sum(s in ("late_start", "late_end") for s in states)
+            project.lab_to_estimate_count = states.count("to_estimate")
+
+    def _lab_task_action(self, name, state):
+        self.ensure_one()
+        action = self.env["ir.actions.act_window"]._for_xml_id(
+            "lab_workflow_custom.action_lab_tasks_to_estimate")
+        action.update({"name": name, "domain": [("project_id", "=", self.id),
+                                                ("lab_schedule_state", "in", state)],
+                       "context": {"default_project_id": self.id}})
+        return action
+
+    def action_lab_tasks_late(self):
+        return self._lab_task_action(_("Task in ritardo – %s", self.name),
+                                     ["late_start", "late_end"])
+
+    def action_lab_tasks_forecast_over(self):
+        self.ensure_one()
+        action = self._lab_task_action(_("Task che sforeranno – %s", self.name), [])
+        action["domain"] = [("project_id", "=", self.id), ("lab_forecast_over", "=", True),
+                            ("is_closed", "=", False)]
+        return action
+
+    def action_lab_tasks_to_estimate(self):
+        return self._lab_task_action(_("Task da stimare – %s", self.name), ["to_estimate"])
+
     def action_lab_timesheets(self):
         self.ensure_one()
         action = self.env["ir.actions.act_window"]._for_xml_id(

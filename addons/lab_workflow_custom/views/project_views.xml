@@ -75,6 +75,35 @@
                         </div>
                     </div>
                 </div>
+                <div class="o_lab_progress d-flex flex-wrap gap-2 mb-3" name="lab_progress">
+                    <div class="card flex-fill text-center p-2">
+                        <div class="text-muted small">Avanzamento (ore registrate / stima a finire)</div>
+                        <field name="lab_progress_pct" widget="progressbar"/>
+                        <div class="small">
+                            <field name="lab_effective_task_hours" widget="float_time" class="d-inline"/> su
+                            <field name="lab_eac_task_hours" widget="float_time" class="d-inline"/>
+                            (stimate <field name="lab_estimated_task_hours" widget="float_time" class="d-inline"/>)
+                        </div>
+                    </div>
+                    <div class="card flex-fill text-center p-2">
+                        <div class="text-muted small">Task che sforeranno</div>
+                        <button name="action_lab_tasks_forecast_over" type="object" class="btn btn-link fs-4 fw-bold p-0">
+                            <field name="lab_forecast_over_count"/>
+                        </button>
+                    </div>
+                    <div class="card flex-fill text-center p-2">
+                        <div class="text-muted small">Task in ritardo</div>
+                        <button name="action_lab_tasks_late" type="object" class="btn btn-link fs-4 fw-bold p-0">
+                            <field name="lab_late_task_count"/>
+                        </button>
+                    </div>
+                    <div class="card flex-fill text-center p-2">
+                        <div class="text-muted small">Task da stimare</div>
+                        <button name="action_lab_tasks_to_estimate" type="object" class="btn btn-link fs-4 fw-bold p-0">
+                            <field name="lab_to_estimate_count"/>
+                        </button>
+                    </div>
+                </div>
                 <group string="Monte ore" name="lab_hours">
                     <group>
                         <field name="lab_is_monthly" invisible="not lab_is_monthly"/>

@@ -29,15 +29,16 @@
 <p style="margin-bottom:4px"><b>Capitoli</b> (il minuto apre il video da quel punto)</p>
 <ol style="font-size:14px;columns:2;column-gap:32px">
   <li><a href="/lab_workflow_custom/static/description/video.html#t=6" target="_blank">0:06</a> – Il Commerciale vende un pacchetto di ore</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html#t=63" target="_blank">1:03</a> – Il Project Manager trova la commessa pronta</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html#t=110" target="_blank">1:50</a> – Pianificazione con la regola 80/20</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html#t=189" target="_blank">3:09</a> – L'analista conferma il turno</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html#t=234" target="_blank">3:54</a> – Alert sul monte ore</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html#t=271" target="_blank">4:31</a> – Lavoro in parallelo</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html#t=293" target="_blank">4:53</a> – Costi, ricavi e margine della commessa</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html#t=364" target="_blank">6:04</a> – Costi AI, consulenti e chiusura del mese</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html#t=438" target="_blank">7:18</a> – Ticket di assistenza</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html#t=583" target="_blank">9:43</a> – Riepilogo</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=65" target="_blank">1:05</a> – Il Project Manager trova la commessa pronta</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=117" target="_blank">1:57</a> – Pianificazione con la regola 80/20</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=195" target="_blank">3:15</a> – L'analista conferma il turno</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=245" target="_blank">4:05</a> – Alert sul monte ore</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=286" target="_blank">4:46</a> – Lavoro in parallelo</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=309" target="_blank">5:09</a> – Costi, ricavi e margine della commessa</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=381" target="_blank">6:21</a> – Costi AI, consulenti e chiusura del mese</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=461" target="_blank">7:41</a> – Ticket di assistenza</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=611" target="_blank">10:11</a> – Consuntivazione e avanzamento dei task</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html#t=687" target="_blank">11:27</a> – Riepilogo</li>
 </ol>
 <!-- /CAPITOLI_VIDEO -->
 
@@ -113,6 +114,14 @@
 <p style="font-size:14px"><i>Protezioni del modulo pubblico</i>: nessun limite al numero di ticket che il cliente può aprire. Un campo esca nascosto ferma i bot. A ogni indirizzo parte <b>una sola email di conferma</b> alla volta: se ne aspetta già una, le richieste successive non ne mandano altre, e il clic sul link le conferma tutte. Così nessuno può usare il modulo per inondare di email l'indirizzo di un altro. In produzione si consiglia di attivare <i>Cloudflare Turnstile</i> o <i>reCAPTCHA</i> (moduli standard di Odoo, chiavi in Impostazioni › Sito web): fermano i programmi automatici e alle persone non chiedono nulla.</p>
 
 <!-- ================================================================== -->
+<h3>2.9 Consuntivazione: ogni giorno le ore, ogni settimana il riepilogo, a fine mese la chiusura</h3>
+<p><b>Ore da fare e assenze.</b> Le ore che ogni persona deve fare sono nella sua scheda (<i>Dipendenti › persona › Informazioni di lavoro › Orario di lavoro</i>, es. 40 ore o part-time 20 ore). Le assenze si chiedono con <i>Ferie e permessi</i> e il responsabile le approva. Ogni giorno lavorativo Odoo calcola le <b>ore attese</b> (orario meno assenze e festività) e le confronta con le <b>ore registrate</b> nei fogli ore. Per riunioni, formazione e attività non dei clienti si usa il progetto <i>Interno</i>. Chi non registra ore (es. l'amministratore di sistema) ha tolta la spunta <i>Deve consuntivare</i>.</p>
+<p><b>Promemoria solo alla persona.</b> Ogni mattina chi il giorno lavorativo prima ha ore mancanti riceve un'email (<i>«mancano 3:00 ore»</i>). Il lunedì ognuno riceve il riepilogo della settimana prima, giorno per giorno. Il PM e l'Amministrazione vedono tutto nel report <i>Pianificazione › Report › Consuntivazione</i> (persona × settimana, ore attese, registrate, mancanti; filtri <i>Settimana scorsa</i>, <i>Con ore mancanti</i>, <i>Consulenti esterni</i>).</p>
+<p><b>Fine mese.</b> In <i>Costi e AI › Ripartizione per mese</i> la scheda del mese mostra ore attese, registrate e mancanti. <i>Chiudi mese</i> non chiude se mancano ore ed elenca chi deve completare; <i>Chiudi comunque</i> chiude lo stesso lasciando annotate le ore mancanti. Dopo la chiusura le ore di quel mese <b>non si possono più aggiungere, modificare o cancellare</b>; per correggere l'Amministrazione riapre il mese.</p>
+<p><b>Ogni task ha sempre i suoi quattro dati.</b> <i>Tempo stimato</i> (ore allocate), <i>inizio e fine pianificati</i>, <i>date di esecuzione</i> (primo e ultimo giorno con ore, calcolate) e <i>tempo effettivo</i> (ore registrate). Il PM trova i task a cui manca la stima o una data in <i>Progetto › Report › Task da stimare</i>, con in cima quelli dove si lavora già. Il task mostra lo stato: <i>Da stimare</i>, <i>Da iniziare</i>, <i>In linea</i>, <i>Inizio in ritardo</i>, <i>Oltre la data di fine</i>, <i>Concluso</i>.</p>
+<p><b>Avanzamento con le ore residue.</b> Quando registra le ore, la persona indica nella colonna <i>Ore residue</i> quante ore mancano per finire il task secondo lei (0 = non cambia). Odoo calcola la <b>stima a finire</b> (ore registrate + ore residue) e l'<b>avanzamento</b> (ore registrate ÷ stima a finire). Se la stima a finire supera il tempo stimato, il task mostra <i>«sforerà la stima»</i> e il PM del progetto riceve un'attività: lo sa prima di sforare, non dopo. Il PM può correggere le ore residue dal task. Nel progetto, accanto ai numeri economici, ci sono avanzamento, task in ritardo, task che sforeranno e task da stimare.</p>
+<p><b>Consulenti esterni.</b> Consuntivano ogni giorno come gli altri. Quando arriva la loro fattura (riga con il campo <i>Consulente</i>), Odoo confronta le ore in fattura (giorni × ore della sua giornata se la tariffa è a giornata) con le ore registrate; se non quadrano lascia una nota sulla fattura. Il riepilogo per consulente è in <i>Costi e AI › Ore consulenti e fatture</i> (Amministrazione).</p>
+
 <h2 style="border-bottom:1px solid #d0d7de;padding-bottom:6px;margin-top:36px">3. Guida passo-passo</h2>
 <p>I passaggi seguono il flusso del video. Per ogni passo: chi lo fa, dove si trova in Odoo e cosa succede dopo.</p>
 
@@ -142,6 +151,10 @@
   <tr><td style="padding:6px;border:1px solid #d0d7de">3</td><td style="padding:6px;border:1px solid #d0d7de">PM</td><td style="padding:6px;border:1px solid #d0d7de">Turno › <i>Pubblica al dipendente</i></td><td style="padding:6px;border:1px solid #d0d7de">Pubblicazione del turno.</td><td style="padding:6px;border:1px solid #d0d7de">La persona vede il turno e riceve un messaggio</td></tr>
   <tr><td style="padding:6px;border:1px solid #d0d7de">4</td><td style="padding:6px;border:1px solid #d0d7de">Analista / Sviluppatore / Supporto</td><td style="padding:6px;border:1px solid #d0d7de">Pianificazione › I miei turni</td><td style="padding:6px;border:1px solid #d0d7de">A fine giornata correggere le <i>Ore effettive</i> se diverse e premere <i>Conferma turno e crea foglio ore</i>.</td><td style="padding:6px;border:1px solid #d0d7de">Riga del foglio ore con commessa e task (pulsante <i>Foglio ore</i>)</td></tr>
   <tr><td style="padding:6px;border:1px solid #d0d7de">5</td><td style="padding:6px;border:1px solid #d0d7de">Analista / Sviluppatore / Supporto</td><td style="padding:6px;border:1px solid #d0d7de">Fogli ore › Fogli ore › I miei fogli ore</td><td style="padding:6px;border:1px solid #d0d7de">Per le attività non pianificate: registrare le ore indicando sempre il task (obbligatorio su corpo e T&amp;M).</td><td style="padding:6px;border:1px solid #d0d7de">Ore scalate dal pacchetto, consumo e alert aggiornati</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">6</td><td style="padding:6px;border:1px solid #d0d7de">PM</td><td style="padding:6px;border:1px solid #d0d7de">Progetto › Report › Task da stimare</td><td style="padding:6px;border:1px solid #d0d7de">Indicare ore allocate e date di inizio e fine pianificate di ogni task.</td><td style="padding:6px;border:1px solid #d0d7de">Il task esce dalla lista; stato e ritardi si calcolano da soli</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">7</td><td style="padding:6px;border:1px solid #d0d7de">Analista / Sviluppatore / Supporto / Consulente</td><td style="padding:6px;border:1px solid #d0d7de">Fogli ore › I miei fogli ore (o il task)</td><td style="padding:6px;border:1px solid #d0d7de">Ogni giorno le ore sul task e, se cambia, le <i>Ore residue</i>. Assenze in <i>Ferie e permessi</i>.</td><td style="padding:6px;border:1px solid #d0d7de">Avanzamento e stima a finire aggiornati; niente promemoria</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">8</td><td style="padding:6px;border:1px solid #d0d7de">PM / Amministrazione</td><td style="padding:6px;border:1px solid #d0d7de">Pianificazione › Report › Consuntivazione</td><td style="padding:6px;border:1px solid #d0d7de">Il lunedì controllare la settimana scorsa (filtro <i>Con ore mancanti</i>).</td><td style="padding:6px;border:1px solid #d0d7de">Chi ha ore mancanti è evidenziato in rosso</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">9</td><td style="padding:6px;border:1px solid #d0d7de">Amministrazione</td><td style="padding:6px;border:1px solid #d0d7de">Costi e AI › Ripartizione per mese › mese › <i>Chiudi mese</i></td><td style="padding:6px;border:1px solid #d0d7de">A mese finito, quando le ore sono complete.</td><td style="padding:6px;border:1px solid #d0d7de">Mese chiuso, ore bloccate</td></tr>
 </table>
 
 <h3>3.4 Controllo durante la commessa</h3>
@@ -184,6 +197,7 @@
 <p><b>PROC-004/005 – Lavoro in parallelo e fatturazione</b><br/><img src="bpmn_proc2.svg" alt="BPMN lavoro in parallelo e fatturazione" style="max-width:100%"/></p>
 <p><b>PROC-006 – Consulente esterno e ribaltamento</b><br/><img src="bpmn_proc3.svg" alt="BPMN consulente esterno" style="max-width:100%"/></p>
 <p><b>PROC-007 – Chiusura mensile dei costi AI</b><br/><img src="bpmn_proc4.svg" alt="BPMN chiusura mensile" style="max-width:100%"/></p>
+<p><b>PROC-008 – Consuntivazione giornaliera, settimanale e mensile</b><br/><img src="bpmn_proc5.svg" alt="BPMN consuntivazione" style="max-width:100%"/></p>
 
 <!-- ================================================================== -->
 <h2 style="border-bottom:1px solid #d0d7de;padding-bottom:6px;margin-top:36px">5. Ruoli e responsabilità</h2>
@@ -209,6 +223,7 @@
   <tr><td style="padding:6px;border:1px solid #d0d7de">CRM</td><td style="padding:6px;border:1px solid #d0d7de">Tre opportunità in fasi diverse e un preventivo AMS in bozza</td></tr>
   <tr><td style="padding:6px;border:1px solid #d0d7de">Pianificazione</td><td style="padding:6px;border:1px solid #d0d7de">Niccolò a 32 h (limite pieno), Carlo con fattore 1,5, fattore ridotto per la settimana prossima, turni confermati che diventano fogli ore</td></tr>
   <tr><td style="padding:6px;border:1px solid #d0d7de">Costi AI</td><td style="padding:6px;border:1px solid #d0d7de">Licenze del team, consumi diretti / per persona / costi generali, mese scorso chiuso e mese in corso aperto</td></tr>
+  <tr><td style="padding:6px;border:1px solid #d0d7de">Consuntivazione</td><td style="padding:6px;border:1px solid #d0d7de">Giulia part-time 20 ore, Gianluca in ferie giovedì e venerdì della settimana scorsa, giornate completate con attività interne e tre ore mancanti volute (Carlo ieri, Giulia un giorno della settimana scorsa, Niccolò due settimane fa); task con date pianificate, uno oltre la data di fine, uno con inizio in ritardo, due da stimare e uno che sforerà la stima secondo le ore residue</td></tr>
 </table>
 
 <!-- ================================================================== -->

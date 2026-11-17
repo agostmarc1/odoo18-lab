@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ===== Report Consuntivazione: persona × giorno ===== -->
+    <record id="view_timesheet_day_list" model="ir.ui.view">
+        <field name="name">lab.timesheet.day.list</field>
+        <field name="model">lab.timesheet.day</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0" delete="0"
+                  decoration-danger="state == 'missing'" decoration-muted="state == 'absent'">
+                <field name="date"/>
+                <field name="employee_id"/>
+                <field name="department_id" optional="hide"/>
+                <field name="is_external" optional="hide"/>
+                <field name="expected_hours" widget="float_time" sum="Totale" optional="hide"/>
+                <field name="leave_hours" widget="float_time" sum="Totale"/>
+                <field name="due_hours" widget="float_time" sum="Totale"/>
+                <field name="logged_hours" widget="float_time" sum="Totale"/>
+                <field name="missing_hours" widget="float_time" sum="Totale"/>
+                <field name="extra_hours" widget="float_time" sum="Totale" optional="hide"/>
+                <field name="state" widget="badge" decoration-success="state == 'ok'"
+                       decoration-danger="state == 'missing'" decoration-muted="state == 'absent'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_timesheet_day_pivot" model="ir.ui.view">
+        <field name="name">lab.timesheet.day.pivot</field>
+        <field name="model">lab.timesheet.day</field>
+        <field name="arch" type="xml">
+            <pivot string="Consuntivazione" disable_linking="0">
+                <field name="employee_id" type="row"/>
+                <field name="week_start" type="col" interval="day"/>
+                <field name="missing_hours" type="measure" widget="float_time"/>
+                <field name="due_hours" type="measure" widget="float_time"/>
+                <field name="logged_hours" type="measure" widget="float_time"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_timesheet_day_graph" model="ir.ui.view">
+        <field name="name">lab.timesheet.day.graph</field>
+        <field name="model">lab.timesheet.day</field>
+        <field name="arch" type="xml">
+            <graph string="Ore mancanti" type="bar">
+                <field name="employee_id"/>
+                <field name="missing_hours" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_timesheet_day_search" model="ir.ui.view">
+        <field name="name">lab.timesheet.day.search</field>
+        <field name="model">lab.timesheet.day</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="employee_id"/>
+                <field name="department_id"/>
+                <filter name="missing" string="Con ore mancanti" domain="[('state', '=', 'missing')]"/>
+                <filter name="absent" string="Assenze" domain="[('state', '=', 'absent')]"/>
+                <separator/>
+                <filter name="internal" string="Dipendenti" domain="[('is_external', '=', False)]"/>
+                <filter name="external" string="Consulenti esterni" domain="[('is_external', '=', True)]"/>
+                <separator/>
+                <filter name="last_week" string="Settimana scorsa"
+                        domain="[('week_start', '=', (context_today() + relativedelta(days=-13, weekday=0)).strftime('%Y-%m-%d'))]"/>
+                <filter name="this_week" string="Questa settimana"
+                        domain="[('week_start', '=', (context_today() + relativedelta(days=-6, weekday=0)).strftime('%Y-%m-%d'))]"/>
+                <filter name="date" string="Giorno" date="date"/>
+                <group>
+                    <filter name="group_employee" string="Persona" context="{'group_by': 'employee_id'}"/>
+                    <filter name="group_week" string="Settimana" context="{'group_by': 'week_start:day'}"/>
+                    <filter name="group_month" string="Mese" context="{'group_by': 'month_start:month'}"/>
+                    <filter name="group_state" string="Stato" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_timesheet_day" model="ir.actions.act_window">
+        <field name="name">Consuntivazione</field>
+        <field name="res_model">lab.timesheet.day</field>
+        <field name="view_mode">pivot,list,graph</field>
+        <field name="search_view_id" ref="view_timesheet_day_search"/>
+        <field name="context">{'search_default_last_week': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Nessun giorno lavorativo nel periodo.</p>
+            <p>Per ogni persona e giorno: ore attese (orario di lavoro meno assenze e festività),
+               ore registrate nei fogli ore e ore mancanti.</p>
+        </field>
+    </record>
+
+
+    <!-- ===== Consulenti: ore registrate contro ore in fattura ===== -->
+    <record id="view_consultant_bill_lines" model="ir.ui.view">
+        <field name="name">account.move.line.lab.consultant.hours</field>
+        <field name="model">account.move.line</field>
+        <field name="priority">90</field>
+        <field name="arch" type="xml">
+            <list create="0" edit="0" delete="0"
+                  decoration-danger="lab_hours_difference &gt; 0.01 or lab_hours_difference &lt; -0.01">
+                <field name="date"/>
+                <field name="move_id" string="Fattura"/>
+                <field name="partner_id" string="Fornitore"/>
+                <field name="lab_consultant_id"/>
+                <field name="name"/>
+                <field name="lab_billed_hours" widget="float_time" sum="Totale"/>
+                <field name="lab_consultant_hours" widget="float_time" sum="Totale"/>
+                <field name="lab_hours_difference"/>
+                <field name="parent_state" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_consultant_bill_hours" model="ir.actions.act_window">
+        <field name="name">Ore consulenti e fatture</field>
+        <field name="res_model">account.move.line</field>
+        <field name="view_mode">list</field>
+        <field name="view_id" ref="view_consultant_bill_lines"/>
+        <field name="domain">[('lab_consultant_id', '!=', False), ('move_id.move_type', 'in', ('in_invoice', 'in_refund'))]</field>
+        <field name="context">{'group_by': ['lab_consultant_id']}</field>
+        <field name="help" type="html">
+            <p>Nessuna fattura di consulenti con la riga collegata al consulente.</p>
+            <p>Nella fattura fornitore indica il <i>Consulente</i> sulla riga: alla conferma Odoo
+               collega le sue ore e confronta le ore fatturate con quelle registrate.</p>
+        </field>
+    </record>
+
+    <!-- ===== Scheda persona: ore da fare = Orario di lavoro; chi deve consuntivare ===== -->
+    <record id="view_employee_form_lab_timesheet" model="ir.ui.view">
+        <field name="name">hr.employee.form.lab.timesheet</field>
+        <field name="model">hr.employee</field>
+        <field name="inherit_id" ref="hr.view_employee_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='resource_calendar_id']" position="after">
+                <field name="lab_timesheet_required"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- ===== Menu ===== -->
+    <menuitem id="menu_timesheet_day" name="Consuntivazione" parent="menu_planning_reporting"
+              action="action_timesheet_day" sequence="5"
+              groups="lab_workflow_custom.group_lab_pm,lab_workflow_custom.group_lab_amministrazione,project.group_project_manager"/>
+    <menuitem id="menu_tasks_to_estimate" name="Task da stimare" parent="menu_planning_reporting"
+              action="action_lab_tasks_to_estimate" sequence="6"
+              groups="lab_workflow_custom.group_lab_pm,project.group_project_manager"/>
+    <menuitem id="menu_tasks_to_estimate_project" name="Task da stimare"
+              parent="project.menu_project_report" action="action_lab_tasks_to_estimate" sequence="5"
+              groups="lab_workflow_custom.group_lab_pm,project.group_project_manager"/>
+    <menuitem id="menu_consultant_bill_hours" name="Ore consulenti e fatture" parent="menu_costs_root"
+              action="action_consultant_bill_hours" sequence="15"
+              groups="lab_workflow_custom.group_lab_amministrazione,base.group_system"/>
+</odoo>
