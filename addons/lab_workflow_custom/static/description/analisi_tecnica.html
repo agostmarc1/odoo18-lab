@@ -33,10 +33,16 @@
 <main>
 <p><a href="/odoo/action-base.open_module_tree">← Torna alle App</a></p>
 <h1>Flusso Operativo Software House</h1>
-<p class="lead">Analisi funzionale e tecnica del modulo <code>lab_workflow_custom</code>, per chi deve installarlo, mantenerlo o estenderlo.</p>
+<p class="lead">Documentazione tecnica del modulo <code>lab_workflow_custom</code> (analisi funzionale e tecnica), per chi deve installarlo, configurarlo, mantenerlo o estenderlo.</p>
 <div class="meta">
-  <span class="chip">Odoo 18.0 Community</span><span class="chip">Versione modulo 18.0.1.15.0</span>
+  <span class="chip">Odoo 18.0 Community</span><span class="chip">Versione modulo 18.0.1.16.0</span>
   <span class="chip">Licenza LGPL-3</span><span class="chip">Categoria Services/Project</span>
+</div>
+
+<div class="note" style="background:var(--accent-soft);border-left-color:var(--accent)">
+<b>Due livelli di documentazione.</b> Questo è il <b>livello tecnico</b>. Per l'uso quotidiano, ruolo per ruolo, c'è il livello utente:
+<a href="/odoo/action-base.open_module_tree">guida per l'utente</a> (scheda dell'app) e <a href="video.html">video per l'utente</a>.
+Il <a href="video.html?v=tecnico">video tecnico</a> mostra installazione, parametri, permessi, automazioni e modelli.
 </div>
 
 <nav class="toc"><b>Indice</b>
@@ -55,7 +61,24 @@
   <li><a href="#rilascio">Installazione e rilascio</a></li>
   <li><a href="#limiti">Limiti noti e rischi tecnici</a></li>
   <li><a href="#glossario">Glossario</a></li>
-</ol></nav>
+  <li><a href="#dati-esempio">Dati di esempio per la verifica</a></li>
+</ol>
+<p style="margin:8px 0 0"><a href="#video-tecnico">Video tecnico</a></p></nav>
+
+<h2 id="video-tecnico">Video tecnico</h2>
+<p>Per l'amministratore di sistema: installazione, parametri di sistema, ruoli e permessi, azioni programmate e modelli email, modelli dati e questa documentazione. Didascalie in italiano, nessun audio. <a href="video.html?v=tecnico">▶ Guarda il video tecnico</a></p>
+<!-- CAPITOLI_VIDEO -->
+<p style="margin-bottom:4px"><b>Capitoli</b> (il minuto apre il video da quel punto)</p>
+<ol style="font-size:14px;columns:2;column-gap:32px">
+  <li><a href="/lab_workflow_custom/static/description/video.html?v=tecnico#t=6" target="_blank">0:06</a> – Installazione su un Odoo 18 CE</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html?v=tecnico#t=47" target="_blank">0:47</a> – Parametri di sistema</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html?v=tecnico#t=72" target="_blank">1:12</a> – Ruoli e permessi</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html?v=tecnico#t=108" target="_blank">1:48</a> – Automazioni e notifiche</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html?v=tecnico#t=146" target="_blank">2:26</a> – Modelli dati</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html?v=tecnico#t=171" target="_blank">2:51</a> – Documentazione tecnica</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html?v=tecnico#t=201" target="_blank">3:21</a> – Riepilogo</li>
+</ol>
+<!-- /CAPITOLI_VIDEO -->
 
 <!-- ============================================================== -->
 <h2 id="scopo">1. Scopo e perimetro</h2>
@@ -368,6 +391,20 @@ consulente      = ore in fattura = quantità (× ore/giorno se tariffa a giornat
   <tr><td>helpdesk.ticket (OCA)</td><td><code>website_form_input_filter</code> (hook di <code>/website/form</code>)</td><td>Se la descrizione arriva dall'editor usa l'HTML (ripulito con <code>html_sanitize</code>) invece della conversione da testo semplice del form builder</td></tr>
   <tr><td>Sito web (JS)</td><td><code>publicWidget</code> <code>LabHelpdeskRichDescription</code></td><td>Sul form <code>#lab_helpdesk_form</code> sostituisce la textarea con un editor (barra fissa, <code>contenteditable</code>); senza JavaScript resta la textarea</td></tr>
 </table></div>
+<h3>Mappa per area</h3>
+<div class="wrap"><table>
+  <tr><th>Area</th><th>Modelli e punti di estensione</th></tr>
+  <tr><td>Vendita → commessa</td><td><code>sale.order.line</code> (<code>lab_sold_hours</code>, ore scalate/residue, <code>_timesheet_create_project</code>), <code>lab.default.task</code></td></tr>
+  <tr><td>Monte ore e alert</td><td><code>project.project</code> / <code>project.task</code> (<code>lab_alert_level</code>, <code>_lab_check_hours_alert</code>)</td></tr>
+  <tr><td>Pianificazione</td><td><code>lab.planning.slot</code>, <code>lab.planning.capacity</code>, parametro <code>max_weekly_hours</code></td></tr>
+  <tr><td>Fogli ore</td><td><code>account.analytic.line</code>: <code>_lab_recompute_days</code> (ore parallele), costo maturato dei consulenti, task obbligatorio</td></tr>
+  <tr><td>Consulenti e pass-through</td><td><code>account.move.line</code> (<code>lab_consultant_id</code>, <code>_sale_determine_order</code> solo T&amp;M, ricarico)</td></tr>
+  <tr><td>Costi AI</td><td><code>lab.ai.tool</code>, <code>lab.ai.license</code>, <code>lab.ai.usage</code>, <code>lab.ai.mapping</code>, <code>lab.cost.period</code>, <code>lab.cost.allocation</code></td></tr>
+  <tr><td>Margini</td><td><code>lab.margin.report</code> (vista SQL, unica fonte dei margini, letta anche dalla scheda del progetto)</td></tr>
+  <tr><td>Ticket</td><td><code>helpdesk.ticket</code> (<code>_lab_find_project</code>, <code>lab_contract_type</code> per gli SLA), ore sul ticket in <code>account.analytic.line.create</code>, anti-spam in <code>controllers/website_form.py</code>, pagina <code>/assistenza</code></td></tr>
+  <tr><td>Dati sintetici</td><td><code>lab.demo.data._lab_load_synthetic</code> (idempotente; su un database già caricato aggiunge solo i ticket con <code>_lab_load_helpdesk</code>)</td></tr>
+</table></div>
+
 <h3>Viste ereditate</h3>
 <p>Form progetto (banner alert, gruppo <i>Monte ore</i>, scheda <i>Costi, ricavi e margine</i>), kanban progetto (etichette alert), form/kanban/lista/ricerca task (banner, barra di consumo, filtri), form ordine (ore scalate/residue e pulsante <i>Ore per task</i>), form prodotto (campi ore), form dipendente (scheda <i>Costi e AI</i>), form fattura (consulente sulla riga). Menu: app <b>Pianificazione</b> (turni, ore parallele, fattore settimanale, report, <i>Costi e AI</i>), più <i>Margini per commessa</i> in Progetti › Rendicontazione e <i>Task di default commessa</i> in Progetti › Configurazione. Form ticket (OCA): commessa non obbligatoria, tipo contratto e consumo del monte ore accanto alla commessa. Sito: pagine <code>/assistenza</code> e <code>/assistenza-grazie</code>, voce di menu <i>Assistenza</i>; le pagine si possono ritoccare con l'editor del sito.</p>
 
@@ -549,6 +586,9 @@ consulente      = ore in fattura = quantità (× ore/giorno se tariffa a giornat
 </table></div>
 
 <!-- ============================================================== -->
+<p><b>Prossimo sviluppo proposto (fase 3, non implementato).</b> Ripartire i consumi AI personali anche in base ai commit Git collegati ai task (codice del task nel messaggio di commit), con base di ripartizione scelta dall'Amministrazione.</p>
+
+<!-- ============================================================== -->
 <h2 id="glossario">14. Glossario</h2>
 <table>
   <tr><th>Termine</th><th>Significato</th></tr>
@@ -562,6 +602,22 @@ consulente      = ore in fattura = quantità (× ore/giorno se tariffa a giornat
   <tr><td>SLA</td><td>Service Level Agreement: tempo massimo, in ore lavorative, per prendere in carico o risolvere un ticket</td></tr>
   <tr><td>Alias</td><td>Indirizzo email (es. assistenza@) le cui email entrano in Odoo come ticket</td></tr>
 </table>
+<!-- ============================================================== -->
+<h2 id="dati-esempio">15. Dati di esempio per la verifica</h2>
+<p>Con i dati demo attivi (o su richiesta con <code>env["lab.demo.data"]._lab_load_synthetic()</code>) l'app carica uno scenario coerente, con date relative a oggi. Non viene mai caricato in un database di produzione senza dati demo.</p>
+<div class="wrap"><table>
+  <tr><th>Cliente / area</th><th>Cosa permette di verificare</th></tr>
+  <tr><td>Rossi Meccanica – monte ore 50 h</td><td>Alert giallo all'80%, ore per task, fattura anticipata, consulente Niccolò fatturato (solo costo, contratto a corpo)</td></tr>
+  <tr><td>Bianchi Logistica – T&amp;M</td><td>Fattura di Carlo ribaltata con ricarico, spese vive AI del mese chiuso, ore parallele approvate e da approvare, fattura al cliente</td></tr>
+  <tr><td>Verdi Retail – canone AMS</td><td>Consumo sul mese corrente, abbonamento OCA e 7 ticket collegati da soli alla commessa: tre chiusi il mese scorso e uno questo mese (con valutazione), uno in corso, uno in attesa del cliente, uno urgente con SLA scaduto; le ore di assistenza sono segnate sui ticket</td></tr>
+  <tr><td>Helpdesk</td><td>Nicola (Supporto) nel team <i>Assistenza clienti</i>; un ticket di Rossi Meccanica (monte ore) ancora senza commessa, da smistare; Giuseppe vede in lettura i ticket dei suoi clienti</td></tr>
+  <tr><td>Neri Assicurazioni – sviluppo a corpo 120 h</td><td>Task di analisi oltre il 90%, ore del consulente maturate in attesa di fattura, da fatturare</td></tr>
+  <tr><td>CRM</td><td>Tre opportunità in fasi diverse e un preventivo AMS in bozza</td></tr>
+  <tr><td>Pianificazione</td><td>Niccolò a 32 h (limite pieno), Carlo con fattore 1,5, fattore ridotto per la settimana prossima, turni confermati che diventano fogli ore</td></tr>
+  <tr><td>Costi AI</td><td>Licenze del team, consumi diretti / per persona / costi generali, mese scorso chiuso e mese in corso aperto</td></tr>
+  <tr><td>Consuntivazione</td><td>Giulia part-time 20 ore, Gianluca in ferie giovedì e venerdì della settimana scorsa, giornate completate con attività interne e tre ore mancanti volute (Carlo ieri, Giulia un giorno della settimana scorsa, Niccolò due settimane fa); task con date pianificate, uno oltre la data di fine, uno con inizio in ritardo, due da stimare e uno che sforerà la stima secondo le ore residue</td></tr>
+</table></div>
+<p>Il video per l'utente si rigenera con <code>./scripts/registra_video.sh</code> (crea e poi ripulisce un ordine di prova per <i>Ferri Automazione S.r.l.</i>), quello tecnico con <code>./scripts/registra_video.sh --tecnico</code> (solo lettura, nessun dato creato).</p>
 </main>
 </body>
 </html>

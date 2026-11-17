@@ -62,12 +62,16 @@ Come installarla in un altro Odoo 18.0 Community:
      (compreso l'Helpdesk per i ticket dei clienti).
 
 Video e documentazione (dentro l'app, cartella lab_workflow_custom/static/description/):
-  - Nella scheda dell'app (Applicazioni > Flusso Operativo Software House) ci sono la guida
-    passo-passo, il video dimostrativo con i capitoli e il link all'analisi tecnica.
+  Due livelli di dettaglio:
+  - Utente: nella scheda dell'app (Applicazioni > Flusso Operativo Software House) la guida per
+    ruolo e il video per l'utente.
+  - Tecnico: documentazione tecnica e video tecnico (installazione, parametri, permessi,
+    automazioni, modelli dati, test).
   - Si aprono anche direttamente, a Odoo avviato:
-      <indirizzo Odoo>/lab_workflow_custom/static/description/video.html
-      <indirizzo Odoo>/lab_workflow_custom/static/description/analisi_tecnica.html
-  - Il video da solo: lab_workflow_custom/static/description/demo_flusso_operativo.mp4
+      <indirizzo Odoo>/lab_workflow_custom/static/description/video.html             (video per l'utente)
+      <indirizzo Odoo>/lab_workflow_custom/static/description/video.html?v=tecnico   (video tecnico)
+      <indirizzo Odoo>/lab_workflow_custom/static/description/analisi_tecnica.html   (documentazione tecnica)
+  - I video da soli: lab_workflow_custom/static/description/demo_flusso_operativo.mp4 e demo_tecnica.mp4
 
 Note:
   - Funziona solo su Odoo 18.0 Community (non su altre versioni).

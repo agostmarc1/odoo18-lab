@@ -449,21 +449,22 @@ commessa Bianchi Logistica), personale (Claude Code di Carlo) e senza corrispond
 
 ---
 
-## Video dimostrativo e documentazione dell'app
+## Video e documentazione dell'app: due livelli
 
-Nella scheda dell'app (Applicazioni → *Flusso Operativo Software House*) ci sono:
+| Livello | Per chi | Documento | Video |
+|---|---|---|---|
+| **Utente** | Commerciale, PM, analisti e sviluppatori, consulenti, Supporto, Amministrazione | `static/description/index.html` (scheda dell'app): cosa fa l'app, guida passo-passo, processi, ruoli, guida rapida per ruolo | `demo_flusso_operativo.mp4` (`video.html`): l'app in uso, ruolo per ruolo |
+| **Tecnico** | chi installa, configura e mantiene l'app | `static/description/analisi_tecnica.html`: requisiti, modello dati, calcoli, permessi, automazioni, parametri, test, installazione, dati di esempio | `demo_tecnica.mp4` (`video.html?v=tecnico`): installazione, parametri, permessi, automazioni, modelli |
 
-- il **video dimostrativo** (`static/description/demo_flusso_operativo.mp4`), con capitoli e didascalie;
-- la **guida passo-passo** per ruolo (sezione 3 della pagina);
-- il link all'**analisi funzionale e tecnica** per i tecnici
-  (`static/description/analisi_tecnica.html`, anche su
-  http://127.0.0.1:8069/lab_workflow_custom/static/description/analisi_tecnica.html).
+Le pagine si aprono anche su http://127.0.0.1:8069/lab_workflow_custom/static/description/
+(`video.html`, `video.html?v=tecnico`, `analisi_tecnica.html`).
 
-Dopo una modifica all'app il video si rigenera con Odoo avviato:
+Dopo una modifica all'app i video si rigenerano con Odoo avviato:
 
 ```bash
-./scripts/registra_video.sh          # registra il video (circa 6 minuti)
-./scripts/registra_video.sh --prova  # solo schermate di controllo in dist/video_lavoro
+./scripts/registra_video.sh            # video per l'utente (circa 12 minuti)
+./scripts/registra_video.sh --tecnico  # video tecnico (circa 3 minuti, solo lettura)
+./scripts/registra_video.sh --prova    # solo schermate di controllo in dist/video_lavoro (anche con --tecnico)
 ```
 
 Lo script guida Chrome con Playwright (ambiente `.venv-video`, creato da solo la prima volta) e monta
