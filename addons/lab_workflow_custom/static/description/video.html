@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Video dimostrativo</title>
+<title>Video dell'app</title>
 <style>
   :root{--fg:#1f2328;--muted:#57606a;--line:#d0d7de;--soft:#f6f8fa;--accent:#714b67;--accent-soft:#f4eef3}
   *{box-sizing:border-box}
@@ -28,24 +28,38 @@
 <body>
 <main>
 <p><a href="/odoo/action-base.open_module_tree">← Torna alle App</a></p>
-<h1>Flusso Operativo Software House</h1>
-<p class="lead">Dimostrazione con gli utenti demo: vendita, commessa, pianificazione 80/20, foglio ore, alert, costi e margini. Didascalie in italiano, senza audio.</p>
+<h1 id="titolo">Flusso Operativo Software House</h1>
+<p class="lead" id="lead">Video per l'utente: l'app in uso con gli utenti demo, dalla vendita al margine, ai ticket e alla consuntivazione. Didascalie in italiano, senza audio.</p>
+<p class="links" id="altro"><b>Video per l'utente</b> · <a href="video.html?v=tecnico">Video tecnico</a></p>
 <div class="layout">
-  <video id="v" controls preload="metadata" poster="video_copertina.png">
-    <source src="demo_flusso_operativo.mp4" type="video/mp4">
-    Il browser non riesce a riprodurre il video: <a href="demo_flusso_operativo.mp4">scarica il file MP4</a>.
-  </video>
+  <video id="v" controls preload="metadata"></video>
   <aside><h2>Capitoli</h2><ol id="cap"></ol></aside>
 </div>
-<p class="links"><a href="demo_flusso_operativo.mp4" download>Scarica il video (MP4)</a> · <a href="analisi_tecnica.html">Analisi funzionale e tecnica</a></p>
+<p class="links"><a id="scarica" download>Scarica il video (MP4)</a> · <a href="index.html">Guida per l'utente</a> · <a href="analisi_tecnica.html">Documentazione tecnica</a></p>
 </main>
 <script>
+  // due livelli: video per l'utente (predefinito) e video tecnico (?v=tecnico)
+  const tecnico = new URLSearchParams(location.search).get('v') === 'tecnico';
+  const cfg = tecnico
+    ? {mp4: 'demo_tecnica.mp4', poster: 'video_tecnico_copertina.png', json: 'video_tecnico_capitoli.json',
+       titolo: 'Flusso Operativo Software House – video tecnico',
+       lead: "Per l'amministratore di sistema e per chi mantiene l'app: installazione, parametri, ruoli e permessi, automazioni, modelli dati e documentazione tecnica. Didascalie in italiano, senza audio.",
+       altro: "<a href=\"video.html\">Video per l'utente</a> · <b>Video tecnico</b>"}
+    : {mp4: 'demo_flusso_operativo.mp4', poster: 'video_copertina.png', json: 'video_capitoli.json'};
   const v = document.getElementById('v');
+  v.poster = cfg.poster; v.src = cfg.mp4;
+  document.getElementById('scarica').href = cfg.mp4;
+  if (tecnico) {
+    document.title = 'Video tecnico';
+    document.getElementById('titolo').textContent = cfg.titolo;
+    document.getElementById('lead').textContent = cfg.lead;
+    document.getElementById('altro').innerHTML = cfg.altro;
+  }
   const ol = document.getElementById('cap');
   const fmt = s => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
   const seek = s => { v.currentTime = s; v.play().catch(() => {}); };
   let caps = [];
-  fetch('video_capitoli.json', {cache: 'no-cache'}).then(r => r.json()).then(list => {
+  fetch(cfg.json, {cache: 'no-cache'}).then(r => r.json()).then(list => {
     caps = list;
     for (const c of list) {
       const li = document.createElement('li');

@@ -21,11 +21,14 @@ Marco non è uno sviluppatore e lavora solo parlando con Claude, senza editor.
   lo scenario sintetico dell'app (`lab.demo.data._lab_load_synthetic`, idempotente, date relative a oggi;
   in altri db parte con i dati demo dell'app). Se aggiungi una funzionalità, aggiungi allo scenario i dati
   che la mostrano. Odoo è su http://127.0.0.1:8069.
-- La documentazione per l'utente sta in `static/description/index.html` (pagina dell'app): aggiornala
-  insieme alla specifica quando cambia una funzionalità.
+- **Due livelli di documentazione e video (richiesta di Marco).** Utente: `static/description/index.html`
+  (pagina dell'app, linguaggio semplice, per ruolo, niente nomi tecnici) e video `./scripts/registra_video.sh`.
+  Tecnico: `static/description/analisi_tecnica.html` (installazione, parametri, permessi, automazioni, modello
+  dati, calcoli, test, dati di esempio) e video `./scripts/registra_video.sh --tecnico`. Quando cambia una
+  funzionalità aggiorna entrambi i livelli; i dettagli tecnici vanno solo nel livello tecnico.
 - **Tutto allineato, sempre (richiesta di Marco).** Ogni correzione o funzionalità dell'app si chiude solo
   quando sono allineati: codice e test, guida `index.html`, analisi tecnica `analisi_tecnica.html` (requisiti,
-  sicurezza, limiti noti), copione e video (`scripts/registra_video.py` → `./scripts/registra_video.sh`) se il
+  sicurezza, limiti noti), copioni e video (`scripts/registra_video.py` → `./scripts/registra_video.sh`, e `--tecnico`) se il
   flusso o una schermata mostrata cambia, README/LEGGIMI e, se l'app va condivisa, il pacchetto ZIP
   (`./scripts/package_app.sh`). Nel resoconto finale elenca cosa hai allineato.
 - Dev mode: `--dev=xml,reload` nel `command` di `docker-compose.yml`. Odoo 18 **non** legge `dev_mode` da `odoo.conf`.

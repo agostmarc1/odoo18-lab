@@ -4,8 +4,14 @@ Guida un vero browser (Chrome, con Playwright) sugli utenti demo di lab18 e salv
 addons/lab_workflow_custom/static/description/demo_flusso_operativo.mp4, insieme all'immagine
 di copertina e ai minuti dei capitoli (video_capitoli.json).
 
-Uso:  ./scripts/registra_video.sh            (registra il video)
-      ./scripts/registra_video.sh --prova    (solo schermate di controllo, nessun video)
+Uso:  ./scripts/registra_video.sh                     (video per l'utente)
+      ./scripts/registra_video.sh --tecnico           (video tecnico: installazione, configurazione,
+                                                       permessi, automazioni, modelli)
+      ./scripts/registra_video.sh [--tecnico] --prova (solo schermate di controllo, nessun video)
+
+Il video per l'utente va in demo_flusso_operativo.mp4 (capitoli in index.html), quello tecnico in
+demo_tecnica.mp4 (capitoli in analisi_tecnica.html). Entrambi si guardano da video.html
+(video.html?v=tecnico per quello tecnico).
 
 Il video crea un ordine di prova per il cliente "Ferri Automazione S.r.l." con il suo progetto,
 un turno e un foglio ore, più un ticket aperto dal modulo web pubblico per Verdi Retail
@@ -36,6 +42,13 @@ TICKET_VIDEO = "Stampa delle bolle bloccata"   # ticket aperto dal modulo web ne
 EMAIL_AMS = "helpdesk@verdiretail.example"
 PORTAL_VERDI = "mario.verdi@verdiretail.example"  # utente portale di Verdi Retail       # Verdi Retail, canone AMS dei dati sintetici
 PROVA = "--prova" in sys.argv
+TECNICO = "--tecnico" in sys.argv
+# nomi dei file prodotti: video per l'utente o video tecnico
+OUT = ({"mp4": "demo_tecnica.mp4", "json": "video_tecnico_capitoli.json",
+        "poster": "video_tecnico_copertina.png", "pagina": "analisi_tecnica.html",
+        "link": "video.html?v=tecnico"} if TECNICO else
+       {"mp4": "demo_flusso_operativo.mp4", "json": "video_capitoli.json",
+        "poster": "video_copertina.png", "pagina": "index.html", "link": "video.html"})
 W, H = 1280, 720
 
 ENV = dict(line.split("=", 1) for line in (ROOT / ".env").read_text().splitlines()
@@ -283,7 +296,7 @@ class Regia:
     def nuova_pagina(self):
         self._nuovo_contesto()
 
-    def login(self, utente, ruolo):
+    def login(self, utente, ruolo, password=None):
         self.nuova_pagina()
         self.page.goto(URL + "/web/session/logout", wait_until="domcontentloaded")
         self.page.goto(URL + "/web/login", wait_until="domcontentloaded")
@@ -293,9 +306,22 @@ class Regia:
         # si usa quello del modulo di accesso
         form = self.page.locator("form.oe_login_form")
         self.scrivi(form.locator("input[name=login]"), utente)
-        form.locator("input[name=password]").fill(PWD_USERS)
+        form.locator("input[name=password]").fill(password or PWD_USERS)
         self.clic(form.locator("button[type=submit]"))
         self.pronto()
+
+    def cerca(self, testo):
+        """Scrive nella barra di ricerca della vista e conferma."""
+        self.scrivi(self.page.locator(".o_searchview_input"), testo)
+        self.page.keyboard.press("Enter")
+        self.pausa(1.2)
+
+    def documento(self, ancora, testo, sec):
+        """Apre la documentazione tecnica alla sezione indicata."""
+        self.page.goto(f"{URL}/lab_workflow_custom/static/description/analisi_tecnica.html#{ancora}",
+                       wait_until="load")
+        self.page.wait_for_timeout(800)
+        self.dici(testo, sec)
 
     # -- mouse e tastiera visibili
     def _muovi(self, loc):
@@ -726,13 +752,112 @@ def copione(r, rpc):
 
 
 # ---------------------------------------------------------------- pagina dell'app
+def copione_tecnico(r, rpc):
+    """Video per chi installa, configura e mantiene l'app (amministratore di sistema)."""
+    mod = rpc.search("ir.module.module", [("name", "=", "lab_workflow_custom")], limit=1)[0]
+    pm = rpc("ir.model.data", "search_read",
+             [("module", "=", "lab_workflow_custom"), ("name", "=", "group_lab_pm")],
+             ["res_id"])[0]["res_id"]
+
+    r.page.goto(URL + "/web/login", wait_until="domcontentloaded")
+    r.capitolo(0, "Flusso Operativo Software House – livello tecnico",
+               "Installazione, configurazione, permessi, automazioni e modelli dati<br>"
+               "Per l'amministratore di sistema e per chi mantiene l'app")
+
+    # 1. Installazione
+    r.capitolo(1, "Installazione su un Odoo 18 CE",
+               "Una sola app: i moduli standard e OCA necessari si installano da soli", "")
+    r.login("admin", "Amministratore di sistema", PWD_ADMIN)
+    r.vai(f"/odoo/action-base.open_module_tree/{mod}?debug=1")
+    r.dici("Il pacchetto ZIP contiene l'app e i moduli OCA alla versione provata: si copiano "
+           "nell'addons path e si installa <b>Flusso Operativo Software House</b>.", 6)
+    r.dici("Le dipendenze (vendite, progetti, fogli ore, contabilità, ferie e permessi, Helpdesk "
+           "OCA, canoni, sito) si installano da sole, anche su un Odoo appena creato.", 6)
+    r.foto("modulo")
+    r.dici("Lo script <b>prova_installazione_pulita.sh</b> lo verifica a ogni rilascio: Odoo "
+           "nuovo, con e senza dati di esempio, e tutti i test automatici.", 6)
+
+    # 2. Parametri
+    r.capitolo(2, "Parametri di sistema",
+               "Ore settimanali, ricarico, chiave Anthropic, richieste web non confermate", "")
+    r.vai("/odoo/action-base.ir_config_list_action?debug=1")
+    r.cerca("lab_workflow_custom")
+    r.dici("Impostazioni › Tecnico › <b>Parametri di sistema</b>: le regole che l'azienda può "
+           "adattare senza toccare il codice.", 5.5)
+    r.dici("<b>max_weekly_hours</b> (32) è il limite 80/20, <b>passthrough_markup_pct</b> (15) "
+           "il ricarico proposto; la chiave Anthropic attiva il connettore dei consumi AI.", 6.5)
+    r.foto("parametri")
+
+    # 3. Permessi
+    r.capitolo(3, "Ruoli e permessi",
+               "Cinque gruppi dell'app; i numeri economici solo a PM e Amministrazione", "")
+    r.vai("/odoo/action-base.action_res_groups?debug=1")
+    r.cerca("Ruoli Flusso Operativo")
+    r.dici("I ruoli dell'app sono gruppi Odoo: Commerciale, Project Manager, Analista / "
+           "Sviluppatore, Supporto e Amministrazione.", 5.5)
+    r.foto("gruppi")
+    r.vai(f"/odoo/action-base.action_res_groups/{pm}?debug=1")
+    r.dici("Ogni gruppo porta i permessi sui modelli e le regole sui record: per esempio i costi, "
+           "i ricavi e i margini sono visibili solo a PM e Amministrazione.", 6.5)
+    r.scheda("Diritti di accesso")
+    r.dici("Scheda <b>Diritti di accesso</b>: cosa il Project Manager può leggere, modificare, "
+           "creare ed eliminare in ogni modello.", 5.5)
+    r.foto("gruppo_pm")
+
+    # 4. Automazioni
+    r.capitolo(4, "Automazioni e notifiche",
+               "Azioni programmate e modelli email dell'app", "")
+    r.vai("/odoo/action-base.ir_cron_act?debug=1")
+    r.cerca("Consuntivazione")
+    r.dici("Impostazioni › Tecnico › <b>Azioni programmate</b>: promemoria alle 9:00, "
+           "riepilogo del lunedì e aggiornamento notturno del report di consuntivazione.", 6.5)
+    r.dici("Altre azioni dell'app: import dei consumi da Anthropic, ripartizione dei costi AI e "
+           "archivio delle richieste dal sito mai confermate. L'elenco completo è nella documentazione tecnica, sezione 8.", 6)
+    r.foto("cron")
+    r.vai("/odoo/action-mail.action_email_template_tree_all?debug=1")
+    r.cerca("Consuntivazione")
+    r.dici("I testi delle email sono <b>modelli email</b> modificabili: restano come li cambia "
+           "l'azienda anche dopo un aggiornamento dell'app.", 6)
+    r.foto("modelli_email")
+
+    # 5. Modelli dati
+    r.capitolo(5, "Modelli dati",
+               "I modelli nuovi dell'app e quelli standard estesi", "")
+    r.vai("/odoo/action-base.action_model_model?debug=1")
+    r.cerca("lab.")
+    r.dici("Impostazioni › Tecnico › <b>Modelli</b>: i modelli nuovi hanno il prefisso "
+           "<b>lab.</b> (turni, costi AI, chiusura del mese, margini, consuntivazione).", 6)
+    r.dici("I modelli standard (ordini, progetti, task, fogli ore, fatture, ticket) sono solo "
+           "estesi: nessuna modifica al core di Odoo né ai moduli OCA.", 6)
+    r.foto("modelli")
+
+    # 6. Documentazione tecnica
+    r.ruolo("")
+    r.capitolo(6, "Documentazione tecnica",
+               "Requisiti, regole di calcolo, test e rilascio", "")
+    r.documento("requisiti", "Ogni requisito è collegato al codice e al test che lo verifica.", 5)
+    r.documento("calcoli", "Le <b>regole di calcolo</b> descrivono le formule: monte ore, 80/20, "
+                "costi dei consulenti, costi AI, margini, consuntivazione e avanzamento.", 6)
+    r.documento("test", "I <b>test automatici</b> coprono ogni regola e girano a ogni modifica e "
+                "nella prova di installazione pulita.", 5.5)
+    r.foto("doc_test")
+    r.documento("rilascio", "<b>Installazione e rilascio</b>: pacchetto, aggiornamento, dati "
+                "che non vengono sovrascritti e dati di esempio.", 5.5)
+
+    r.page.evaluate("() => window.__labCaption('')")
+    r.capitolo(7, "Riepilogo",
+               "Pacchetto installabile da solo → parametri → ruoli e permessi → automazioni → "
+               "modelli → documentazione e test.<br>Per l'uso quotidiano: guida e video per "
+               "l'utente nella scheda dell'app.")
+
+
 def aggiorna_capitoli_index(capitoli):
-    """Scrive l'elenco dei capitoli (con i minuti) nella pagina dell'app, tra i segnaposto."""
-    index = DESC / "index.html"
+    """Scrive l'elenco dei capitoli (con i minuti) nella pagina del video, tra i segnaposto."""
+    index = DESC / OUT["pagina"]
     html = index.read_text(encoding="utf-8")
     start, end = "<!-- CAPITOLI_VIDEO -->", "<!-- /CAPITOLI_VIDEO -->"
     if start not in html or end not in html:
-        print("Segnaposto dei capitoli non trovato in index.html: elenco non aggiornato")
+        print(f"Segnaposto dei capitoli non trovato in {OUT['pagina']}: elenco non aggiornato")
         return
     voci = []
     for c in capitoli:
@@ -740,26 +865,27 @@ def aggiorna_capitoli_index(capitoli):
             continue
         s = c["secondi"]
         voci.append(
-            f'  <li><a href="/lab_workflow_custom/static/description/video.html#t={s}" '
+            f'  <li><a href="/lab_workflow_custom/static/description/{OUT["link"]}#t={s}" '
             f'target="_blank">{s // 60}:{s % 60:02d}</a> – {c["titolo"]}</li>')
     blocco = (f'{start}\n<p style="margin-bottom:4px"><b>Capitoli</b> (il minuto apre il video '
               f'da quel punto)</p>\n<ol style="font-size:14px;columns:2;column-gap:32px">\n'
               + "\n".join(voci) + f"\n</ol>\n{end}")
     a, b = html.index(start), html.index(end) + len(end)
     index.write_text(html[:a] + blocco + html[b:], encoding="utf-8")
-    print("Capitoli aggiornati in index.html")
+    print("Capitoli aggiornati in", OUT["pagina"])
 
 
 # ---------------------------------------------------------------- main
 def main():
     if "--solo-capitoli" in sys.argv:
-        aggiorna_capitoli_index(json.loads((DESC / "video_capitoli.json").read_text("utf-8")))
+        aggiorna_capitoli_index(json.loads((DESC / OUT["json"]).read_text("utf-8")))
         return
     shutil.rmtree(WORK, ignore_errors=True)
     FRAMES.mkdir(parents=True, exist_ok=True)
     rpc = Rpc()
-    pulisci_dati_video(rpc)
-    prepara_settimana_niccolo(rpc)
+    if not TECNICO:
+        pulisci_dati_video(rpc)
+        prepara_settimana_niccolo(rpc)
     with sync_playwright() as p:
         browser = p.chromium.launch(channel="chrome")
         opts = {"viewport": {"width": W, "height": H}, "locale": "it-IT",
@@ -767,7 +893,7 @@ def main():
         t0 = time.monotonic()
         r = Regia(browser, opts, t0)
         try:
-            copione(r, rpc)
+            (copione_tecnico if TECNICO else copione)(r, rpc)
         except Exception:
             import traceback
             traceback.print_exc()
@@ -788,11 +914,11 @@ def main():
     if PROVA:
         print("Prova completata: schermate in", WORK)
         return
-    (DESC / "video_capitoli.json").write_text(
+    (DESC / OUT["json"]).write_text(
         json.dumps(r.capitoli, ensure_ascii=False, indent=1), encoding="utf-8")
     aggiorna_capitoli_index(r.capitoli)
     # montaggio: ogni fotogramma resta a schermo fino al successivo (frequenza variabile)
-    mp4 = DESC / "demo_flusso_operativo.mp4"
+    mp4 = DESC / OUT["mp4"]
     ffmpeg = shutil.which("ffmpeg") or "ffmpeg"
     elenco = WORK / "fotogrammi.txt"
     righe = []
@@ -808,10 +934,11 @@ def main():
                     "-c:v", "libx264", "-preset", "slow", "-crf", "28",
                     "-movflags", "+faststart", "-an", str(mp4)], check=True)
     subprocess.run([ffmpeg, "-y", "-loglevel", "error", "-ss", "2", "-i", str(mp4),
-                    "-frames:v", "1", str(DESC / "video_copertina.png")], check=True)
+                    "-frames:v", "1", str(DESC / OUT["poster"])], check=True)
     print("Video:", mp4, f"({mp4.stat().st_size / 1e6:.1f} MB)")
     # il progetto, l'ordine e il ticket di prova del video non restano tra i dati di lavoro
-    pulisci_dati_video(rpc)
+    if not TECNICO:
+        pulisci_dati_video(rpc)
 
 
 if __name__ == "__main__":

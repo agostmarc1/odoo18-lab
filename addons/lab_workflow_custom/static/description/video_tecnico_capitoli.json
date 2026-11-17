@@ -1,0 +1,42 @@
+[
+ {
+  "n": 0,
+  "titolo": "Flusso Operativo Software House – livello tecnico",
+  "secondi": 1
+ },
+ {
+  "n": 1,
+  "titolo": "Installazione su un Odoo 18 CE",
+  "secondi": 6
+ },
+ {
+  "n": 2,
+  "titolo": "Parametri di sistema",
+  "secondi": 47
+ },
+ {
+  "n": 3,
+  "titolo": "Ruoli e permessi",
+  "secondi": 72
+ },
+ {
+  "n": 4,
+  "titolo": "Automazioni e notifiche",
+  "secondi": 108
+ },
+ {
+  "n": 5,
+  "titolo": "Modelli dati",
+  "secondi": 146
+ },
+ {
+  "n": 6,
+  "titolo": "Documentazione tecnica",
+  "secondi": 171
+ },
+ {
+  "n": 7,
+  "titolo": "Riepilogo",
+  "secondi": 201
+ }
+]
