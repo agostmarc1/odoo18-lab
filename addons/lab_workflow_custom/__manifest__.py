@@ -2,7 +2,7 @@
     "name": "Flusso Operativo Software House",
     "summary": "Flusso operativo software house: CRM > Vendite > Progetto > "
                "Pianificazione > Fogli ore > Alert monte ore > Margini > Ticket di assistenza",
-    "version": "18.0.1.16.0",
+    "version": "18.0.1.17.0",
     "category": "Services/Project",
     "description": """
 Unica app che contiene TUTTE le personalizzazioni rispetto a Odoo 18 CE standard.
@@ -19,6 +19,7 @@ Per installarla in un altro Odoo 18: vedi scripts/package_app.sh nel repository 
         "hr_timesheet",
         "account",
         "hr_holidays",               # ferie e permessi: le assenze riducono le ore attese
+        "project_task_code",  # OCA: numero unico dei task (T0001, T0002, ...)
         "project_timesheet_holidays",  # le ferie diventano fogli ore sul task "Time Off" (esclusi dal controllo)
         # OCA, branch 18.0 (inclusi nel pacchetto creato da scripts/package_app.sh)
         "subscription_oca",   # canoni ricorrenti (AMS mensile)

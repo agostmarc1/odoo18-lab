@@ -442,6 +442,8 @@ def copione(r, rpc):
     r.vai(f"/odoo/project/{project_id}/tasks")
     r.dici("I task sono già creati e stimati: Analisi 15%, Project Management 10%, "
            "Sviluppo 60%, Test 15% delle ore vendute.", 6)
+    r.dici("Ogni task ha un <b>numero unico</b>, come i ticket (T0001, T0002…): si cerca "
+           "scrivendolo nella barra di ricerca.", 5)
     r.foto("task")
 
     # 3. PM: pianificazione 80/20

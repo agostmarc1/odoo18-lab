@@ -10,6 +10,7 @@ APP=lab_workflow_custom
 declare -A OCA=(
   [subscription_oca]=oca-contract
   [project_timeline]=oca-project
+  [project_task_code]=oca-project
   [web_timeline]=oca-web
   # ticketing (Helpdesk OCA)
   [helpdesk_mgmt]=oca-helpdesk

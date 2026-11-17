@@ -55,7 +55,7 @@ L'immagine Docker è quella ufficiale `odoo:18.0` più due librerie Python richi
 **Tutte le personalizzazioni sono in una sola app: "Flusso Operativo Software House"**
 (nome tecnico `lab_workflow_custom`). Si installa solo lei: Odoo attiva da solo i moduli da cui dipende,
 cioè `crm`, `sale_management`, `project`, `hr_timesheet`, `sale_timesheet`, `account`,
-`subscription_oca` (OCA, canoni ricorrenti), `project_timeline` + `web_timeline` (OCA, timeline dei task)
+`subscription_oca` (OCA, canoni ricorrenti), `project_timeline` + `web_timeline` (OCA, timeline dei task), `project_task_code` (OCA, numero unico dei task T0001…)
 e l'**Helpdesk OCA** per i ticket (`helpdesk_mgmt_timesheet`, `helpdesk_type`, `helpdesk_mgmt_sla`,
 `helpdesk_mgmt_rating`, `website_helpdesk_mgmt`, che porta anche il modulo **Sito web** di Odoo).
 
