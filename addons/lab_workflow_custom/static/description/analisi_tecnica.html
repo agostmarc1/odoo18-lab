@@ -35,7 +35,7 @@
 <h1>Flusso Operativo Software House</h1>
 <p class="lead">Documentazione tecnica del modulo <code>lab_workflow_custom</code> (analisi funzionale e tecnica), per chi deve installarlo, configurarlo, mantenerlo o estenderlo.</p>
 <div class="meta">
-  <span class="chip">Odoo 18.0 Community</span><span class="chip">Versione modulo 18.0.1.16.0</span>
+  <span class="chip">Odoo 18.0 Community</span><span class="chip">Versione modulo 18.0.1.17.0</span>
   <span class="chip">Licenza LGPL-3</span><span class="chip">Categoria Services/Project</span>
 </div>
 
@@ -70,13 +70,13 @@ Il <a href="video.html?v=tecnico">video tecnico</a> mostra installazione, parame
 <!-- CAPITOLI_VIDEO -->
 <p style="margin-bottom:4px"><b>Capitoli</b> (il minuto apre il video da quel punto)</p>
 <ol style="font-size:14px;columns:2;column-gap:32px">
-  <li><a href="/lab_workflow_custom/static/description/video.html?v=tecnico#t=6" target="_blank">0:06</a> – Installazione su un Odoo 18 CE</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html?v=tecnico#t=47" target="_blank">0:47</a> – Parametri di sistema</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html?v=tecnico#t=72" target="_blank">1:12</a> – Ruoli e permessi</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html?v=tecnico#t=108" target="_blank">1:48</a> – Automazioni e notifiche</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html?v=tecnico#t=146" target="_blank">2:26</a> – Modelli dati</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html?v=tecnico#t=171" target="_blank">2:51</a> – Documentazione tecnica</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html?v=tecnico#t=201" target="_blank">3:21</a> – Riepilogo</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html?v=tecnico#t=7" target="_blank">0:07</a> – Installazione su un Odoo 18 CE</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html?v=tecnico#t=49" target="_blank">0:49</a> – Parametri di sistema</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html?v=tecnico#t=74" target="_blank">1:14</a> – Ruoli e permessi</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html?v=tecnico#t=112" target="_blank">1:52</a> – Automazioni e notifiche</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html?v=tecnico#t=152" target="_blank">2:32</a> – Modelli dati</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html?v=tecnico#t=177" target="_blank">2:57</a> – Documentazione tecnica</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html?v=tecnico#t=207" target="_blank">3:27</a> – Riepilogo</li>
 </ol>
 <!-- /CAPITOLI_VIDEO -->
 
@@ -117,6 +117,7 @@ Il <a href="video.html?v=tecnico">video tecnico</a> mostra installazione, parame
   <tr><td><code>account</code></td><td>Odoo CE</td><td>Fatture cliente e fornitore, distribuzione analitica</td></tr>
   <tr><td><code>hr_holidays</code></td><td>Odoo CE</td><td>Ferie e permessi: le assenze approvate riducono le ore attese della consuntivazione</td></tr>
   <tr><td><code>subscription_oca</code></td><td>OCA <code>contract</code> 18.0</td><td>Canoni ricorrenti AMS (sostituisce <code>sale_subscription</code> Enterprise)</td></tr>
+  <tr><td><code>project_task_code</code></td><td>OCA <code>project</code> 18.0</td><td>Numero unico dei task (<code>code</code>, sequenza <code>project.task</code>, prefisso <code>T</code>, 4 cifre): compare nel nome mostrato (<code>[T0012] Analisi</code>) e si cerca; all'installazione numera anche i task esistenti</td></tr>
   <tr><td><code>project_timeline</code> (+ <code>web_timeline</code>)</td><td>OCA <code>project</code> / <code>web</code> 18.0</td><td>Vista timeline dei task</td></tr>
   <tr><td><code>helpdesk_mgmt_timesheet</code> (+ <code>helpdesk_mgmt</code>, <code>helpdesk_mgmt_project</code>, <code>project_timesheet_time_control</code>)</td><td>OCA <code>helpdesk</code> / <code>project</code> 18.0</td><td>Ticket, team, stadi, portale, alias email; ticket collegato a commessa e task; ore sul ticket</td></tr>
   <tr><td><code>helpdesk_type</code>, <code>helpdesk_mgmt_sla</code>, <code>helpdesk_mgmt_rating</code></td><td>OCA <code>helpdesk</code> 18.0</td><td>Tipo di richiesta, SLA con calendario lavorativo, valutazione del cliente</td></tr>
@@ -135,7 +136,7 @@ Il <a href="video.html?v=tecnico">video tecnico</a> mostra installazione, parame
 ├── data/                    parametri, prodotti, task di default, strumenti AI, cron,
 │                            configurazione Helpdesk, email ai clienti, pagine del sito
 ├── demo/                    utenti demo, costi demo, scenario sintetico
-├── tests/                   test_flow, test_costs, test_ai_usage, test_helpdesk, test_pm_overview, test_timesheet_check (46 test)
+├── tests/                   test_flow, test_costs, test_ai_usage, test_helpdesk, test_pm_overview, test_timesheet_check, test_task_code (48 test)
 ├── static/src/              editor della descrizione del modulo pubblico e Kanban del portale
 │                            con aggiornamento in tempo reale (JS + SCSS, web.assets_frontend)
 └── static/description/      pagina dell'app, video, questa analisi</pre>
@@ -193,6 +194,7 @@ Il <a href="video.html?v=tecnico">video tecnico</a> mostra installazione, parame
   <tr><td>RF-39</td><td>Chiusura del mese solo con ore complete (o <i>Chiudi comunque</i>, annotato); ore del mese chiuso bloccate</td><td><code>lab.cost.period.action_close</code>, <code>account.analytic.line._lab_check_closed_month</code></td><td>test_timesheet_check 04</td><td>Amministrazione</td></tr>
   <tr><td>RF-40</td><td>Task: tempo stimato, inizio/fine pianificati, date di esecuzione, tempo effettivo, stato rispetto alle date, lista <i>Task da stimare</i>; ore residue, stima a finire, avanzamento, avviso di sforamento previsto al PM; avanzamento del progetto</td><td><code>project.task</code> (<code>lab_schedule_state</code>, <code>lab_eac_hours</code>), <code>account.analytic.line.lab_remaining_hours</code>, <code>project.project._compute_lab_progress</code></td><td>test_timesheet_check 05</td><td>PM, team</td></tr>
   <tr><td>RF-41</td><td>Consulenti: ore in fattura contro ore registrate, nota sulla fattura se non quadrano, riepilogo per consulente</td><td><code>account.move.line.lab_hours_difference</code>, <code>account.move._lab_check_consultant_hours</code></td><td>test_timesheet_check 06</td><td>Amministrazione</td></tr>
+  <tr><td>RF-42</td><td>Ogni task ha un numero unico, come i ticket, visibile in liste, schede, turni e fogli ore e ricercabile</td><td>dipendenza OCA <code>project_task_code</code> (<code>project.task.code</code>, <code>display_name</code>)</td><td>test_task_code 01–02</td></tr>
 </table></div>
 <h3>Requisiti non funzionali</h3>
 <table>
@@ -504,7 +506,7 @@ consulente      = ore in fattura = quantità (× ore/giorno se tariffa a giornat
 
 <!-- ============================================================== -->
 <h2 id="test">11. Test automatici</h2>
-<p>46 test (<code>TransactionCase</code> e un <code>HttpCase</code>), eseguiti con <code>./scripts/run_tests.sh</code> (Odoo fermo, <code>--test-tags</code> sul modulo).</p>
+<p>48 test (<code>TransactionCase</code> e un <code>HttpCase</code>), eseguiti con <code>./scripts/run_tests.sh</code> (Odoo fermo, <code>--test-tags</code> sul modulo).</p>
 <div class="wrap"><table>
   <tr><th>File</th><th>Test</th><th>Cosa verifica</th></tr>
   <tr><td rowspan="8">test_flow.py</td><td>01 products_configured</td><td>Prodotti di base con le giuste politiche</td></tr>
@@ -553,6 +555,8 @@ consulente      = ore in fattura = quantità (× ore/giorno se tariffa a giornat
   <tr><td>04 month_close_checks_and_locks_hours</td><td>Chiusura bloccata con ore mancanti, <i>Chiudi comunque</i>; ore del mese chiuso non modificabili dalla persona</td></tr>
   <tr><td>05 task_estimate_dates_and_remaining</td><td>Da stimare, inizio in ritardo, in linea; ore residue dal foglio ore, stima a finire, avanzamento, attività al PM; avanzamento del progetto; task interni esclusi</td></tr>
   <tr><td>06 consultant_hours_vs_bill</td><td>Ore in fattura contro ore registrate e nota sulla fattura</td></tr>
+  <tr><td rowspan="2">test_task_code.py</td><td>01 task_numbered_and_searchable</td><td>Numero T… unico anche per i task creati da un analista, nel nome mostrato e ricercabile</td></tr>
+  <tr><td>02 default_tasks_from_order_numbered</td><td>I task di default creati dalla conferma dell'ordine hanno numeri tutti diversi</td></tr>
 </table></div>
 <p>Il collaudo end-to-end con gli utenti dei ruoli è documentato nel video della pagina dell'app (registrato da <code>scripts/registra_video.sh</code>, rigenerabile dopo ogni modifica).</p>
 
