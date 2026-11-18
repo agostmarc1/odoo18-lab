@@ -79,6 +79,10 @@ class SaleOrderLine(models.Model):
             # solo gli utenti invitati e gli assegnatari dei task vedono la commessa
             "privacy_visibility": "followers",
         })
+        # Soluzione di settore: la commessa conta come installazione nel cruscotto
+        vertical = lines.product_id.product_tmpl_id.lab_vertical_id[:1]
+        if vertical:
+            project.lab_vertical_id = vertical
         salesman = self.order_id.user_id.partner_id
         if salesman:
             project.message_subscribe(partner_ids=salesman.ids)

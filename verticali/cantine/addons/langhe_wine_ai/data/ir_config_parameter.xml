@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!--
+        Parametri di sistema del modulo (Impostazioni > Tecnico > Parametri di sistema).
+        La chiave API NON viene creata qui, così non finisce mai nel codice:
+        si inserisce da Impostazioni > Vendite > Assistente Claude
+        (parametro "langhe_wine_ai.anthropic_api_key") oppure come variabile
+        d'ambiente ANTHROPIC_API_KEY del server.
+        noupdate="1": gli aggiornamenti del modulo non sovrascrivono le scelte del cliente.
+    -->
+    <record id="param_claude_model" model="ir.config_parameter">
+        <field name="key">langhe_wine_ai.model</field>
+        <field name="value">claude-sonnet-5-5</field>
+    </record>
+    <record id="param_claude_effort" model="ir.config_parameter">
+        <field name="key">langhe_wine_ai.effort</field>
+        <field name="value">medium</field>
+    </record>
+    <record id="param_claude_fallback" model="ir.config_parameter">
+        <field name="key">langhe_wine_ai.use_fallback</field>
+        <field name="value">True</field>
+    </record>
+</odoo>

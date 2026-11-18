@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Soluzioni di settore: la stessa offerta venduta a più clienti (es. Soluzione Cantina) -->
+    <record id="view_lab_vertical_form" model="ir.ui.view">
+        <field name="name">lab.vertical.form</field>
+        <field name="model">lab.vertical</field>
+        <field name="arch" type="xml">
+            <form string="Soluzione di settore">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_lab_installations" type="object" class="oe_stat_button" icon="fa-cubes">
+                            <field name="install_count" widget="statinfo" string="Installazioni"/>
+                        </button>
+                        <button name="action_lab_pipeline" type="object" class="oe_stat_button" icon="fa-handshake-o">
+                            <field name="pipeline_count" widget="statinfo" string="Trattative"/>
+                        </button>
+                        <button name="action_lab_products" type="object" class="oe_stat_button" icon="fa-tags">
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">Offerta</span>
+                                <span class="o_stat_text">a listino</span>
+                            </div>
+                        </button>
+                    </div>
+                    <widget name="web_ribbon" title="Archiviata" bg_color="text-bg-danger" invisible="active"/>
+                    <field name="active" invisible="1"/>
+                    <field name="currency_id" invisible="1"/>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="es. Soluzione Cantina"/></h1>
+                    </div>
+                    <!-- Cruscotto: il business scala se le ore per cliente scendono e le trattative crescono -->
+                    <div class="d-flex flex-wrap gap-2 my-3" name="lab_vertical_overview">
+                        <div class="card flex-fill text-center p-2">
+                            <div class="text-muted small">Clienti</div>
+                            <field name="customer_count" class="fs-4 fw-bold"/>
+                        </div>
+                        <div class="card flex-fill text-center p-2">
+                            <div class="text-muted small">Valore trattative</div>
+                            <field name="pipeline_amount" class="fs-4 fw-bold"/>
+                        </div>
+                        <div class="card flex-fill text-center p-2">
+                            <div class="text-muted small">Ore prima installazione → standard</div>
+                            <div class="fs-4 fw-bold">
+                                <field name="pilot_hours" widget="float_time" class="d-inline"/> →
+                                <field name="standard_hours" widget="float_time" class="d-inline"/>
+                            </div>
+                            <div class="small text-success" invisible="not hours_saved">
+                                <field name="hours_saved" widget="float_time" class="d-inline"/> h in meno per cliente
+                            </div>
+                        </div>
+                        <div class="card flex-fill text-center p-2"
+                             groups="lab_workflow_custom.group_lab_pm,lab_workflow_custom.group_lab_amministrazione,project.group_project_manager">
+                            <div class="text-muted small">Margine installazioni</div>
+                            <field name="margin" class="fs-4 fw-bold"
+                                   decoration-danger="margin &lt; 0" decoration-success="margin &gt; 0"/>
+                            <div class="small"><field name="margin_pct" class="d-inline"/> %</div>
+                        </div>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="user_id" widget="many2one_avatar_user"/>
+                            <field name="avg_sold_hours" widget="float_time"/>
+                            <field name="avg_consumed_hours" widget="float_time"/>
+                        </group>
+                        <group groups="lab_workflow_custom.group_lab_pm,lab_workflow_custom.group_lab_amministrazione,project.group_project_manager">
+                            <field name="revenue"/>
+                            <field name="total_cost"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Installazioni" name="installations">
+                            <field name="project_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="partner_id" string="Cliente"/>
+                                    <field name="user_id" widget="many2one_avatar_user" string="PM"/>
+                                    <field name="lab_sold_hours" widget="float_time" sum="Totale"/>
+                                    <field name="lab_consumed_hours" widget="float_time" sum="Totale"/>
+                                    <field name="lab_margin_pct" string="Margine %"
+                                           groups="lab_workflow_custom.group_lab_pm,lab_workflow_custom.group_lab_amministrazione,project.group_project_manager"/>
+                                    <field name="lab_instance_url" widget="url"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Trattative" name="pipeline">
+                            <field name="lead_ids" readonly="1">
+                                <list decoration-muted="not active">
+                                    <field name="active" column_invisible="1"/>
+                                    <field name="name"/>
+                                    <field name="partner_id"/>
+                                    <field name="user_id" widget="many2one_avatar_user"/>
+                                    <field name="stage_id"/>
+                                    <field name="expected_revenue" sum="Totale"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Offerta a listino" name="products">
+                            <field name="product_tmpl_ids" readonly="1">
+                                <list>
+                                    <field name="default_code"/>
+                                    <field name="name"/>
+                                    <field name="list_price"/>
+                                    <field name="lab_hours_per_unit" widget="float_time"/>
+                                    <field name="lab_monthly_hours" widget="float_time"/>
+                                    <field name="project_template_id"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Cosa comprende" name="description">
+                            <field name="description" placeholder="Moduli, procedura di installazione, cosa resta fuori..."/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_lab_vertical_list" model="ir.ui.view">
+        <field name="name">lab.vertical.list</field>
+        <field name="model">lab.vertical</field>
+        <field name="arch" type="xml">
+            <list string="Soluzioni di settore">
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="user_id" widget="many2one_avatar_user"/>
+                <field name="customer_count"/>
+                <field name="pipeline_count"/>
+                <field name="pipeline_amount"/>
+                <field name="standard_hours" widget="float_time"/>
+                <field name="hours_saved" widget="float_time"/>
+                <field name="margin_pct"
+                       groups="lab_workflow_custom.group_lab_pm,lab_workflow_custom.group_lab_amministrazione,project.group_project_manager"/>
+                <field name="currency_id" column_invisible="1"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_lab_vertical_kanban" model="ir.ui.view">
+        <field name="name">lab.vertical.kanban</field>
+        <field name="model">lab.vertical</field>
+        <field name="arch" type="xml">
+            <kanban>
+                <field name="currency_id"/>
+                <templates>
+                    <t t-name="card">
+                        <field name="name" class="fw-bold fs-5"/>
+                        <div class="text-muted small">Responsabile: <field name="user_id"/></div>
+                        <div class="d-flex justify-content-between mt-2">
+                            <span><field name="customer_count"/> clienti</span>
+                            <span><field name="pipeline_count"/> trattative · <field name="pipeline_amount"/></span>
+                        </div>
+                        <div class="small mt-1">
+                            Ore per installazione: <field name="pilot_hours" widget="float_time"/> →
+                            <field name="standard_hours" widget="float_time"/>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="action_lab_verticals" model="ir.actions.act_window">
+        <field name="name">Soluzioni di settore</field>
+        <field name="res_model">lab.vertical</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Nessuna soluzione di settore</p>
+            <p>Una soluzione di settore è la stessa offerta (setup standard + canone) venduta a più
+               clienti dello stesso settore: qui si vede se il business scala.</p>
+        </field>
+    </record>
+
+    <!-- Commessa: soluzione di settore e indirizzo dell'ambiente del cliente -->
+    <record id="edit_project_lab_vertical" model="ir.ui.view">
+        <field name="name">project.project.form.lab.vertical</field>
+        <field name="model">project.project</field>
+        <field name="inherit_id" ref="project.edit_project"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='label_tasks']/.." position="inside">
+                <field name="lab_vertical_id" options="{'no_create': True}"/>
+                <field name="lab_instance_url" widget="url" placeholder="https://cantina.cloudpepper.site"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Opportunità: a quale soluzione di settore appartiene -->
+    <record id="crm_lead_form_lab_vertical" model="ir.ui.view">
+        <field name="name">crm.lead.form.lab.vertical</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='tag_ids']" position="after">
+                <field name="lab_vertical_id" options="{'no_create': True}"
+                       invisible="type == 'lead'"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_lw_wine_denomination_list" model="ir.ui.view">
+        <field name="name">lw.wine.denomination.list</field>
+        <field name="model">lw.wine.denomination</field>
+        <field name="arch" type="xml">
+            <list string="Denominazioni" editable="bottom">
+                <field name="name"/>
+                <field name="level"/>
+                <field name="region"/>
+                <field name="active" column_invisible="True"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_lw_wine_denomination" model="ir.actions.act_window">
+        <field name="name">Denominazioni</field>
+        <field name="res_model">lw.wine.denomination</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <record id="view_lw_wine_grape_list" model="ir.ui.view">
+        <field name="name">lw.wine.grape.list</field>
+        <field name="model">lw.wine.grape</field>
+        <field name="arch" type="xml">
+            <list string="Vitigni" editable="bottom">
+                <field name="name"/>
+                <field name="color"/>
+                <field name="active" column_invisible="True"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_lw_wine_grape" model="ir.actions.act_window">
+        <field name="name">Vitigni</field>
+        <field name="res_model">lw.wine.grape</field>
+        <field name="view_mode">list</field>
+    </record>
+
+    <!-- Vendite > Configurazione > Vino -->
+    <menuitem id="menu_lw_wine_config" name="Vino" parent="sale.menu_sale_config" sequence="40"/>
+    <menuitem id="menu_lw_wine_denomination" name="Denominazioni" parent="menu_lw_wine_config"
+              action="action_lw_wine_denomination" sequence="10"/>
+    <menuitem id="menu_lw_wine_grape" name="Vitigni" parent="menu_lw_wine_config"
+              action="action_lw_wine_grape" sequence="20"/>
+</odoo>

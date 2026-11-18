@@ -1,0 +1,43 @@
+# Odoo 18 Community DEDICATO a una cantina: un'istanza separata per ogni cliente, come su Cloudpepper.
+# Stessa soluzione standard per tutti (cartella addons/); cambiano solo i dati in clienti/<cliente>/.
+# Non si lancia a mano: lo usa ./nuovo_cliente.sh, che passa il file .env del cliente
+# (porta, nome database, password generate). Il laboratorio sulla 8069 non viene toccato.
+services:
+  db:
+    image: postgres:16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?manca il file .env del cliente}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U odoo"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  odoo:
+    # Immagine ufficiale, senza librerie in più: la soluzione deve girare su un Odoo 18 CE qualsiasi
+    image: odoo:18.0
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${CANTINA_PORT:?}:8069"   # solo dal tuo PC
+    environment:
+      HOST: db
+      USER: odoo
+      PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - ./config/odoo.conf:/etc/odoo/odoo.conf:ro
+      - ./addons:/mnt/extra-addons:ro
+      - ./clienti/${CANTINA_SLUG:?}:/mnt/cliente:ro
+      - filestore:/var/lib/odoo
+    command: ["odoo", "--database=${CANTINA_DB:?}", "--db-filter=^${CANTINA_DB}$$"]
+
+volumes:
+  db-data:
+  filestore:

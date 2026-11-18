@@ -1,0 +1,5 @@
+codice;nome;categoria;denominazione;livello;annata;vitigno;perc_vitigno;grado;formato;bott_cartone;peso_netto;peso_lordo;tara_cartone;lung_cm;larg_cm;alt_cm;prezzo_base;italia;horeca;export_eu;export_usa;giacenza;lotto;note
+BAR20;Barolo 2020;rossi;Barolo;docg;2020;Nebbiolo;100;14,5;0,75;6;0,75;1,45;0,6;31;21;33;42;30;36;28;34;600;L2020-01;Affinamento 24 mesi in botte grande.
+BAR23;Barbera d'Alba 2023;rossi;Barbera d'Alba;doc;2023;Barbera;100;14;0,75;6;0,75;1,30;0,6;31;21;33;14;9,5;12;9;11;900;L2023-02;
+DOL24;Dolcetto d'Alba 2024;rossi;Dolcetto d'Alba;doc;2024;Dolcetto;100;13;0,75;6;0,75;1,25;0,6;31;21;33;11;7,5;9,5;7;9;1200;L2024-01;
+ARN24;Langhe Arneis 2024;bianchi;Langhe;doc;2024;Arneis;100;13;0,75;6;0,75;1,25;0,6;31;21;33;12;8;10;7,5;9,5;800;L2024-03;

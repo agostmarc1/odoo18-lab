@@ -1,0 +1,22 @@
+{
+  "_istruzioni": "Dati della cantina Bricco Rosso (cliente fittizio del laboratorio). Le password stanno nel file .env di questa cartella, che non va su git.",
+  "ragione_sociale": "Cantina Bricco Rosso S.r.l. Agricola",
+  "via": "Strada delle Vigne 12",
+  "cap": "12060",
+  "citta": "Barolo",
+  "paese": "IT",
+  "email": "info@briccorosso.example",
+  "telefono": "+39 0173 000 000",
+  "sito": "https://www.briccorosso.example",
+  "piva": "",
+  "cambio_usd_dimostrativo": 1.08,
+  "utenti": [
+    {"login": "paolo", "nome": "Paolo Bricco (titolare)", "ruolo": "titolare", "email": "paolo@briccorosso.example"},
+    {"login": "elena", "nome": "Elena Ferrero (commerciale export)", "ruolo": "commerciale", "email": "elena@briccorosso.example"},
+    {"login": "franco", "nome": "Franco Sobrero (cantina e magazzino)", "ruolo": "magazzino", "email": "franco@briccorosso.example"}
+  ],
+  "dati_demo": true,
+  "ordine_da_email": {"cliente": "Hudson Fine Wines Import LLC", "file": "ordine_demo.txt"},
+  "ordine_confermato": {"cliente": "Ristorante La Torre", "righe": [["DOL24", 12], ["BAR23", 6], ["BAR19", 6]]},
+  "evento": {"nome": "Degustazione classica del sabato", "posti": 20, "partecipanti": 12}
+}

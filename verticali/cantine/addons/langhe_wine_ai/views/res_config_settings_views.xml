@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_lw_wine" model="ir.ui.view">
+        <field name="name">res.config.settings.form.lw.wine</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="sale.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//app[@name='sale_management']" position="inside">
+                <block title="Assistente Claude (Langhe Wine AI)" name="lw_claude_settings" groups="base.group_system">
+                    <setting id="lw_anthropic_api_key" string="Chiave API Anthropic"
+                             help="Chiave dell'account Anthropic della cantina (console.anthropic.com). Visibile solo agli amministratori. Senza chiave il modulo lavora in modalità demo: legge gli ordini con regole semplici, senza Claude.">
+                        <field name="lw_anthropic_api_key" password="True" placeholder="sk-ant-..."/>
+                    </setting>
+                    <setting id="lw_claude_model" string="Modello"
+                             help="Modello usato per ordini e schede tecniche. Predefinito: claude-sonnet-5-5.">
+                        <field name="lw_claude_model"/>
+                        <div class="mt8">
+                            <field name="lw_claude_effort"/>
+                        </div>
+                    </setting>
+                </block>
+            </xpath>
+        </field>
+    </record>
+</odoo>

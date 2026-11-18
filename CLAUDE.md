@@ -42,6 +42,7 @@ addons/lab_workflow_custom/   <- moduli custom (mount /mnt/extra-addons)
 third-party/oca-*            <- repo OCA branch 18.0 (mount /mnt/third-party, gitignored)
 scripts/                     <- setup_pc, init_db, reset_db, update_module, run_tests, get_third_party, package_app, prova_installazione_pulita
 dist/                        <- pacchetto dell'app per altri Odoo (gitignored)
+verticali/<settore>/         <- prodotti per i CLIENTI (es. cantine): moduli propri, un Odoo dedicato per cliente
 ```
 **Una sola app**: tutte le personalizzazioni rispetto a Odoo 18 CE stanno in `lab_workflow_custom`
 ("Flusso Operativo Software House", `application: True`). Niente configurazioni a mano nel database né
@@ -50,12 +51,47 @@ in un altro Odoo si attiva tutto. Ogni modulo (standard o OCA) che serve va in `
 se è OCA va anche nell'elenco `OCA` di `scripts/package_app.sh`. A ogni modifica alza la versione
 `18.0.x.y.z` nel manifest. `scripts/_lib.sh` installa solo `lab_workflow_custom` (le dipendenze arrivano da sole).
 
+**Prodotti per i clienti (verticali), richiesta di Marco.** Le soluzioni che la software house vende
+a un settore NON sono personalizzazioni della software house: stanno in `verticali/<settore>/`, con
+i loro moduli e un Odoo 18 CE dedicato per ogni cliente (immagine ufficiale `odoo:18.0`, progetto
+docker `cantina_<cliente>`, porta da 8070 in su, database e password nel `.env` della cartella
+del cliente, mai su git). Esempio: `verticali/cantine/`.
+- Moduli: `langhe_wine_ai` (funzioni) e `cantina_standard` (pacchetto standard + caricatore
+  `cs.customer.package._cs_load`).
+- Dati di ogni cantina in `clienti/<cantina>/` (`cliente.json`, `vini.csv`, `clienti.csv`).
+- Comandi: `nuovo_cliente.sh "Nome"` crea o completa un'istanza, `--aggiorna` aggiorna i moduli,
+  `prova_pacchetto.sh` fa la prova su Odoo pulito con i test.
+
+Ciò che cambia da cliente a cliente va nei file del cliente, mai nel codice: così la soluzione
+resta una sola e scala. Il codice di un verticale ha la sua versione nel proprio manifest. Claude
+senza chiave = modalità demo (nessuna credenziale reale).
+
+Nell'app del laboratorio resta la parte commerciale ed economica: `lab.vertical` (Soluzioni di
+settore), installazioni, trattative, modello di progetto del setup standard.
+
 ## Comandi
+- **Pipeline di rilascio**: `./scripts/pipeline.sh` esegue in ordine tutte le fasi dopo una modifica:
+  1. controlli;
+  2. prova pulita della Soluzione Cantina;
+  3. prova pulita dell'app;
+  4. backup di lab18 e aggiornamento, con riavvio;
+  5. dati di esempio e test su lab18;
+  6. aggiornamento delle istanze delle cantine, con riavvio;
+  7. verifica degli accessi;
+  8. ZIP;
+  9. video, con `--video`;
+  10. commit su un ramo nuovo, con `--commit "msg"`, senza push.
+
+  Opzioni: `--da N`, `--solo N`, `--elenco`. Si ferma al primo errore e dice da dove ripartire;
+  registro in `backups/`. Lanciarla vale come conferma dei riavvii delle fasi 4 e 6.
 - Installazione completa su un PC nuovo: `./scripts/setup_pc.sh` (idempotente: genera `.env`, OCA, db, test)
 - Pacchetto per un altro Odoo 18: `./scripts/package_app.sh` (crea `dist/flusso_operativo_18.0.zip` con app + moduli OCA)
 - **Requisito chiave**: l'app deve installarsi da sola su qualsiasi Odoo 18 CE. Prima di ogni commit lancia
   `./scripts/prova_installazione_pulita.sh` (immagine ufficiale, db vuoto solo inglese, con e senza demo, test).
   Non dare per scontati lingua italiana, dati del laboratorio o librerie Python extra.
+- Verticali: prima di ogni commit che tocca `verticali/` lancia `./verticali/cantine/prova_pacchetto.sh`
+  (Odoo pulito in inglese, con e senza demo, test dei moduli). Non toccare le istanze dei clienti
+  senza chiedere: si aggiornano con `nuovo_cliente.sh "Nome" --aggiorna`.
 - Moduli OCA a versioni fissate in `scripts/oca_versions.txt`: aggiornarli solo con
   `./scripts/get_third_party.sh --aggiorna` seguito da test e prova di installazione pulita.
 - Sicurezza: i numeri economici dei progetti sono limitati sul campo (`ECONOMICS_GROUPS`); i nuovi
@@ -124,6 +160,12 @@ filtri data non accettano `default_period="week"`.
   (`_lab_fetch_anthropic`, API Usage & Cost Analytics) si attiva solo se esiste il parametro
   `lab_workflow_custom.anthropic_admin_key`; si testa con payload d'esempio (`_lab_parse_anthropic_rows`),
   mai con chiamate reali. Le chiavi stanno solo nei parametri di sistema, mai in file versionati.
+- **Soluzioni di settore** (`models/lab_vertical.py`): la commessa conta come installazione con
+  `project.lab_vertical_id`, preso dal prodotto alla conferma (`_timesheet_create_project`). Il setup
+  standard è `project_only` con `project_template_id` (fasi e ore dal modello). Setup e canone vanno
+  in **preventivi separati**: nello stesso ordine il canone fa dedurre il contratto "canone" anche al
+  setup. L'economia del cruscotto legge `lab.margin.report`, con `groups=ECONOMICS_GROUPS`.
+  `project.lab_instance_url` = indirizzo dell'Odoo dedicato del cliente. Dati demo in `_lab_load_vertical`.
 - **Consulenti esterni**: `lab_resource_type = external`, costo orario 0, costo maturato in
   `lab_accrued_external_cost` finché la fattura fornitore (riga con `lab_consultant_id`) non lo sostituisce.
 - **Pass-through**: l'ordine da rifatturare si cerca con `sudo` (le commesse sono riservate e chi
@@ -182,3 +224,6 @@ filtri data non accettano `default_period="week"`.
 | Licenze AI, consumi AI e import, fatture consulenti, chiusura mese costi | Amministrazione |
 | Corrispondenze consumi AI (workspace/chiavi/utenti → commesse/persone) | Project Manager, Amministrazione |
 | Approvazione ore parallele, fattore parallelo, ricarico pass-through | Project Manager |
+| Soluzioni di settore: offerta a listino, trattative per settore | Commerciale |
+| Soluzioni di settore: modello di progetto, cruscotto installazioni e margini, ambiente del cliente | Project Manager, Amministrazione (margini) |
+| Istanze dedicate dei clienti (verticali): creazione, aggiornamento, dati del cliente | Analista Funzionale / Sviluppatore |

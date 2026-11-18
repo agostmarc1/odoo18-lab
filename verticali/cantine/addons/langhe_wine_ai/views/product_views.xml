@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="product_template_form_view_lw_wine" model="ir.ui.view">
+        <field name="name">product.template.form.lw.wine</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_form_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='categ_id']" position="after">
+                <field name="lw_is_wine"/>
+            </xpath>
+            <xpath expr="//notebook" position="inside">
+                <page string="Vino" name="lw_wine" invisible="not lw_is_wine">
+                    <group>
+                        <group string="Identità">
+                            <field name="lw_denomination_id" options="{'no_create': True}"/>
+                            <field name="lw_vintage" options="{'format': false}"/>
+                            <field name="lw_grape_id"/>
+                            <field name="lw_grape_percent" invisible="not lw_grape_id"/>
+                            <field name="lw_alcohol"/>
+                            <field name="lw_format"/>
+                            <field name="lw_volume_l"/>
+                        </group>
+                        <group string="Bottiglia e cartone">
+                            <field name="lw_bottle_net_kg"/>
+                            <field name="lw_bottle_gross_kg"/>
+                            <field name="lw_bottles_per_case"/>
+                            <field name="lw_case_tare_kg"/>
+                            <label for="lw_case_length_cm" string="Misure cartone (cm)"/>
+                            <div class="o_row">
+                                <field name="lw_case_length_cm" nolabel="1"/> ×
+                                <field name="lw_case_width_cm" nolabel="1"/> ×
+                                <field name="lw_case_height_cm" nolabel="1"/>
+                            </div>
+                            <field name="lw_case_gross_kg"/>
+                            <field name="lw_case_volume_m3"/>
+                        </group>
+                    </group>
+                    <group string="Note del produttore">
+                        <field name="lw_producer_notes" nolabel="1" colspan="2"
+                               placeholder="Vinificazione, affinamento, note di degustazione, abbinamenti..."/>
+                    </group>
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <button name="action_lw_generate_sheet" type="object" icon="fa-magic"
+                                class="btn-primary" string="Genera scheda IT/EN/DE con Claude"/>
+                        <span class="text-muted">Usa solo i dati di questa scheda: controllare sempre il testo prima di inviarlo.</span>
+                    </div>
+                    <notebook>
+                        <page string="Italiano" name="lw_sheet_it">
+                            <field name="lw_sheet_it" nolabel="1"/>
+                        </page>
+                        <page string="English" name="lw_sheet_en">
+                            <field name="lw_sheet_en" nolabel="1"/>
+                        </page>
+                        <page string="Deutsch" name="lw_sheet_de">
+                            <field name="lw_sheet_de" nolabel="1"/>
+                        </page>
+                    </notebook>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="product_template_list_view_lw_wine" model="ir.ui.view">
+        <field name="name">product.template.list.lw.wine</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_tree_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="lw_denomination_id" optional="show"/>
+                <field name="lw_vintage" optional="show" options="{'format': false}"/>
+                <field name="lw_format" optional="hide"/>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="product_template_search_view_lw_wine" model="ir.ui.view">
+        <field name="name">product.template.search.lw.wine</field>
+        <field name="model">product.template</field>
+        <field name="inherit_id" ref="product.product_template_search_view"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="lw_denomination_id"/>
+                <field name="lw_vintage"/>
+            </xpath>
+            <xpath expr="//filter[@name='filter_to_sell']" position="before">
+                <filter string="Vini" name="lw_wines" domain="[('lw_is_wine', '=', True)]"/>
+                <separator/>
+            </xpath>
+            <xpath expr="//group" position="inside">
+                <filter string="Denominazione" name="lw_group_denomination" context="{'group_by': 'lw_denomination_id'}"/>
+                <filter string="Annata" name="lw_group_vintage" context="{'group_by': 'lw_vintage'}"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

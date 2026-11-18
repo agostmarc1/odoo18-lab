@@ -46,4 +46,10 @@
     <menuitem id="menu_default_tasks" name="Task di default commessa"
               parent="project.menu_project_config" action="action_default_tasks" sequence="90"
               groups="project.group_project_manager"/>
+    <!-- Soluzioni di settore: in CRM per il Commerciale, in Progetti > Report per il PM -->
+    <menuitem id="menu_verticals_crm" name="Soluzioni di settore" parent="crm.crm_menu_sales"
+              action="action_lab_verticals" sequence="40"/>
+    <menuitem id="menu_verticals_project" name="Soluzioni di settore"
+              parent="project.menu_project_report" action="action_lab_verticals" sequence="95"
+              groups="project.group_project_manager,lab_workflow_custom.group_lab_pm"/>
 </odoo>

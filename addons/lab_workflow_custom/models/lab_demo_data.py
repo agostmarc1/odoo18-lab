@@ -17,6 +17,7 @@ _logger = logging.getLogger(__name__)
 
 MODULE = "lab_workflow_custom"
 MARKER = "synth_order_rossi"
+FILLER_NAME = "Attività interne (riunioni, formazione)"
 
 
 def _workdays(start, end):
@@ -58,6 +59,8 @@ class LabDemoData(models.AbstractModel):
             loaded = self._lab_load_portal_users() or loaded
             loaded = self._lab_load_project_history() or loaded
             loaded = self._lab_load_timesheet_check() or loaded
+            loaded = self._lab_load_winery() or loaded
+            loaded = self._lab_load_vertical() or loaded
             if loaded:
                 return True
             _logger.info("Dati sintetici già presenti: nulla da fare")
@@ -76,6 +79,8 @@ class LabDemoData(models.AbstractModel):
         self.env["lab.cost.period"]._cron_compute_open_periods()
         self._lab_load_project_history()
         self._lab_load_timesheet_check()
+        self._lab_load_winery()
+        self._lab_load_vertical()
         _logger.info("Dati sintetici caricati")
         return True
 
@@ -152,7 +157,7 @@ class LabDemoData(models.AbstractModel):
             gap = gaps.get((row.employee_id.id, row.date), 0.0)
             hours = 0.0 if gap is None else max(missing - gap, 0.0)
             if hours > 0.01:
-                lines.append({"name": "Attività interne (riunioni, formazione)",
+                lines.append({"name": FILLER_NAME,
                               "project_id": internal.id, "task_id": internal_task.id,
                               "employee_id": row.employee_id.id, "date": row.date,
                               "unit_amount": hours})
@@ -263,6 +268,281 @@ class LabDemoData(models.AbstractModel):
         neri.with_user(marco).activity_schedule(
             f"{MODULE}.mail_activity_type_sal", date_deadline=(start + timedelta(days=14)).date(),
             summary="SAL 2 con il cliente", user_id=marco.id)
+        return True
+
+    # ---- Cliente cantina: pacchetto Odoo chiavi in mano con l'assistente Claude -----------
+    def _lab_free_hours(self, employee, day):
+        """Ore ancora libere nel giorno (ore attese meno ore su commesse e ticket) e righe di
+        "Attività interne" di riempimento che si possono ridurre per far posto al lavoro."""
+        internal = self.env.company.internal_project_id
+        lines = self.env["account.analytic.line"].search([
+            ("employee_id", "=", employee.id), ("date", "=", day), ("project_id", "!=", False)])
+        filler = lines.filtered(lambda l: l.project_id == internal and l.name == FILLER_NAME)
+        row = self.env["lab.timesheet.day"].search(
+            [("employee_id", "=", employee.id), ("date", "=", day)], limit=1)
+        due = row.due_hours if row else (employee.resource_calendar_id.hours_per_day or 8.0)
+        return due - sum((lines - filler).mapped("unit_amount")), filler
+
+    def _lab_ts_fit(self, ctx, who, task, day, hours, name):
+        """Foglio ore che non crea ore parallele: usa solo le ore libere del giorno, togliendole
+        dalle attività interne di riempimento. Restituisce la riga creata (o niente)."""
+        employee = ctx["emp"][who]
+        free, filler = self._lab_free_hours(employee, day)
+        hours = min(hours, free)
+        if hours <= 0.01:
+            return self.env["account.analytic.line"]
+        rest = hours
+        for line in filler.with_context(lab_skip_parallel=True):
+            take = min(line.unit_amount, rest)
+            if take >= line.unit_amount - 0.01:
+                line.unlink()
+            else:
+                line.unit_amount -= take
+            rest -= take
+            if rest <= 0.01:
+                break
+        return self._ts(ctx, who, task, day, hours, name)
+
+    def _lab_load_winery(self):
+        """Cantina Bricco Rosso (Barolo, circa 80.000 bottiglie l'anno), cliente della software
+        house per il pacchetto "Odoo chiavi in mano per cantine" con il modulo langhe_wine_ai
+        (ordini da email con Claude, Packing List export). Ciclo completo nel mese in corso:
+        opportunità vinta, ordine a corpo confermato, commessa con task stimati, ore di PM,
+        analisi e del consulente Carlo (sviluppo con Claude Code), consumo API dedicato alla
+        commessa, cronologia nel chatter e preventivo del canone di assistenza dopo il go-live.
+        Le ore usano solo il tempo libero delle persone: nessuna ora parallela nuova.
+        Idempotente."""
+        if (self.env.ref(f"{MODULE}.synth_order_bricco", raise_if_not_found=False)
+                or not self.env.ref(f"{MODULE}.{MARKER}", raise_if_not_found=False)):
+            return False
+        from markupsafe import Markup
+        from .lab_project_history import _link
+        self = self.sudo().with_context(tracking_disable=True, mail_notrack=True,
+                                        mail_create_nolog=True)
+        ctx = self._context_data()
+        users, today = ctx["users"], ctx["today"]
+        giuseppe, marco = users["giuseppe"], users["marco"]
+        days = [d for d in ctx["cur_days"] if d < today] or [today]
+        day = lambda i: days[min(i, len(days) - 1)]  # noqa: E731
+
+        # Commerciale: cliente, opportunità e ordine a prezzo fisso
+        partner = self._partner("synth_partner_bricco", "Cantina Bricco Rosso S.r.l. Agricola",
+                                "Barolo", "info@briccorosso.example")
+        partner.write({"user_id": giuseppe.id, "street": "Via delle Langhe 12", "zip": "12060"})
+        lead = self.env["crm.lead"].create({
+            "name": "Odoo chiavi in mano per la cantina con assistente Claude",
+            "type": "opportunity", "partner_id": partner.id, "user_id": giuseppe.id,
+            "expected_revenue": 12000 + 12 * 1500,  # setup + primo anno di assistenza
+            "description": Markup(
+                "<p>80.000 bottiglie l'anno, 40% export (USA, Germania, Svizzera). Oggi ordini "
+                "da email e WhatsApp ricopiati a mano, listini in Excel. Registri SIAN nel "
+                "software di cantina: restano lì.</p>")})
+        self._xmlid("synth_lead_bricco", lead)
+        dev = self._ref("product_dev_fixed").product_variant_id
+        order = self.env["sale.order"].with_user(giuseppe).create({
+            "partner_id": partner.id, "opportunity_id": lead.id,
+            "client_order_ref": "Setup Odoo cantina – prezzo fisso",
+            "order_line": [(0, 0, {
+                "product_id": dev.id, "product_uom_qty": 1,
+                "name": "Setup chiavi in mano Odoo 18 CE per cantina: vini, annate e lotti, "
+                        "listini Privati / Ho.Re.Ca. / Export USA, DDT e Packing List, punto "
+                        "vendita ed eventi di degustazione, modulo langhe_wine_ai (ordini da "
+                        "email con Claude)"})]})
+        order.with_user(giuseppe).action_confirm()
+        order = order.sudo()
+        order.date_order = fields.Datetime.to_datetime(days[0])
+        self._xmlid("synth_order_bricco", order)
+        lead.action_set_won()
+        line = order.order_line[:1]
+        project = line.task_id.project_id or line.project_id
+        project.user_id = marco
+        dev_task = line.task_id or self._task(project, "Sviluppo")
+        dev_task.name = "Sviluppo modulo langhe_wine_ai e configurazione"
+
+        # Analisti, PM e consulente: ore del mese in corso (solo tempo libero)
+        fit = self._lab_ts_fit
+        fit(ctx, "marco", self._task(project, "Project"), day(0), 2,
+            "Kick-off in cantina a Barolo con il titolare")
+        fit(ctx, "gianluca", self._task(project, "Analisi"), day(0), 4,
+            "Sopralluogo: flusso ordini, listini e lotti")
+        fit(ctx, "gianluca", self._task(project, "Analisi"), day(1), 6,
+            "Specifica listini Privati, Ho.Re.Ca. ed Export USA")
+        fit(ctx, "gianluca", self._task(project, "Analisi"), day(2), 4,
+            "Raccordo con il software SIAN: codice prodotto + lotto")
+        fit(ctx, "carlo", dev_task, day(2), 6,
+            "Modulo langhe_wine_ai: anagrafica vino e Packing List con Claude Code")
+        fit(ctx, "carlo", dev_task, day(3), 6,
+            "Analisi ordini da email con Claude: prompt, schema JSON e test")
+        fit(ctx, "gianluca", self._task(project, "Test"), day(4), 3,
+            "Prova con 15 email reali di importatori")
+        fit(ctx, "marco", self._task(project, "Project"), day(4), 1,
+            "Stato avanzamento con la cantina")
+
+        # Costi AI: workspace API dedicato alla commessa (costo diretto)
+        self._xmlid("synth_mapping_bricco", self.env["lab.ai.mapping"].create({
+            "ref_type": "workspace", "name": "wrkspc_bricco_rosso",
+            "label": "Workspace API della commessa Cantina Bricco Rosso",
+            "project_id": project.id}))
+        self.env["lab.ai.usage"].create({
+            "date": day(3), "source": "manual", "tool_id": self._ref("ai_tool_claude_api").id,
+            "currency_id": self.env.ref("base.USD").id, "amount_currency": 26.40,
+            "workspace_ref": "wrkspc_bricco_rosso",
+            "description": "API / claude-sonnet-5-5 – prove di analisi ordini da email",
+            "external_ref": "synth|bricco|1"})
+
+        # PM: date dei task, stima a finire, cronologia e prossimi passi
+        go_live = today + timedelta(days=21)
+        for task in project.task_ids.filtered(lambda t: t.allocated_hours > 0):
+            task.write({"planned_date_start": datetime.combine(days[0], time(8, 0)),
+                        "planned_date_end": datetime.combine(go_live, time(17, 0))})
+            if task.effective_hours:
+                task.write({"lab_remaining_estimate": max(
+                    task.allocated_hours - task.effective_hours, 2.0),
+                    "lab_remaining_date": today})
+        msg = project.with_context(mail_create_nosubscribe=True).message_post(
+            body=Markup("🧾 <b>Ordine di vendita confermato</b>: %s – %s, imponibile %s") % (
+                _link(order, order.name), partner.display_name,
+                tools.format_amount(self.env, order.amount_untaxed, order.currency_id)),
+            message_type="comment", subtype_xmlid="mail.mt_note", author_id=marco.partner_id.id)
+        msg.date = fields.Datetime.to_datetime(days[0])
+        start = datetime.combine(day(0), time(8, 0))  # 9:00 ora italiana (UTC+1)
+        self.env["calendar.event"].with_user(marco).with_context(
+            no_mail_to_attendees=True).create({
+                "name": "Sopralluogo in cantina a Barolo", "start": start,
+                "stop": start + timedelta(hours=3), "user_id": marco.id,
+                "res_model_id": self.env["ir.model"]._get_id("project.project"),
+                "res_id": project.id,
+                "partner_ids": [(6, 0, (marco.partner_id | partner).ids)]})
+        project.with_user(marco).activity_schedule(
+            "mail.mail_activity_data_todo", date_deadline=go_live,
+            summary="Formazione in cantina e go-live", user_id=marco.id)
+
+        # Commerciale: canone di assistenza dopo il go-live (preventivo in bozza)
+        quote = self.env["sale.order"].with_user(giuseppe).create({
+            "partner_id": partner.id, "opportunity_id": lead.id,
+            "client_order_ref": "Assistenza dedicata dopo il go-live",
+            "order_line": [(0, 0, {"product_id": self._ref(
+                "product_ams_monthly").product_variant_id.id, "product_uom_qty": 1})]})
+        self._xmlid("synth_quote_bricco", quote.sudo())
+
+        self.env["lab.timesheet.day"]._lab_refresh(ctx["month_start"], today)
+        self.env["lab.cost.period"]._cron_compute_open_periods()
+        _logger.info("Cliente cantina (Cantina Bricco Rosso) caricato")
+        return True
+
+    # Modello di progetto della Soluzione Cantina: le fasi standard di ogni installazione (60 h)
+    VERTICAL_STEPS = [
+        ("Raccolta dati: vini, listini, clienti e utenti nei file del cliente", 8),
+        ("Istanza dedicata e caricamento dati (nuovo_cliente.sh)", 4),
+        ("Configurazione standard: listini, lotti, cartoni, DDT", 10),
+        ("Personalizzazioni leggere (stampe, campi)", 12),
+        ("Formazione in cantina: titolare, commerciale, magazzino", 12),
+        ("Go-live e affiancamento", 8),
+        ("Project management", 6),
+    ]
+
+    def _lab_load_vertical(self):
+        """Soluzione Cantina: dopo la prima cantina (Bricco Rosso, 120 h su misura) la software
+        house la trasforma in un'offerta standard da proporre ad altre cantine. Crea la soluzione
+        di settore, il modello di progetto con le fasi standard (60 h), i prodotti a listino
+        (setup a prezzo fisso e canone), collega Bricco Rosso come installazione pilota (con
+        l'indirizzo del suo Odoo dedicato) e apre una seconda trattativa con l'offerta standard.
+        Idempotente."""
+        if (self.env.ref(f"{MODULE}.synth_vertical_cantina", raise_if_not_found=False)
+                or not self.env.ref(f"{MODULE}.synth_order_bricco", raise_if_not_found=False)):
+            return False
+        from markupsafe import Markup
+        self = self.sudo().with_context(tracking_disable=True, mail_notrack=True,
+                                        mail_create_nolog=True)
+        ctx = self._context_data()
+        users, today = ctx["users"], ctx["today"]
+        giuseppe, marco = users["giuseppe"], users["marco"]
+
+        vertical = self._xmlid("synth_vertical_cantina", self.env["lab.vertical"].create({
+            "name": "Soluzione Cantina (Langhe)", "user_id": marco.id,
+            "description": Markup(
+                "<p>Odoo 18 Community dedicato per cantine da 30.000 a 150.000 bottiglie:</p><ul>"
+                "<li>vendite, magazzino con lotti e cartoni, acquisti, CRM, eventi in cantina;</li>"
+                "<li>listini Italia, Ho.Re.Ca., Export Europa ed Export USA;</li>"
+                "<li>modulo <b>langhe_wine_ai</b>: ordini da email con Claude, schede tecniche "
+                "IT/EN/DE, Packing List export;</li>"
+                "<li>installazione ripetibile: <code>verticali/cantine/nuovo_cliente.sh</code> "
+                "con i file del cliente (vini.csv, clienti.csv).</li></ul>"
+                "<p>Fuori perimetro: registri telematici SIAN/ICQRF (restano nel software di "
+                "cantina).</p>"),
+        }))
+        template = self._xmlid("synth_project_template_cantina", self.env["project.project"].create({
+            "name": "MODELLO – Soluzione Cantina", "user_id": marco.id,
+            "privacy_visibility": "followers", "allow_timesheets": True,
+            "description": Markup("<p>Modello di progetto: non segnare ore qui. Ogni ordine del "
+                                  "setup standard ne crea una copia con queste fasi.</p>")}))
+        for seq, (name, hours) in enumerate(self.VERTICAL_STEPS, 1):
+            self.env["project.task"].create({
+                "name": name, "project_id": template.id, "allocated_hours": hours,
+                "sequence": seq * 10, "user_ids": False})
+        standard_hours = sum(h for _n, h in self.VERTICAL_STEPS)
+        unit = self.env.ref("uom.product_uom_unit").id
+        common = {"type": "service", "sale_ok": True, "purchase_ok": False,
+                  "uom_id": unit, "uom_po_id": unit,
+                  "service_policy": "ordered_prepaid", "lab_vertical_id": vertical.id}
+        setup = self._xmlid("synth_product_cantina_setup", self.env["product.template"].create(dict(
+            common, name="Soluzione Cantina – setup chiavi in mano", default_code="CANT-SETUP",
+            list_price=9000, service_tracking="project_only", project_template_id=template.id,
+            lab_hours_per_unit=standard_hours,
+            description_sale="Odoo 18 CE dedicato per la cantina con la Soluzione Cantina standard: "
+                             "installazione, caricamento di vini, listini e clienti, formazione e "
+                             "go-live. Prezzo fisso, %d ore stimate." % standard_hours)))
+        ams = self._xmlid("synth_product_cantina_ams", self.env["product.template"].create(dict(
+            common, name="Soluzione Cantina – assistenza e aggiornamenti", default_code="CANT-AMS",
+            list_price=450, service_tracking="project_only", lab_monthly_hours=6,
+            subscribable=True, subscription_template_id=self._ref("subscription_template_monthly").id,
+            description_sale="Canone mensile: assistenza, aggiornamenti della soluzione e "
+                             "hosting gestito, 6 ore/mese incluse.")))
+
+        # Prima installazione (pilota): Bricco Rosso, con l'indirizzo del suo Odoo dedicato
+        bricco = self._ref("synth_order_bricco")
+        line = bricco.order_line[:1]
+        project = line.task_id.project_id or line.project_id
+        project.write({"lab_vertical_id": vertical.id, "lab_instance_url": "http://127.0.0.1:8070"})
+        self._ref("synth_lead_bricco").write({
+            "lab_vertical_id": vertical.id, "expected_revenue": 12000 + 12 * 450})
+        quote = self._ref("synth_quote_bricco")
+        if quote.state == "draft":  # il canone della cantina diventa quello standard del settore
+            quote.order_line.filtered(lambda l: l.product_id.lab_monthly_hours)[:1].write({
+                "product_id": ams.product_variant_id.id})
+
+        # Commerciale: seconda cantina in trattativa con l'offerta standard
+        partner = self._partner("synth_partner_noci", "Tenuta Collina dei Noci S.s. Agricola",
+                                "La Morra", "info@collinadeinoci.example")
+        partner.user_id = giuseppe
+        stages = self.env["crm.stage"].search([("is_won", "=", False)], order="sequence")
+        lead = self._xmlid("synth_lead_noci", self.env["crm.lead"].create({
+            "name": "Soluzione Cantina standard – 45.000 bottiglie, export in Germania",
+            "type": "opportunity", "partner_id": partner.id, "user_id": giuseppe.id,
+            "lab_vertical_id": vertical.id, "expected_revenue": 9000 + 12 * 450,
+            "stage_id": stages[min(2, len(stages) - 1)].id if stages else False,
+            "description": Markup(
+                "<p>Ha visto la demo della Soluzione Cantina sull'Odoo di Bricco Rosso. Oggi "
+                "listini in Excel e ordini dei distributori tedeschi ricopiati a mano.</p>")}))
+        # due documenti, come per Bricco Rosso: setup a prezzo fisso e canone dopo il go-live
+        # (nello stesso ordine il canone farebbe trattare anche il setup come contratto mensile)
+        for xmlid, ref, product in (
+                ("synth_quote_noci", "Soluzione Cantina standard – setup", setup),
+                ("synth_quote_noci_ams", "Soluzione Cantina – assistenza dopo il go-live", ams)):
+            offer = self.env["sale.order"].with_user(giuseppe).create({
+                "partner_id": partner.id, "opportunity_id": lead.id, "client_order_ref": ref,
+                "order_line": [(0, 0, {"product_id": product.product_variant_id.id,
+                                       "product_uom_qty": 1})]})
+            self._xmlid(xmlid, offer.sudo())
+        lead.with_user(giuseppe).activity_schedule(
+            "mail.mail_activity_data_todo", date_deadline=today + timedelta(days=3),
+            summary="Demo in cantina con l'Odoo di Bricco Rosso", user_id=giuseppe.id)
+        vertical.with_context(mail_create_nosubscribe=True).message_post(
+            body=Markup("Prima installazione: <b>%s</b>, %d h a corpo su misura. Da qui il "
+                        "setup standard da %d h con il modello di progetto.") % (
+                bricco.partner_id.name, line.lab_sold_hours, standard_hours),
+            message_type="comment", subtype_xmlid="mail.mt_note", author_id=marco.partner_id.id)
+        _logger.info("Soluzione di settore Cantina caricata")
         return True
 
     def _lab_load_portal_users(self):

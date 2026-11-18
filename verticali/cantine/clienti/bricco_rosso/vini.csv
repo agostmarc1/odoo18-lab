@@ -1,0 +1,10 @@
+codice;nome;categoria;denominazione;livello;annata;vitigno;perc_vitigno;grado;formato;bott_cartone;peso_netto;peso_lordo;tara_cartone;lung_cm;larg_cm;alt_cm;prezzo_base;italia;horeca;export_eu;export_usa;giacenza;lotto;note
+BAR19;Barolo 2019;rossi;Barolo;docg;2019;Nebbiolo;100;14,5;0,75;6;0,75;1,45;0,6;31;21;33;48;34;40;31;37;240;L2019-02;Vigne a Barolo, esposizione sud-ovest. Affinamento 30 mesi in botte grande di rovere. Abbinamenti: brasato, tajarin al tartufo, formaggi stagionati.
+BAR20;Barolo 2020;rossi;Barolo;docg;2020;Nebbiolo;100;14,5;0,75;6;0,75;1,45;0,6;31;21;33;45;32;38;29;34;720;L2020-01;Affinamento 24 mesi in botte grande di rovere di Slavonia. Abbinamenti: carni rosse, selvaggina.
+BAR19M;Barolo 2019 Magnum;rossi;Barolo;docg;2019;Nebbiolo;100;14,5;1,5;3;1,5;2,9;1,2;34;12;40;105;75;88;68;82;4;L2019-M1;Formato magnum in cassetta di legno da 3.
+BAR20M;Barolo 2020 Magnum;rossi;Barolo;docg;2020;Nebbiolo;100;14,5;1,5;3;1,5;2,9;1,2;34;12;40;98;70;82;64;76;30;L2020-M1;Formato magnum in cassetta di legno da 3.
+BBR21;Barbaresco 2021;rossi;Barbaresco;docg;2021;Nebbiolo;100;14;0,75;6;0,75;1,45;0,6;31;21;33;38;27;32;25;30;360;L2021-01;Affinamento 18 mesi in botte grande.
+LNE23;Langhe Nebbiolo 2023;rossi;Langhe Nebbiolo;doc;2023;Nebbiolo;100;13,5;0,75;6;0,75;1,30;0,6;31;21;33;20;14;17;13;16;900;L2023-01;
+BAR23;Barbera d'Alba 2023;rossi;Barbera d'Alba;doc;2023;Barbera;100;14;0,75;6;0,75;1,30;0,6;31;21;33;15;10,5;13;9,5;12;1100;L2023-02;
+DOL24;Dolcetto d'Alba 2024;rossi;Dolcetto d'Alba;doc;2024;Dolcetto;100;13;0,75;6;0,75;1,25;0,6;31;21;33;12;8;10;7,5;9;1500;L2024-01;
+ARN24;Langhe Arneis 2024;bianchi;Langhe;doc;2024;Arneis;100;13;0,75;6;0,75;1,25;0,6;31;21;33;13;9;11;8;10;600;L2024-03;
