@@ -5,3 +5,5 @@ from . import test_helpdesk
 from . import test_pm_overview
 from . import test_timesheet_check
 from . import test_task_code
+from . import test_winery_scenario
+from . import test_vertical

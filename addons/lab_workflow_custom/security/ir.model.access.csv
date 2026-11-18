@@ -31,3 +31,7 @@ access_timesheet_day_pm,timesheet day pm,model_lab_timesheet_day,group_lab_pm,1,
 access_timesheet_day_admin,timesheet day amministrazione,model_lab_timesheet_day,group_lab_amministrazione,1,0,0,0
 access_timesheet_day_manager,timesheet day project manager,model_lab_timesheet_day,project.group_project_manager,1,0,0,0
 access_timesheet_day_system,timesheet day system,model_lab_timesheet_day,base.group_system,1,1,1,1
+access_vertical_user,vertical internal user,model_lab_vertical,base.group_user,1,0,0,0
+access_vertical_sale_manager,vertical sale manager,model_lab_vertical,sales_team.group_sale_manager,1,1,1,0
+access_vertical_pm,vertical pm,model_lab_vertical,group_lab_pm,1,1,1,0
+access_vertical_project_manager,vertical project manager,model_lab_vertical,project.group_project_manager,1,1,1,1

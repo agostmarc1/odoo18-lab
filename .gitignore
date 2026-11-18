@@ -21,3 +21,8 @@ Thumbs.db
 dist/
 # ambiente Python per registrare il video della guida
 .venv-video/
+
+# istanze dedicate delle cantine: password generate e cartella di prova
+verticali/cantine/clienti/*/.env
+verticali/cantine/clienti/_prova/
+verticali/cantine/*.test.log.txt

@@ -1,0 +1,5 @@
+nome;via;cap;citta;paese;email;lingua;listino;telefono
+Hudson Fine Wines Import LLC;210 Hudson Street;10013;New York;US;dave@hudsonfinewines.example;en_US;export_usa;
+Weinhandel Berger GmbH;Leopoldstraße 40;80802;München;DE;einkauf@weinhandel-berger.example;de_DE;export_eu;
+Enoteca del Centro;Via Garibaldi 18;10122;Torino;IT;ordini@enotecadelcentro.example;it_IT;italia;
+Ristorante La Torre;Piazza Risorgimento 3;12051;Alba;IT;cucina@ristorantelatorre.example;it_IT;horeca;

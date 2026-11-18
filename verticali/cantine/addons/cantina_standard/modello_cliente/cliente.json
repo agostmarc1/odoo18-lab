@@ -1,0 +1,22 @@
+{
+  "_istruzioni": "Modello per una cantina nuova: compila i campi, poi vini.csv e clienti.csv. Le password NON vanno qui: le genera nuovo_cliente.sh nel file .env della cartella.",
+  "ragione_sociale": "__RAGIONE_SOCIALE__",
+  "via": "",
+  "cap": "",
+  "citta": "",
+  "paese": "IT",
+  "email": "",
+  "telefono": "",
+  "sito": "",
+  "piva": "",
+  "cambio_usd_dimostrativo": 1.08,
+  "utenti": [
+    {"login": "titolare", "nome": "Titolare", "ruolo": "titolare"},
+    {"login": "commerciale", "nome": "Ufficio commerciale", "ruolo": "commerciale"},
+    {"login": "magazzino", "nome": "Cantiniere / magazzino", "ruolo": "magazzino"}
+  ],
+  "dati_demo": true,
+  "ordine_da_email": {"cliente": "Esempio Wine Import LLC", "file": "ordine_demo.txt"},
+  "ordine_confermato": {"cliente": "Enoteca di Esempio", "righe": [["DOL24", 12], ["BAR23", 6]]},
+  "evento": {"nome": "Degustazione in cantina", "posti": 20, "partecipanti": 8}
+}

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- Categorie standard: uguali in ogni cantina, così report e listini si leggono allo stesso modo -->
+    <record id="categ_wine" model="product.category">
+        <field name="name">Vini</field>
+    </record>
+    <record id="categ_wine_red" model="product.category">
+        <field name="name">Rossi</field>
+        <field name="parent_id" ref="categ_wine"/>
+    </record>
+    <record id="categ_wine_white" model="product.category">
+        <field name="name">Bianchi</field>
+        <field name="parent_id" ref="categ_wine"/>
+    </record>
+    <record id="categ_wine_sparkling" model="product.category">
+        <field name="name">Spumanti e dolci</field>
+        <field name="parent_id" ref="categ_wine"/>
+    </record>
+    <record id="categ_accessories" model="product.category">
+        <field name="name">Confezioni regalo e accessori</field>
+    </record>
+    <record id="categ_packaging" model="product.category">
+        <field name="name">Materiali di imbottigliamento</field>
+    </record>
+</odoo>

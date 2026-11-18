@@ -7,6 +7,7 @@
         <field name="arch" type="xml">
             <xpath expr="//page[@name='general_information']//group[@name='group_general']" position="inside">
                 <field name="lab_hours_per_unit" invisible="type != 'service'"/>
+                <field name="lab_vertical_id" invisible="type != 'service'"/>
                 <field name="lab_monthly_hours" invisible="type != 'service'"/>
                 <field name="lab_create_default_tasks" invisible="type != 'service'"/>
             </xpath>

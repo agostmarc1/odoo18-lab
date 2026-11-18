@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo noupdate="1">
+    <!-- Denominazioni principali di Langhe, Roero e Monferrato (modificabili dal cliente) -->
+    <record id="den_barolo" model="lw.wine.denomination"><field name="name">Barolo</field><field name="level">docg</field></record>
+    <record id="den_barbaresco" model="lw.wine.denomination"><field name="name">Barbaresco</field><field name="level">docg</field></record>
+    <record id="den_roero" model="lw.wine.denomination"><field name="name">Roero</field><field name="level">docg</field></record>
+    <record id="den_dogliani" model="lw.wine.denomination"><field name="name">Dogliani</field><field name="level">docg</field></record>
+    <record id="den_moscato_asti" model="lw.wine.denomination"><field name="name">Moscato d'Asti</field><field name="level">docg</field></record>
+    <record id="den_barbera_asti" model="lw.wine.denomination"><field name="name">Barbera d'Asti</field><field name="level">docg</field></record>
+    <record id="den_nizza" model="lw.wine.denomination"><field name="name">Nizza</field><field name="level">docg</field></record>
+    <record id="den_alta_langa" model="lw.wine.denomination"><field name="name">Alta Langa</field><field name="level">docg</field></record>
+    <record id="den_langhe_nebbiolo" model="lw.wine.denomination"><field name="name">Langhe Nebbiolo</field><field name="level">doc</field></record>
+    <record id="den_langhe" model="lw.wine.denomination"><field name="name">Langhe</field><field name="level">doc</field></record>
+    <record id="den_nebbiolo_alba" model="lw.wine.denomination"><field name="name">Nebbiolo d'Alba</field><field name="level">doc</field></record>
+    <record id="den_barbera_alba" model="lw.wine.denomination"><field name="name">Barbera d'Alba</field><field name="level">doc</field></record>
+    <record id="den_dolcetto_alba" model="lw.wine.denomination"><field name="name">Dolcetto d'Alba</field><field name="level">doc</field></record>
+    <record id="den_piemonte" model="lw.wine.denomination"><field name="name">Piemonte</field><field name="level">doc</field></record>
+
+    <record id="grape_nebbiolo" model="lw.wine.grape"><field name="name">Nebbiolo</field><field name="color">red</field></record>
+    <record id="grape_barbera" model="lw.wine.grape"><field name="name">Barbera</field><field name="color">red</field></record>
+    <record id="grape_dolcetto" model="lw.wine.grape"><field name="name">Dolcetto</field><field name="color">red</field></record>
+    <record id="grape_freisa" model="lw.wine.grape"><field name="name">Freisa</field><field name="color">red</field></record>
+    <record id="grape_pelaverga" model="lw.wine.grape"><field name="name">Pelaverga</field><field name="color">red</field></record>
+    <record id="grape_arneis" model="lw.wine.grape"><field name="name">Arneis</field><field name="color">white</field></record>
+    <record id="grape_moscato" model="lw.wine.grape"><field name="name">Moscato bianco</field><field name="color">white</field></record>
+    <record id="grape_favorita" model="lw.wine.grape"><field name="name">Favorita</field><field name="color">white</field></record>
+    <record id="grape_chardonnay" model="lw.wine.grape"><field name="name">Chardonnay</field><field name="color">white</field></record>
+    <record id="grape_pinot_nero" model="lw.wine.grape"><field name="name">Pinot nero</field><field name="color">red</field></record>
+</odoo>

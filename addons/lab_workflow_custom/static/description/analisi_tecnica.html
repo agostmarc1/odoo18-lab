@@ -35,7 +35,7 @@
 <h1>Flusso Operativo Software House</h1>
 <p class="lead">Documentazione tecnica del modulo <code>lab_workflow_custom</code> (analisi funzionale e tecnica), per chi deve installarlo, configurarlo, mantenerlo o estenderlo.</p>
 <div class="meta">
-  <span class="chip">Odoo 18.0 Community</span><span class="chip">Versione modulo 18.0.1.17.0</span>
+  <span class="chip">Odoo 18.0 Community</span><span class="chip">Versione modulo 18.0.1.19.0</span>
   <span class="chip">Licenza LGPL-3</span><span class="chip">Categoria Services/Project</span>
 </div>
 
@@ -70,13 +70,13 @@ Il <a href="video.html?v=tecnico">video tecnico</a> mostra installazione, parame
 <!-- CAPITOLI_VIDEO -->
 <p style="margin-bottom:4px"><b>Capitoli</b> (il minuto apre il video da quel punto)</p>
 <ol style="font-size:14px;columns:2;column-gap:32px">
-  <li><a href="/lab_workflow_custom/static/description/video.html?v=tecnico#t=7" target="_blank">0:07</a> – Installazione su un Odoo 18 CE</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html?v=tecnico#t=49" target="_blank">0:49</a> – Parametri di sistema</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html?v=tecnico#t=74" target="_blank">1:14</a> – Ruoli e permessi</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html?v=tecnico#t=112" target="_blank">1:52</a> – Automazioni e notifiche</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html?v=tecnico#t=152" target="_blank">2:32</a> – Modelli dati</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html?v=tecnico#t=177" target="_blank">2:57</a> – Documentazione tecnica</li>
-  <li><a href="/lab_workflow_custom/static/description/video.html?v=tecnico#t=207" target="_blank">3:27</a> – Riepilogo</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html?v=tecnico#t=6" target="_blank">0:06</a> – Installazione su un Odoo 18 CE</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html?v=tecnico#t=43" target="_blank">0:43</a> – Parametri di sistema</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html?v=tecnico#t=67" target="_blank">1:07</a> – Ruoli e permessi</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html?v=tecnico#t=104" target="_blank">1:44</a> – Automazioni e notifiche</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html?v=tecnico#t=141" target="_blank">2:21</a> – Modelli dati</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html?v=tecnico#t=164" target="_blank">2:44</a> – Documentazione tecnica</li>
+  <li><a href="/lab_workflow_custom/static/description/video.html?v=tecnico#t=194" target="_blank">3:14</a> – Riepilogo</li>
 </ol>
 <!-- /CAPITOLI_VIDEO -->
 
@@ -136,7 +136,7 @@ Il <a href="video.html?v=tecnico">video tecnico</a> mostra installazione, parame
 ├── data/                    parametri, prodotti, task di default, strumenti AI, cron,
 │                            configurazione Helpdesk, email ai clienti, pagine del sito
 ├── demo/                    utenti demo, costi demo, scenario sintetico
-├── tests/                   test_flow, test_costs, test_ai_usage, test_helpdesk, test_pm_overview, test_timesheet_check, test_task_code (48 test)
+├── tests/                   test_flow, test_costs, test_ai_usage, test_helpdesk, test_pm_overview, test_timesheet_check, test_task_code, test_winery_scenario, test_vertical (52 test)
 ├── static/src/              editor della descrizione del modulo pubblico e Kanban del portale
 │                            con aggiornamento in tempo reale (JS + SCSS, web.assets_frontend)
 └── static/description/      pagina dell'app, video, questa analisi</pre>
@@ -195,6 +195,7 @@ Il <a href="video.html?v=tecnico">video tecnico</a> mostra installazione, parame
   <tr><td>RF-40</td><td>Task: tempo stimato, inizio/fine pianificati, date di esecuzione, tempo effettivo, stato rispetto alle date, lista <i>Task da stimare</i>; ore residue, stima a finire, avanzamento, avviso di sforamento previsto al PM; avanzamento del progetto</td><td><code>project.task</code> (<code>lab_schedule_state</code>, <code>lab_eac_hours</code>), <code>account.analytic.line.lab_remaining_hours</code>, <code>project.project._compute_lab_progress</code></td><td>test_timesheet_check 05</td><td>PM, team</td></tr>
   <tr><td>RF-41</td><td>Consulenti: ore in fattura contro ore registrate, nota sulla fattura se non quadrano, riepilogo per consulente</td><td><code>account.move.line.lab_hours_difference</code>, <code>account.move._lab_check_consultant_hours</code></td><td>test_timesheet_check 06</td><td>Amministrazione</td></tr>
   <tr><td>RF-42</td><td>Ogni task ha un numero unico, come i ticket, visibile in liste, schede, turni e fogli ore e ricercabile</td><td>dipendenza OCA <code>project_task_code</code> (<code>project.task.code</code>, <code>display_name</code>)</td><td>test_task_code 01–02</td></tr>
+  <tr><td>RF-43</td><td>Soluzioni di settore: la stessa offerta (setup a prezzo fisso con modello di progetto + canone) venduta a più clienti; installazioni, trattative e cruscotto (clienti, valore trattative, ore della prima installazione contro lo standard, ore medie, margine per PM e Amministrazione); indirizzo dell'ambiente dedicato del cliente sulla commessa</td><td><code>lab.vertical</code>, <code>product.template.lab_vertical_id</code>, <code>crm.lead.lab_vertical_id</code>, <code>project.project.lab_vertical_id</code> / <code>lab_instance_url</code>, <code>sale.order.line._timesheet_create_project</code></td><td>test_vertical 01, 02, 03</td><td>Commerciale, PM, Amministrazione</td></tr>
 </table></div>
 <h3>Requisiti non funzionali</h3>
 <table>
@@ -225,15 +226,17 @@ Il <a href="video.html?v=tecnico">video tecnico</a> mostra installazione, parame
   <tr><td><code>lab.cost.allocation</code></td><td>Registro delle ripartizioni (letto dal report margini)</td><td>period_id, project_id (vuoto = costi generali), employee_id, license_id, cost_type (ai_fixed / ai_variable), passthrough, sale_line_id, amount, basis, basis_qty, basis_pct</td></tr>
   <tr><td><code>lab.margin.report</code></td><td>Vista SQL di sola lettura (<code>_auto = False</code>), una riga per progetto attivo</td><td>sold_amount, passthrough_revenue, invoiced_amount, timesheet_cost, ai_cost, external_cost, external_accrued, other_vendor_cost, passthrough_cost, total_cost, margin, margin_pct, margin_excl_passthrough, hours_consumed, hours_estimated, hours_saved</td></tr>
   <tr><td><code>lab.timesheet.day</code></td><td>Registro calcolato della consuntivazione, una riga per persona e giorno lavorativo (scritto solo dal sistema)</td><td>employee_id, date (unici insieme), week_start, month_start, expected_hours, leave_hours, due_hours, logged_hours, missing_hours, extra_hours, state (ok / missing / absent), is_external</td></tr>
+  <tr><td><code>lab.vertical</code></td><td>Soluzione di settore con cruscotto (chatter)</td><td>name, user_id, description, product_tmpl_ids, project_ids, lead_ids; calcolati non salvati: standard_hours, install_count, customer_count, pipeline_count, pipeline_amount, pilot_hours, hours_saved, avg_sold_hours, avg_consumed_hours; economici (<code>groups</code> = ECONOMICS_GROUPS, da <code>lab.margin.report</code>): revenue, total_cost, margin, margin_pct</td></tr>
   <tr><td><code>lab.demo.data</code></td><td>Caricatore dello scenario sintetico (modello astratto di servizio)</td><td><code>_lab_load_synthetic()</code> idempotente</td></tr>
 </table></div>
 <h3>Modelli estesi</h3>
 <div class="wrap"><table>
   <tr><th>Modello</th><th>Campi aggiunti</th><th>Salvati?</th></tr>
-  <tr><td><code>product.template</code></td><td>lab_hours_per_unit, lab_monthly_hours, lab_create_default_tasks</td><td>Sì</td></tr>
+  <tr><td><code>product.template</code></td><td>lab_hours_per_unit, lab_monthly_hours, lab_create_default_tasks, lab_vertical_id</td><td>Sì</td></tr>
   <tr><td><code>sale.order.line</code></td><td>lab_sold_hours</td><td>Sì (calcolato)</td></tr>
   <tr><td></td><td>lab_consumed_hours, lab_remaining_hours, lab_task_count</td><td>No (calcolati)</td></tr>
-  <tr><td><code>project.project</code></td><td>lab_default_tasks_done, lab_passthrough_markup_pct, lab_alert_notified</td><td>Sì</td></tr>
+  <tr><td><code>project.project</code></td><td>lab_default_tasks_done, lab_passthrough_markup_pct, lab_alert_notified, lab_vertical_id, lab_instance_url</td><td>Sì</td></tr>
+  <tr><td><code>crm.lead</code></td><td>lab_vertical_id (Soluzione di settore)</td><td>Sì</td></tr>
   <tr><td></td><td>lab_is_monthly, lab_sold/estimated/consumed_hours, lab_consumption_pct, lab_alert_level, lab_contract_type, campi economici (lab_revenue … lab_margin_pct), lab_package_line_ids</td><td>No (calcolati)</td></tr>
   <tr><td><code>project.task</code></td><td>lab_consumption_pct, lab_alert_level</td><td>Sì (calcolati, filtrabili)</td></tr>
   <tr><td></td><td>lab_sold_hours</td><td>No (related)</td></tr>
@@ -364,11 +367,21 @@ avanzamento     = registrate / stima a finire; sforerà = stima a finire > tempo
 progetto        = somma delle ore registrate / somma delle stime a finire dei task stimati
 consulente      = ore in fattura = quantità (× ore/giorno se tariffa a giornata) contro ore collegate</pre>
 
+<h3>5.13 Soluzioni di settore</h3>
+<ul>
+  <li><b>Installazione</b>: commessa con <code>lab_vertical_id</code>. Si imposta da sola alla conferma dell'ordine se il prodotto ha la soluzione (<code>_timesheet_create_project</code>), oppure a mano (es. il cliente pilota).</li>
+  <li><b>Setup standard</b>: prodotto servizio <code>project_only</code> con <code>project_template_id</code>. Odoo copia il modello di progetto con le sue fasi e ore (standard <code>sale_project</code>) e il laboratorio porta le ore allocate della commessa alle ore vendute (<code>lab_hours_per_unit</code>). Il modello resta un progetto attivo, senza soluzione e senza ore: non conta come installazione.</li>
+  <li><b>Ore standard</b> = massimo di <code>lab_hours_per_unit</code> dei prodotti della soluzione senza ore mensili. <b>Ore della prima installazione</b> = ore vendute della commessa più vecchia. <b>Ore risparmiate</b> = prima installazione − standard (mai sotto zero).</li>
+  <li><b>Trattative aperte</b>: opportunità attive della soluzione non in una fase vinta; valore = somma del ricavo atteso.</li>
+  <li><b>Economia</b>: somma delle righe di <code>lab.margin.report</code> delle installazioni (venduto + ribaltato, costi totali); margine % = margine / ricavi. È lo stesso calcolo della commessa.</li>
+  <li><b>Setup e canone in documenti separati</b>: in un unico ordine il canone farebbe dedurre il contratto <i>canone</i> anche alla commessa del setup (vedi Limiti noti).</li>
+</ul>
+
 <h2 id="estensioni">6. Punti di estensione di Odoo</h2>
 <p>Tutti gli override chiamano <code>super()</code>; nessun metodo standard è sostituito per intero.</p>
 <div class="wrap"><table>
   <tr><th>Modello</th><th>Metodo</th><th>Modifica</th></tr>
-  <tr><td>sale.order.line</td><td><code>_timesheet_create_project</code></td><td>Ore allocate = ore vendute, visibilità <i>followers</i>, iscrizione venditore e Supporto (AMS)</td></tr>
+  <tr><td>sale.order.line</td><td><code>_timesheet_create_project</code></td><td>Ore allocate = ore vendute, visibilità <i>followers</i>, iscrizione venditore e Supporto (AMS), soluzione di settore dal prodotto (<code>lab_vertical_id</code>)</td></tr>
   <tr><td>sale.order.line</td><td><code>_timesheet_create_task_prepare_values</code></td><td>Ore stimate del task = ore vendute per i prodotti a ore</td></tr>
   <tr><td>sale.order.line</td><td><code>_timesheet_service_generation</code></td><td>Crea i task di default dopo la generazione standard</td></tr>
   <tr><td>sale.order.line</td><td><code>_timesheet_compute_delivered_quantity_domain</code></td><td>Esclude le ore parallele da approvare</td></tr>
@@ -437,7 +450,9 @@ consulente      = ore in fattura = quantità (× ore/giorno se tariffa a giornat
   <tr><td>lab.cost.period</td><td>—</td><td>L S</td><td>L S C E</td><td>L S C E</td></tr>
   <tr><td>lab.cost.allocation</td><td>—</td><td>L</td><td>L</td><td>L S C E</td></tr>
   <tr><td>lab.margin.report</td><td>—</td><td>L</td><td>L</td><td>—</td></tr>
+  <tr><td>lab.vertical</td><td>L (tutti gli utenti interni; Responsabile vendite: L S C)</td><td>L S C (Responsabile progetti: L S C E)</td><td>L</td><td>—</td></tr>
 </table></div>
+<p>Nel cruscotto delle soluzioni di settore ricavi, costi e margine hanno <code>groups=ECONOMICS_GROUPS</code> sul campo, come sulla commessa: il Commerciale vede clienti, trattative e ore ma non i margini (test_vertical 03).</p>
 <h3>Regole di record e controlli nel codice</h3>
 <ul>
   <li><code>rule_planning_slot_own</code>: l'utente turni vede solo i propri turni non in bozza; <code>rule_planning_slot_all</code>: il responsabile vede tutto; <code>rule_planning_slot_company</code>: regola globale multi-azienda.</li>
@@ -506,7 +521,7 @@ consulente      = ore in fattura = quantità (× ore/giorno se tariffa a giornat
 
 <!-- ============================================================== -->
 <h2 id="test">11. Test automatici</h2>
-<p>48 test (<code>TransactionCase</code> e un <code>HttpCase</code>), eseguiti con <code>./scripts/run_tests.sh</code> (Odoo fermo, <code>--test-tags</code> sul modulo).</p>
+<p>52 test (<code>TransactionCase</code> e un <code>HttpCase</code>), eseguiti con <code>./scripts/run_tests.sh</code> (Odoo fermo, <code>--test-tags</code> sul modulo).</p>
 <div class="wrap"><table>
   <tr><th>File</th><th>Test</th><th>Cosa verifica</th></tr>
   <tr><td rowspan="8">test_flow.py</td><td>01 products_configured</td><td>Prodotti di base con le giuste politiche</td></tr>
@@ -557,6 +572,10 @@ consulente      = ore in fattura = quantità (× ore/giorno se tariffa a giornat
   <tr><td>06 consultant_hours_vs_bill</td><td>Ore in fattura contro ore registrate e nota sulla fattura</td></tr>
   <tr><td rowspan="2">test_task_code.py</td><td>01 task_numbered_and_searchable</td><td>Numero T… unico anche per i task creati da un analista, nel nome mostrato e ricercabile</td></tr>
   <tr><td>02 default_tasks_from_order_numbered</td><td>I task di default creati dalla conferma dell'ordine hanno numeri tutti diversi</td></tr>
+  <tr><td>test_winery_scenario.py</td><td>01 winery_customer_full_cycle</td><td>Cliente cantina dei dati di esempio: caricamento idempotente, opportunità vinta, ordine a corpo confermato, ore su task senza ore parallele, consulente sulla commessa, consumo API diretto, preventivo del canone in bozza (si salta se lo scenario non è caricato)</td></tr>
+  <tr><td rowspan="3">test_vertical.py</td><td>01 dashboard_pilot_and_pipeline</td><td>Soluzione Cantina: Bricco Rosso prima installazione (120 h) con indirizzo dell'ambiente, setup standard 60 h, 60 h risparmiate, una trattativa aperta, canone standard in preventivi separati (si salta se lo scenario non è caricato)</td></tr>
+  <tr><td>02 standard_offer_creates_project_from_template</td><td>Conferma del setup standard: commessa a corpo copiata dal modello con le stesse fasi e 60 h, collegata alla soluzione; il modello non conta come installazione</td></tr>
+  <tr><td>03 economics_only_for_pm_and_administration</td><td>Il Commerciale legge il cruscotto ma non i margini (AccessError); il PM sì</td></tr>
 </table></div>
 <p>Il collaudo end-to-end con gli utenti dei ruoli è documentato nel video della pagina dell'app (registrato da <code>scripts/registra_video.sh</code>, rigenerabile dopo ogni modifica).</p>
 
@@ -570,6 +589,7 @@ consulente      = ore in fattura = quantità (× ore/giorno se tariffa a giornat
   <li><b>Dati</b>: i file in <code>data/</code> con <code>noupdate="1"</code> (parametri, prodotti, task di default, strumenti AI) non vengono sovrascritti negli aggiornamenti; cron e gruppi sì. Anche team, SLA, tipi, categorie ed email dei ticket sono <code>noupdate</code>. Le email sugli stadi OCA le imposta <code>_lab_setup_stage_templates</code> a ogni aggiornamento, solo dove c'è ancora l'email OCA o nessuna.</li>
   <li><b>Database già esistente</b>: dopo l'aggiornamento, <code>./scripts/load_synthetic.sh</code> aggiunge i ticket demo e sposta sui ticket le ore dei vecchi task "Ticket 101–103" (<code>_lab_load_helpdesk</code>, idempotente) e crea gli utenti portale di prova dei clienti (<code>_lab_load_portal_users</code>, idempotente; password da <code>.env</code>).</li>
   <li><b>Dipendenze Python</b>: <code>requests</code> (già in Odoo) per il connettore.</li>
+  <li><b>Prodotti per i clienti (verticali)</b>: le soluzioni vendute ai clienti NON stanno in quest'app. Hanno i loro moduli e il loro Odoo dedicato in <code>verticali/</code>. Esempio: <code>verticali/cantine/</code> con i moduli <code>langhe_wine_ai</code> e <code>cantina_standard</code>, l'istanza di ogni cantina creata da <code>nuovo_cliente.sh</code> (porta 8070 in su, database e password propri) e la prova di installazione pulita <code>prova_pacchetto.sh</code>. Quest'app ne registra la parte commerciale ed economica: soluzione di settore, installazioni, trattative.</li>
 </ul>
 
 <!-- ============================================================== -->
@@ -577,7 +597,7 @@ consulente      = ore in fattura = quantità (× ore/giorno se tariffa a giornat
 <div class="wrap"><table>
   <tr><th>Tema</th><th>Descrizione</th><th>Impatto / mitigazione</th></tr>
   <tr><td>Campi di progetto non salvati</td><td>Ore, alert, tipo contratto ed economia del progetto sono calcolati a ogni lettura (una ricerca sui fogli ore per progetto).</td><td>Non filtrabili né ordinabili; con molte commesse il kanban può rallentare. Se serve, salvarli e ricalcolarli dagli hook dei fogli ore.</td></tr>
-  <tr><td>Tipo contratto dedotto</td><td>Se un ordine mescola prodotti a canone, T&amp;M e a corpo, vince nell'ordine: canone, T&amp;M, corpo.</td><td>Vendere tipologie diverse su ordini separati.</td></tr>
+  <tr><td>Tipo contratto dedotto</td><td>Se un ordine mescola prodotti a canone, T&amp;M e a corpo, vince nell'ordine: canone, T&amp;M, corpo.</td><td>Vendere tipologie diverse su ordini separati (anche nelle soluzioni di settore: setup e canone in due preventivi).</td></tr>
   <tr><td>Ripartizione ricalcolata</td><td>A ogni ricalcolo le allocazioni del mese aperto vengono eliminate e ricreate.</td><td>Non modificarle a mano (sono in sola lettura); i mesi chiusi non si ricalcolano.</td></tr>
   <tr><td>Costi fornitori per conto analitico</td><td>Il report somma le fatture fornitore per conto analitico del progetto.</td><td>Un conto analitico condiviso da più progetti duplicherebbe i costi: mantenere un conto per commessa (default di Odoo).</td></tr>
   <tr><td>Calendario</td><td>Le ore di una giornata si leggono da <code>hours_per_day</code> del calendario della persona (default 8), senza ferie o giorni ridotti.</td><td>Giornate parziali o permessi vanno gestiti a mano (approvazione PM).</td></tr>
@@ -616,7 +636,9 @@ consulente      = ore in fattura = quantità (× ore/giorno se tariffa a giornat
   <tr><td>Verdi Retail – canone AMS</td><td>Consumo sul mese corrente, abbonamento OCA e 7 ticket collegati da soli alla commessa: tre chiusi il mese scorso e uno questo mese (con valutazione), uno in corso, uno in attesa del cliente, uno urgente con SLA scaduto; le ore di assistenza sono segnate sui ticket</td></tr>
   <tr><td>Helpdesk</td><td>Nicola (Supporto) nel team <i>Assistenza clienti</i>; un ticket di Rossi Meccanica (monte ore) ancora senza commessa, da smistare; Giuseppe vede in lettura i ticket dei suoi clienti</td></tr>
   <tr><td>Neri Assicurazioni – sviluppo a corpo 120 h</td><td>Task di analisi oltre il 90%, ore del consulente maturate in attesa di fattura, da fatturare</td></tr>
-  <tr><td>CRM</td><td>Tre opportunità in fasi diverse e un preventivo AMS in bozza</td></tr>
+  <tr><td>Cantina Bricco Rosso – sviluppo a corpo 120 h (mese in corso)</td><td>Cliente che compra il pacchetto <i>Odoo chiavi in mano per cantine</i> con il modulo <code>langhe_wine_ai</code>: opportunità vinta, ordine confermato a inizio mese, commessa con task stimati e date fino al go-live, ore di Marco (PM), Gianluca (analisi e test) e del consulente Carlo (sviluppo con Claude Code) messe solo nel tempo libero di ciascuno (<code>_lab_ts_fit</code> riduce le attività interne di riempimento, nessuna ora parallela nuova), consumo API sul workspace <code>wrkspc_bricco_rosso</code> (costo diretto), sopralluogo in calendario, attività "Formazione e go-live", preventivo del canone di assistenza in bozza. Caricamento <code>_lab_load_winery</code>, idempotente, aggiunto anche ai database con lo scenario già presente. È la prima installazione (pilota) della Soluzione Cantina, con <i>Ambiente del cliente</i> = <code>http://127.0.0.1:8070</code> (Odoo dedicato creato da <code>verticali/cantine/nuovo_cliente.sh</code>)</td></tr>
+  <tr><td>Soluzione Cantina (Langhe) – soluzione di settore</td><td>Modello di progetto <i>MODELLO – Soluzione Cantina</i> (7 fasi, 60 h), prodotti <code>CANT-SETUP</code> (9.000 €, 60 h, dal modello) e <code>CANT-AMS</code> (450 €/mese, 6 h), Bricco Rosso come installazione pilota (il suo preventivo del canone passa a quello standard), seconda cantina <i>Tenuta Collina dei Noci</i> (La Morra) in trattativa con due preventivi (setup e canone) e attività "Demo in cantina" di Giuseppe. Caricamento <code>_lab_load_vertical</code>, idempotente</td></tr>
+  <tr><td>CRM</td><td>Tre opportunità in fasi diverse, l'opportunità vinta della cantina, la seconda cantina in trattativa, due preventivi AMS in bozza, il canone di Bricco Rosso e i due preventivi della Soluzione Cantina per Collina dei Noci</td></tr>
   <tr><td>Pianificazione</td><td>Niccolò a 32 h (limite pieno), Carlo con fattore 1,5, fattore ridotto per la settimana prossima, turni confermati che diventano fogli ore</td></tr>
   <tr><td>Costi AI</td><td>Licenze del team, consumi diretti / per persona / costi generali, mese scorso chiuso e mese in corso aperto</td></tr>
   <tr><td>Consuntivazione</td><td>Giulia part-time 20 ore, Gianluca in ferie giovedì e venerdì della settimana scorsa, giornate completate con attività interne e tre ore mancanti volute (Carlo ieri, Giulia un giorno della settimana scorsa, Niccolò due settimane fa); task con date pianificate, uno oltre la data di fine, uno con inizio in ritardo, due da stimare e uno che sforerà la stima secondo le ore residue</td></tr>

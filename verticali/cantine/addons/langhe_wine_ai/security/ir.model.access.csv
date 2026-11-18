@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_lw_wine_denomination_user,lw.wine.denomination utente,model_lw_wine_denomination,base.group_user,1,0,0,0
+access_lw_wine_denomination_manager,lw.wine.denomination responsabile vendite,model_lw_wine_denomination,sales_team.group_sale_manager,1,1,1,1
+access_lw_wine_grape_user,lw.wine.grape utente,model_lw_wine_grape,base.group_user,1,0,0,0
+access_lw_wine_grape_manager,lw.wine.grape responsabile vendite,model_lw_wine_grape,sales_team.group_sale_manager,1,1,1,1

@@ -20,8 +20,10 @@ casa", aziende di Chicago): si vedono solo dati coerenti con il nostro flusso, c
 | Bianchi Logistica | T&M 60h | fattura di Carlo ribaltata +15%, spese vive AI, ore parallele approvate e da approvare |
 | Verdi Retail | Canone AMS 20h/mese | 7 ticket di assistenza collegati alla commessa (chiusi con valutazione, in corso, in attesa del cliente, urgente con SLA scaduto), ore sui ticket, consumo del mese |
 | Neri Assicurazioni | Sviluppo a corpo 120h | task di analisi oltre il 90%, ore del consulente in attesa di fattura |
+| Cantina Bricco Rosso (Barolo) | Sviluppo a corpo 120h, mese in corso | pacchetto *Odoo chiavi in mano per cantine* (modulo `langhe_wine_ai`): opportunità vinta, commessa appena partita con ore di PM, analista e consulente Carlo (Claude Code), consumo API diretto, preventivo del canone di assistenza in bozza. È la **prima installazione** della *Soluzione Cantina*, con il suo Odoo dedicato su http://127.0.0.1:8070 |
+| Tenuta Collina dei Noci (La Morra) | Soluzione Cantina standard, in trattativa | seconda cantina: opportunità e due preventivi (setup 9.000 € / 60h, canone 450 €/mese), demo in cantina in agenda per Giuseppe |
 
-In più: 3 opportunità e un preventivo AMS in bozza (Commerciale), turni della settimana (Niccolò a
+In più: 3 opportunità aperte e due preventivi AMS in bozza (Commerciale), la soluzione di settore *Soluzione Cantina* con il suo cruscotto, turni della settimana (Niccolò a
 32h, Carlo con fattore 1,5), mese scorso dei costi AI chiuso dall'Amministrazione, un ticket di
 Rossi Meccanica ancora da smistare (monte ore: la commessa la sceglie il Supporto).
 
@@ -48,7 +50,8 @@ L'immagine Docker è quella ufficiale `odoo:18.0` più due librerie Python richi
 | `Dockerfile`, `requirements.txt` | Immagine `odoo:18.0` + librerie per la localizzazione italiana |
 | `.env` | Password locali. **Non va mai su git** (copiarlo da `.env.example`) |
 | `config/odoo.conf` | Configurazione di Odoo (cartelle dei moduli, database `lab18`) |
-| `addons/lab_workflow_custom/` | **Il nostro modulo custom** |
+| `addons/lab_workflow_custom/` | **Il nostro modulo custom** (la gestione della software house) |
+| `verticali/cantine/` | **Prodotto per i clienti**: la *Soluzione Cantina* (moduli `langhe_wine_ai` e `cantina_standard`), un Odoo dedicato per ogni cantina |
 | `third-party/` | Moduli OCA 18.0 scaricati con `scripts/get_third_party.sh` (non versionati) |
 | `scripts/` | Comandi pronti: crea, resetta e aggiorna il database, lancia i test |
 
@@ -179,6 +182,27 @@ Per provare più utenti insieme usa una **finestra anonima** del browser per ogn
 | Fermare Odoo (i dati restano) | `docker compose stop` |
 | Vedere i log in tempo reale | `docker compose logs -f odoo` (esci con Ctrl+C) |
 | Stato dei container | `docker compose ps` |
+
+### Pipeline di rilascio: tutte le fasi in ordine
+
+Dopo una modifica al codice basta un comando: `./scripts/pipeline.sh`. Esegue in ordine queste fasi
+e si ferma al primo errore, dicendo da quale fase ripartire (`--da N`):
+
+| # | Fase | Riavvia Odoo? |
+|---|---|---|
+| 1 | Controlli: Docker, `.env`, laboratorio avviato | no |
+| 2 | Prova su Odoo pulito della Soluzione Cantina (12 test) | no |
+| 3 | Prova su Odoo pulito dell'app del laboratorio | no |
+| 4 | Copia di sicurezza di `lab18` in `backups/`, aggiornamento dell'app | **sì** (8069, circa un minuto) |
+| 5 | Dati di esempio nuovi e test dell'app su `lab18` | **sì** (durante i test) |
+| 6 | Aggiornamento delle istanze delle cantine | **sì** (8070 e successive) |
+| 7 | Verifica: accesso a laboratorio e cantine, cruscotto della soluzione | no |
+| 8 | Pacchetto ZIP dell'app (`dist/`) | no |
+| 9 | Video utente e tecnico, solo con `--video` | no |
+| 10 | Commit su un ramo nuovo `rilascio-<versione>`, solo con `--commit "messaggio"` (nessun push) | no |
+
+Altre opzioni: `--solo N` esegue una sola fase, `--elenco` mostra le fasi. Il registro di ogni
+esecuzione è in `backups/pipeline_<data>.log`.
 
 ### Aggiornare il modulo dopo una modifica al codice
 
@@ -443,9 +467,51 @@ commessa Bianchi Logistica), personale (Claude Code di Carlo) e senza corrispond
   in arrivo si provano con i test. In produzione: Impostazioni → Generali → *Dominio alias* e
   Impostazioni → Tecnico → *Server di posta in arrivo*.
 
+### Soluzioni di settore (CRM → Vendite → Soluzioni di settore)
+
+Quando un progetto per un cliente diventa un'offerta da rivendere a tutto il settore, si registra
+come **soluzione di settore**. Esempio: la *Soluzione Cantina*, nata con Cantina Bricco Rosso.
+- **Commerciale**: offerta a listino (setup a prezzo fisso `CANT-SETUP` e canone `CANT-AMS`, in due
+  preventivi separati), opportunità collegate con il campo *Soluzione di settore*.
+- **Project Manager**: il setup ha un **modello di progetto** (*MODELLO – Soluzione Cantina*, 7 fasi
+  e 60 ore). Alla conferma dell'ordine la commessa nasce già con quelle fasi. Sulla commessa il campo
+  *Ambiente del cliente* porta all'Odoo dedicato del cliente.
+- **Cruscotto**: clienti, valore delle trattative, ore della prima installazione rispetto allo
+  standard (120h → 60h: 60 ore in meno a cantina), ore medie e, solo per PM e Amministrazione, il
+  margine. Il margine è calcolato come nel report *Margini per commessa*.
+
 ### Prossima fase (non ancora fatta)
 
 - **Fase 3:** commit Git come base di ripartizione dei costi AI (in alternativa o insieme alle ore).
+
+## Clienti con un Odoo dedicato: `verticali/`
+
+Le soluzioni vendute ai clienti **non** sono personalizzazioni della software house, quindi non stanno
+nell'app del laboratorio. Ognuna ha la sua cartella in `verticali/` e ogni cliente ha il suo Odoo,
+separato dal laboratorio, come in produzione su Cloudpepper.
+
+| Comando | A cosa serve |
+|---|---|
+| `./verticali/cantine/nuovo_cliente.sh "Cantina Bricco Rosso"` | Crea (o completa) l'Odoo della cantina: database, utenti, vini, listini, clienti |
+| `./verticali/cantine/nuovo_cliente.sh "Cantina Bricco Rosso" --aggiorna` | Aggiorna i moduli della soluzione nell'Odoo della cantina |
+| `./verticali/cantine/nuovo_cliente.sh "Tenuta Collina dei Noci"` | Cantina nuova: crea `clienti/collina_dei_noci/` dal modello. Si compilano i file e si rilancia |
+| `./verticali/cantine/prova_pacchetto.sh` | Prova la soluzione su un Odoo pulito (con e senza dati di esempio) e lancia i test |
+
+**Accesso all'Odoo di Cantina Bricco Rosso: http://127.0.0.1:8070**
+- amministratore `admin`, password `CANTINA_ADMIN_PASSWORD` nel file `verticali/cantine/clienti/bricco_rosso/.env`;
+- utenti della cantina, password `CANTINA_USERS_PASSWORD` nello stesso file:
+  `paolo` (titolare), `elena` (commerciale export), `franco` (cantina e magazzino).
+
+Dentro trovi:
+- 9 vini con annata, lotti, cartoni e pesi;
+- 4 listini (Italia, Ho.Re.Ca., Export Europa, Export USA) e 4 clienti (New York, Monaco, Torino, Alba);
+- il preventivo per Hudson Fine Wines con l'email di Dave da analizzare;
+- un ordine confermato per il Ristorante La Torre;
+- la degustazione del sabato.
+
+Senza chiave API il pulsante *Analizza Ordine con Claude AI* lavora in **modalità demo**: legge l'email
+con le regole del modulo, senza chiamare Claude. Ogni cantina nuova prende la porta successiva (8071, 8072…).
+Dettagli in `verticali/cantine/README.md`.
 
 ---
 

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_order_form_lw_wine" model="ir.ui.view">
+        <field name="name">sale.order.form.lw.wine</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <!-- Pulsanti in testata -->
+            <xpath expr="//header" position="inside">
+                <button name="action_lw_analyze_order" type="object" icon="fa-magic"
+                        string="Analizza Ordine con Claude AI" class="btn-secondary"
+                        invisible="state not in ('draft', 'sent') or not lw_raw_request"/>
+                <button name="action_lw_print_packing_list" type="object" icon="fa-cubes"
+                        string="Packing List" invisible="lw_total_bottles == 0"/>
+            </xpath>
+
+            <!-- Righe: segno "creata da Claude" e richiesta originale -->
+            <xpath expr="//field[@name='order_line']/list/field[@name='product_uom_qty']" position="after">
+                <field name="lw_ai_generated" optional="show" string="AI" widget="boolean_toggle" readonly="1"/>
+                <field name="lw_ai_source_text" optional="hide"/>
+            </xpath>
+
+            <xpath expr="//page[@name='order_lines']" position="after">
+                <page string="Assistente Claude" name="lw_claude">
+                    <group>
+                        <field name="lw_raw_request" nolabel="1" colspan="2"
+                               readonly="state not in ('draft', 'sent')"
+                               placeholder="Incollare qui l'email, il messaggio WhatsApp o la trascrizione del vocale del cliente, così com'è. Poi premere 'Analizza Ordine con Claude AI'."/>
+                    </group>
+                    <group invisible="not lw_ai_analyzed_at">
+                        <field name="lw_ai_analyzed_at"/>
+                    </group>
+                    <field name="lw_ai_notes" invisible="not lw_ai_notes"/>
+                </page>
+                <page string="Export" name="lw_export" invisible="lw_total_bottles == 0">
+                    <group>
+                        <group string="Quantità">
+                            <field name="lw_total_bottles"/>
+                            <field name="lw_total_cases"/>
+                            <field name="lw_loose_bottles"/>
+                            <field name="lw_total_packages"/>
+                            <field name="lw_total_liters"/>
+                            <field name="lw_alcohol_liters"/>
+                        </group>
+                        <group string="Pesi e volumi">
+                            <field name="lw_net_weight_kg"/>
+                            <field name="lw_gross_weight_kg"/>
+                            <field name="lw_volume_m3"/>
+                        </group>
+                    </group>
+                    <div class="alert alert-warning" role="alert" invisible="not lw_export_warnings">
+                        <strong>Dati mancanti nelle schede vino: i totali potrebbero essere incompleti.</strong>
+                        <field name="lw_export_warnings" nolabel="1"/>
+                    </div>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

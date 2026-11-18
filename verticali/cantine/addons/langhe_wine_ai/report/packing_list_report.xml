@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="action_report_lw_packing_list" model="ir.actions.report">
+        <field name="name">Packing List</field>
+        <field name="model">sale.order</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">langhe_wine_ai.report_lw_packing_list</field>
+        <field name="report_file">langhe_wine_ai.report_lw_packing_list</field>
+        <field name="print_report_name">'Packing List - %s' % object.name</field>
+        <field name="binding_model_id" ref="sale.model_sale_order"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_lw_packing_list_document">
+        <t t-call="web.external_layout">
+            <t t-set="o" t-value="o.with_context(lang=o.partner_id.lang)"/>
+            <t t-set="address">
+                <div t-field="o.partner_shipping_id"
+                     t-options="{'widget': 'contact', 'fields': ['address', 'name', 'phone', 'vat'], 'no_marker': True}"/>
+            </t>
+            <div class="page">
+                <h2>Packing List <span t-field="o.name"/></h2>
+                <div class="row mb-3">
+                    <div class="col-4"><strong>Data / Date:</strong> <span t-field="o.date_order" t-options="{'widget': 'date'}"/></div>
+                    <div class="col-4" t-if="o.client_order_ref"><strong>Rif. cliente / Your ref.:</strong> <span t-field="o.client_order_ref"/></div>
+                    <div class="col-4" t-if="o.incoterm"><strong>Incoterm:</strong> <span t-field="o.incoterm.code"/> <span t-field="o.incoterm_location"/></div>
+                </div>
+                <table class="table table-sm o_main_table">
+                    <thead>
+                        <tr>
+                            <th>Codice<br/>Code</th>
+                            <th>Vino<br/>Wine</th>
+                            <th>Annata<br/>Vintage</th>
+                            <th class="text-end">Formato L<br/>Size L</th>
+                            <th class="text-end">% vol</th>
+                            <th class="text-end">Bottiglie<br/>Bottles</th>
+                            <th class="text-end">Cartoni<br/>Cases</th>
+                            <th class="text-end">Sfuse<br/>Loose</th>
+                            <th class="text-end">Litri<br/>Liters</th>
+                            <th class="text-end">Netto kg<br/>Net kg</th>
+                            <th class="text-end">Lordo kg<br/>Gross kg</th>
+                            <th class="text-end">m³</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="o.order_line.filtered(lambda l: not l.display_type and l.product_id.lw_is_wine)" t-as="line">
+                            <t t-set="tmpl" t-value="line.product_id.product_tmpl_id"/>
+                            <tr>
+                                <td><span t-field="line.product_id.default_code"/></td>
+                                <td>
+                                    <span t-field="tmpl.name"/>
+                                    <div class="text-muted small" t-if="tmpl.lw_denomination_id" t-field="tmpl.lw_denomination_id"/>
+                                </td>
+                                <td><t t-out="tmpl.lw_vintage or 'NV'"/></td>
+                                <td class="text-end"><t t-out="'%.3f' % tmpl.lw_volume_l"/></td>
+                                <td class="text-end"><t t-out="'%.1f' % tmpl.lw_alcohol"/></td>
+                                <td class="text-end"><t t-out="line.lw_bottles"/></td>
+                                <td class="text-end"><t t-out="line.lw_cases"/> × <t t-out="tmpl.lw_bottles_per_case"/></td>
+                                <td class="text-end"><t t-out="line.lw_loose_bottles"/></td>
+                                <td class="text-end"><t t-out="'%.2f' % line.lw_liters"/></td>
+                                <td class="text-end"><t t-out="'%.2f' % line.lw_net_weight_kg"/></td>
+                                <td class="text-end"><t t-out="'%.2f' % line.lw_gross_weight_kg"/></td>
+                                <td class="text-end"><t t-out="'%.3f' % line.lw_volume_m3"/></td>
+                            </tr>
+                        </t>
+                    </tbody>
+                    <tfoot>
+                        <tr class="fw-bold">
+                            <td colspan="5">Totale / Total</td>
+                            <td class="text-end"><t t-out="o.lw_total_bottles"/></td>
+                            <td class="text-end"><t t-out="o.lw_total_cases"/></td>
+                            <td class="text-end"><t t-out="o.lw_loose_bottles"/></td>
+                            <td class="text-end"><t t-out="'%.2f' % o.lw_total_liters"/></td>
+                            <td class="text-end"><t t-out="'%.2f' % o.lw_net_weight_kg"/></td>
+                            <td class="text-end"><t t-out="'%.2f' % o.lw_gross_weight_kg"/></td>
+                            <td class="text-end"><t t-out="'%.3f' % o.lw_volume_m3"/></td>
+                        </tr>
+                    </tfoot>
+                </table>
+                <p class="mt-3">
+                    <strong>Litri anidri / Pure alcohol liters:</strong> <t t-out="'%.3f' % o.lw_alcohol_liters"/>
+                    · <strong>Colli / Packages:</strong> <t t-out="o.lw_total_packages"/>
+                </p>
+                <p class="text-muted small">
+                    I lotti di imbottigliamento sono indicati sul DDT / documento di trasporto.
+                    Bottling lot numbers are stated on the delivery note.
+                </p>
+            </div>
+        </t>
+    </template>
+
+    <template id="report_lw_packing_list">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="o">
+                <t t-call="langhe_wine_ai.report_lw_packing_list_document" t-lang="o.partner_id.lang"/>
+            </t>
+        </t>
+    </template>
+</odoo>
